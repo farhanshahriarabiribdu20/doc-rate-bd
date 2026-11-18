@@ -1,0 +1,246 @@
+import React, { useState } from 'react';
+import { X, Calculator as CalcIcon, Coins, TrendingUp, AlertCircle, RefreshCw } from 'lucide-react';
+
+export default function Calculator({ isOpen, onClose, lang }) {
+  if (!isOpen) return null;
+
+  const [chickType, setChickType] = useState('broiler');
+  const [chickCount, setChickCount] = useState(1000);
+  const [chickPrice, setChickPrice] = useState(40); // 100% verified broiler average
+  const [feedBagPrice, setFeedBagPrice] = useState(3400); // 50kg bag
+  const [feedPerBirdKg, setFeedPerBirdKg] = useState(3.0); // 3kg per broiler
+  const [medCostPerBird, setMedCostPerBird] = useState(15);
+  const [mortalityRate, setMortalityRate] = useState(4); // 4%
+  const [targetWeightKg, setTargetWeightKg] = useState(1.8);
+  const [sellingPricePerKg, setSellingPricePerKg] = useState(185);
+
+  // Auto preset switch
+  const handleTypeChange = (type) => {
+    setChickType(type);
+    if (type === 'broiler') {
+      setChickPrice(40);
+      setFeedPerBirdKg(3.0);
+      setTargetWeightKg(1.8);
+      setSellingPricePerKg(185);
+      setMedCostPerBird(15);
+    } else if (type === 'sonali') {
+      setChickPrice(63);
+      setFeedPerBirdKg(2.2);
+      setTargetWeightKg(0.85);
+      setSellingPricePerKg(310);
+      setMedCostPerBird(25);
+    }
+  };
+
+  // Calculations
+  const totalChickCost = chickCount * chickPrice;
+  const feedCostPerKg = feedBagPrice / 50;
+  const totalFeedKg = chickCount * feedPerBirdKg;
+  const totalFeedCost = totalFeedKg * feedCostPerKg;
+  const totalMedCost = chickCount * medCostPerBird;
+  const totalInvestment = totalChickCost + totalFeedCost + totalMedCost;
+
+  const survivingBirds = Math.round(chickCount * (1 - mortalityRate / 100));
+  const totalWeightKg = Math.round(survivingBirds * targetWeightKg);
+  const totalRevenue = totalWeightKg * sellingPricePerKg;
+  const netProfit = totalRevenue - totalInvestment;
+  const profitPerBird = survivingBirds > 0 ? Math.round(netProfit / survivingBirds) : 0;
+  const costPerKgLive = totalWeightKg > 0 ? Math.round(totalInvestment / totalWeightKg) : 0;
+
+  return (
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-xs animate-in fade-in duration-200">
+      <div className="bg-white rounded-3xl max-w-2xl w-full max-h-[90vh] overflow-y-auto shadow-2xl border border-slate-200">
+        {/* Header */}
+        <div className="p-5 border-b border-slate-100 flex items-center justify-between sticky top-0 bg-white/95 backdrop-blur-xs z-10">
+          <div className="flex items-center gap-2.5">
+            <div className="w-10 h-10 rounded-xl bg-amber-100 text-amber-700 flex items-center justify-center">
+              <CalcIcon className="w-5 h-5" />
+            </div>
+            <div>
+              <h3 className="font-extrabold text-slate-900 text-lg sm:text-xl">
+                {lang === 'bn' ? 'বাচ্চা ও খামার লাভ-ক্ষতি ক্যালকুলেটর' : 'Poultry Farm Profit Calculator'}
+              </h3>
+              <p className="text-xs text-slate-500">
+                {lang === 'bn' ? 'বাচ্চার রেট ও ফিডের দাম দিয়ে পুরো ব্যাচের বাজেট করুন' : 'Calculate chick cost, feed and net profit per batch'}
+              </p>
+            </div>
+          </div>
+          <button
+            onClick={onClose}
+            className="p-2 rounded-xl text-slate-400 hover:text-slate-600 hover:bg-slate-100 transition cursor-pointer"
+          >
+            <X className="w-5 h-5" />
+          </button>
+        </div>
+
+        <div className="p-5 sm:p-6 space-y-6">
+          {/* Preset switch */}
+          <div className="flex bg-slate-100 p-1 rounded-xl">
+            <button
+              onClick={() => handleTypeChange('broiler')}
+              className={`flex-1 py-2 text-xs sm:text-sm font-bold rounded-lg transition cursor-pointer ${
+                chickType === 'broiler' ? 'bg-white text-slate-900 shadow-xs' : 'text-slate-500 hover:text-slate-900'
+              }`}
+            >
+              {lang === 'bn' ? 'ব্রয়লার ব্যাচ' : 'Broiler Batch'}
+            </button>
+            <button
+              onClick={() => handleTypeChange('sonali')}
+              className={`flex-1 py-2 text-xs sm:text-sm font-bold rounded-lg transition cursor-pointer ${
+                chickType === 'sonali' ? 'bg-white text-slate-900 shadow-xs' : 'text-slate-500 hover:text-slate-900'
+              }`}
+            >
+              {lang === 'bn' ? 'সোনালী ব্যাচ' : 'Sonali Batch'}
+            </button>
+          </div>
+
+          {/* Form inputs */}
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            <div>
+              <label className="block text-xs font-bold text-slate-700 mb-1">
+                {lang === 'bn' ? 'বাচ্চার সংখ্যা (পিস)' : 'Number of Chicks'}
+              </label>
+              <input
+                type="number"
+                value={chickCount}
+                onChange={(e) => setChickCount(Number(e.target.value))}
+                className="w-full px-3 py-2 border border-slate-200 rounded-xl text-sm font-semibold focus:ring-2 focus:ring-emerald-500 outline-none"
+              />
+            </div>
+
+            <div>
+              <label className="block text-xs font-bold text-slate-700 mb-1">
+                {lang === 'bn' ? 'বাচ্চার দর (৳ প্রতি পিস)' : 'Chick Price (৳/pc)'}
+              </label>
+              <input
+                type="number"
+                value={chickPrice}
+                onChange={(e) => setChickPrice(Number(e.target.value))}
+                className="w-full px-3 py-2 border border-slate-200 rounded-xl text-sm font-semibold focus:ring-2 focus:ring-emerald-500 outline-none"
+              />
+            </div>
+
+            <div>
+              <label className="block text-xs font-bold text-slate-700 mb-1">
+                {lang === 'bn' ? 'ফিড প্রতি ৫০ কেজি বস্তা (৳)' : 'Feed 50kg Bag Price (৳)'}
+              </label>
+              <input
+                type="number"
+                value={feedBagPrice}
+                onChange={(e) => setFeedBagPrice(Number(e.target.value))}
+                className="w-full px-3 py-2 border border-slate-200 rounded-xl text-sm font-semibold focus:ring-2 focus:ring-emerald-500 outline-none"
+              />
+            </div>
+
+            <div>
+              <label className="block text-xs font-bold text-slate-700 mb-1">
+                {lang === 'bn' ? 'প্রতি মুরগিতে ফিড খাবে (কেজি)' : 'Feed per bird (kg)'}
+              </label>
+              <input
+                type="number"
+                step="0.1"
+                value={feedPerBirdKg}
+                onChange={(e) => setFeedPerBirdKg(Number(e.target.value))}
+                className="w-full px-3 py-2 border border-slate-200 rounded-xl text-sm font-semibold focus:ring-2 focus:ring-emerald-500 outline-none"
+              />
+            </div>
+
+            <div>
+              <label className="block text-xs font-bold text-slate-700 mb-1">
+                {lang === 'bn' ? 'ওষুধ, টিকা ও অন্যান্য (৳/মুরগি)' : 'Medicine/Misc cost (৳/bird)'}
+              </label>
+              <input
+                type="number"
+                value={medCostPerBird}
+                onChange={(e) => setMedCostPerBird(Number(e.target.value))}
+                className="w-full px-3 py-2 border border-slate-200 rounded-xl text-sm font-semibold focus:ring-2 focus:ring-emerald-500 outline-none"
+              />
+            </div>
+
+            <div>
+              <label className="block text-xs font-bold text-slate-700 mb-1">
+                {lang === 'bn' ? 'মর্টালিটি বা মৃত্যুহার (%)' : 'Expected Mortality (%)'}
+              </label>
+              <input
+                type="number"
+                value={mortalityRate}
+                onChange={(e) => setMortalityRate(Number(e.target.value))}
+                className="w-full px-3 py-2 border border-slate-200 rounded-xl text-sm font-semibold focus:ring-2 focus:ring-emerald-500 outline-none"
+              />
+            </div>
+
+            <div>
+              <label className="block text-xs font-bold text-slate-700 mb-1">
+                {lang === 'bn' ? 'বিক্রয়কালীন গড় ওজন (কেজি)' : 'Avg Weight per Bird (kg)'}
+              </label>
+              <input
+                type="number"
+                step="0.05"
+                value={targetWeightKg}
+                onChange={(e) => setTargetWeightKg(Number(e.target.value))}
+                className="w-full px-3 py-2 border border-slate-200 rounded-xl text-sm font-semibold focus:ring-2 focus:ring-emerald-500 outline-none"
+              />
+            </div>
+
+            <div>
+              <label className="block text-xs font-bold text-slate-700 mb-1">
+                {lang === 'bn' ? 'প্রত্যাশিত বিক্রয় রেডি দর (৳/কেজি)' : 'Expected Sale Rate (৳/kg)'}
+              </label>
+              <input
+                type="number"
+                value={sellingPricePerKg}
+                onChange={(e) => setSellingPricePerKg(Number(e.target.value))}
+                className="w-full px-3 py-2 border border-slate-200 rounded-xl text-sm font-semibold focus:ring-2 focus:ring-emerald-500 outline-none"
+              />
+            </div>
+          </div>
+
+          {/* Results Summary Box */}
+          <div className="bg-gradient-to-br from-slate-900 to-slate-800 text-white rounded-2xl p-5 shadow-xl">
+            <h4 className="font-extrabold text-sm uppercase tracking-wider text-emerald-400 mb-4 flex items-center gap-2">
+              <Coins className="w-4 h-4" />
+              {lang === 'bn' ? 'আনুমানিক ফলাফল ও লাভ-ক্ষতির চিত্র' : 'Cost & Profit Projections'}
+            </h4>
+
+            <div className="grid grid-cols-2 sm:grid-cols-3 gap-4 text-xs sm:text-sm border-b border-slate-700/80 pb-4 mb-4">
+              <div>
+                <span className="text-slate-400 block">{lang === 'bn' ? 'বাচ্চার মোট খরচ' : 'Total Chick Cost'}</span>
+                <span className="text-base font-bold text-white">৳{totalChickCost.toLocaleString()}</span>
+              </div>
+              <div>
+                <span className="text-slate-400 block">{lang === 'bn' ? 'ফিডের মোট খরচ' : 'Total Feed Cost'}</span>
+                <span className="text-base font-bold text-white">৳{Math.round(totalFeedCost).toLocaleString()}</span>
+              </div>
+              <div>
+                <span className="text-slate-400 block">{lang === 'bn' ? 'ওষুধ ও অন্যান্য' : 'Medicine Cost'}</span>
+                <span className="text-base font-bold text-white">৳{totalMedCost.toLocaleString()}</span>
+              </div>
+            </div>
+
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              <div className="bg-slate-800/80 p-3.5 rounded-xl border border-slate-700">
+                <span className="text-xs text-slate-400 block">{lang === 'bn' ? 'মোট খামার খরচ (খরচ/কেজি)' : 'Total Investment'}</span>
+                <span className="text-xl sm:text-2xl font-black text-amber-400">৳{Math.round(totalInvestment).toLocaleString()}</span>
+                <span className="text-[11px] text-slate-400 block mt-0.5">উৎপাদন খরচ: ৳{costPerKgLive}/কেজি</span>
+              </div>
+
+              <div className={`p-3.5 rounded-xl border ${
+                netProfit >= 0 ? 'bg-emerald-950/60 border-emerald-500/50' : 'bg-red-950/60 border-red-500/50'
+              }`}>
+                <span className="text-xs text-slate-300 block">
+                  {lang === 'bn' ? (netProfit >= 0 ? 'আনুমানিক মোট লাভ' : 'আনুমানিক ক্ষতি') : 'Net Profit / Loss'}
+                </span>
+                <span className={`text-xl sm:text-2xl font-black ${netProfit >= 0 ? 'text-emerald-400' : 'text-red-400'}`}>
+                  {netProfit >= 0 ? '+' : ''}৳{Math.round(netProfit).toLocaleString()}
+                </span>
+                <span className="text-[11px] text-slate-300 block mt-0.5">
+                  প্রতি মুরগিতে: {netProfit >= 0 ? '+' : ''}৳{profitPerBird}
+                </span>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
