@@ -67,3 +67,5 @@ npm run build
 এই প্রজেক্টটি খুব সহজে সম্পূর্ণ ফ্রিতে হোস্ট করা যাবে:
 1. **Vercel / Netlify:** প্রজেক্ট ফোল্ডারটি GitHub-এ পুশ করে Vercel বা Netlify-তে ইমপোর্ট করলে এক ক্লিকে লাইভ হয়ে যাবে।
 2. **Firebase Hosting:** `firebase init hosting` চালিয়ে `dist` ফোল্ডার ডেপ্লয় করা যাবে।
+
+<!-- Deployment pipeline verified: 2026-11-18 19:34:15 -->
