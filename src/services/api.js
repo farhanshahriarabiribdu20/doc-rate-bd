@@ -45,6 +45,24 @@ export async function publishSiteData(key, payload) {
   }
 }
 
+/** Admin: earlier published versions (for undo), newest first, or null on failure. */
+export async function fetchHistory(key) {
+  try {
+    const res = await fetch('/api/site-history', { headers: adminHeaders(key) });
+    const body = await json(res);
+    return res.ok && body?.success && Array.isArray(body.versions) ? body.versions : null;
+  } catch { return null; }
+}
+
+/** Admin: full data of one earlier version, or null. */
+export async function fetchHistoryVersion(key, id) {
+  try {
+    const res = await fetch(`/api/site-history?id=${encodeURIComponent(id)}`, { headers: adminHeaders(key) });
+    const body = await json(res);
+    return res.ok && body?.success ? body.data : null;
+  } catch { return null; }
+}
+
 /** Public: submit visitor feedback. Returns { ok }. */
 export async function submitFeedback(data) {
   try {
