@@ -1,13 +1,15 @@
 import React, { useState } from 'react';
-import { MessageSquareText, X, Send, Sparkles, CheckCircle2 } from 'lucide-react';
+import { MessageSquareText, X, Send, Sparkles, CheckCircle2, AlertTriangle } from 'lucide-react';
+import { submitFeedback } from '../services/api';
 
-export default function FeedbackWidget({ lang = 'bn', whatsappNumber = '8801619500178', onAddFeedback }) {
+export default function FeedbackWidget({ lang = 'bn', whatsappNumber = '8801619500178' }) {
   const [isOpen, setIsOpen] = useState(false);
   const [category, setCategory] = useState('পরামর্শ');
   const [name, setName] = useState('');
   const [phone, setPhone] = useState('');
   const [feedback, setFeedback] = useState('');
-  const [isSent, setIsSent] = useState(false);
+  const [website, setWebsite] = useState(''); // honeypot: hidden from people, bots fill it
+  const [status, setStatus] = useState('idle'); // 'idle' | 'sending' | 'saved' | 'failed'
 
   const categories = [
     { id: 'পরামর্শ', labelBn: '💡 নতুন ফিচার/পরামর্শ', labelEn: '💡 Suggestion' },
@@ -16,47 +18,44 @@ export default function FeedbackWidget({ lang = 'bn', whatsappNumber = '88016195
     { id: 'সাধারণ', labelBn: '⭐ সাধারণ মতামত', labelEn: '⭐ General' }
   ];
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
-    if (!feedback.trim()) return;
+    if (!feedback.trim() || status === 'sending') return;
+    setStatus('sending');
 
-    // 1. Directly store in Admin Panel
-    if (onAddFeedback) {
-      onAddFeedback({
-        category,
-        name: name.trim() || (lang === 'bn' ? 'সম্মানিত ভিজিটর' : 'Visitor'),
-        phone: phone.trim() || '',
-        feedback: feedback.trim()
-      });
-    }
-
-    // 2. Also prepare and open WhatsApp
-    const message = 
-`*🌾 ফসলনেক্সা (FosholNexa) ওয়েবসাইট উন্নয়ন মতামত*
+    // Open WhatsApp synchronously (before any await) so popup blockers allow it.
+    const message =
+`*🌾 ফসলনেক্সা (FosholNexa) ওয়েবসাইট উন্নয়ন মতামত*
 --------------------------------
-📌 *বিষয়:* ${category}
+📌 *বিষয়:* ${category}
 👤 *প্রেরক:* ${name.trim() || 'সম্মানিত ভিজিটর'}
 ${phone.trim() ? `📞 *যোগাযোগ:* ${phone.trim()}\n` : ''}
 💬 *মতামত / পরামর্শ:*
 ${feedback.trim()}
 --------------------------------
-🌐 *fosholnexa.com*`;
-
-    const waUrl = `https://wa.me/${whatsappNumber}?text=${encodeURIComponent(message)}`;
-    
-    // Open WhatsApp
+🌐 *${window.location.host}*`;
     try {
-      window.open(waUrl, '_blank', 'noopener,noreferrer');
-    } catch (e) {}
+      window.open(`https://wa.me/${whatsappNumber}?text=${encodeURIComponent(message)}`, '_blank', 'noopener,noreferrer');
+    } catch { /* popup blocked: the cloud copy below still goes through */ }
 
-    setIsSent(true);
+    const result = await submitFeedback({
+      category,
+      name: name.trim() || (lang === 'bn' ? 'সম্মানিত ভিজিটর' : 'Visitor'),
+      phone: phone.trim(),
+      feedback: feedback.trim(),
+      website
+    });
+
+    setStatus(result.ok ? 'saved' : 'failed');
     setTimeout(() => {
-      setIsSent(false);
-      setFeedback('');
-      setName('');
-      setPhone('');
-      setIsOpen(false);
-    }, 2000);
+      setStatus('idle');
+      if (result.ok) {
+        setFeedback('');
+        setName('');
+        setPhone('');
+        setIsOpen(false);
+      }
+    }, 2500);
   };
 
   return (
@@ -110,16 +109,20 @@ ${feedback.trim()}
             </div>
 
             {/* Form */}
-            {isSent ? (
+            {status === 'saved' || status === 'failed' ? (
               <div className="p-8 text-center flex flex-col items-center justify-center gap-3">
-                <div className="w-14 h-14 rounded-full bg-emerald-100 text-emerald-600 flex items-center justify-center">
-                  <CheckCircle2 className="w-8 h-8" />
+                <div className={`w-14 h-14 rounded-full flex items-center justify-center ${status === 'saved' ? 'bg-emerald-100 text-emerald-600' : 'bg-amber-100 text-amber-600'}`}>
+                  {status === 'saved' ? <CheckCircle2 className="w-8 h-8" /> : <AlertTriangle className="w-8 h-8" />}
                 </div>
                 <h4 className="text-base font-black text-slate-900">
-                  {lang === 'bn' ? 'ধন্যবাদ! মতামতটি সরাসরি এডমিন প্যানেলে জমা হয়েছে' : 'Thank you! Saved to Admin Panel'}
+                  {status === 'saved'
+                    ? (lang === 'bn' ? 'ধন্যবাদ! আপনার মতামত জমা হয়েছে' : 'Thank you! Your feedback was received')
+                    : (lang === 'bn' ? 'ওয়েবসাইটে জমা হয়নি' : 'Could not save on the website')}
                 </h4>
                 <p className="text-xs text-slate-500 max-w-xs">
-                  {lang === 'bn' ? 'আপনার মতামত আমাদের এডমিন ড্যাশবোর্ডে সংরক্ষিত হয়েছে এবং হোয়াটসঅ্যাপেও ওপেন হয়েছে।' : 'Your feedback is recorded in our admin panel and WhatsApp.'}
+                  {status === 'saved'
+                    ? (lang === 'bn' ? 'হোয়াটসঅ্যাপেও মেসেজটি ওপেন হয়েছে।' : 'The message was also opened in WhatsApp.')
+                    : (lang === 'bn' ? 'ইন্টারনেট সমস্যা হতে পারে। হোয়াটসঅ্যাপে পাঠানো মেসেজটিই আমাদের কাছে পৌঁছাবে।' : 'Network problem. The WhatsApp message will still reach us.')}
                 </p>
               </div>
             ) : (
@@ -205,10 +208,18 @@ ${feedback.trim()}
                   </p>
                 </div>
 
+                {/* Honeypot (hidden from real visitors) */}
+                <div aria-hidden="true" style={{ position: 'absolute', left: '-9999px', width: 1, height: 1, overflow: 'hidden' }}>
+                  <label>Website
+                    <input type="text" tabIndex={-1} autoComplete="off" value={website} onChange={(e) => setWebsite(e.target.value)} />
+                  </label>
+                </div>
+
                 {/* Submit Button */}
                 <button
                   type="submit"
-                  className="w-full py-3.5 px-4 bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-500 hover:to-teal-500 text-white font-black rounded-2xl text-xs sm:text-sm flex items-center justify-center gap-2 transition-all shadow-lg shadow-emerald-950/20 active:scale-98 cursor-pointer"
+                  disabled={status === 'sending'}
+                  className="w-full py-3.5 px-4 disabled:opacity-60 bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-500 hover:to-teal-500 text-white font-black rounded-2xl text-xs sm:text-sm flex items-center justify-center gap-2 transition-all shadow-lg shadow-emerald-950/20 active:scale-98 cursor-pointer"
                 >
                   <Send className="w-4 h-4" />
                   <span>

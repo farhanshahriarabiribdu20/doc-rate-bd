@@ -1,7 +1,7 @@
 import React from 'react';
 import { Phone, MessageCircle, MapPin, ShieldAlert, ShieldCheck, Heart } from 'lucide-react';
 
-export default function Footer({ lang }) {
+export default function Footer({ lang, isStale = false }) {
   return (
     <footer className="bg-slate-950 text-slate-400 text-xs mt-16 border-t border-slate-800">
       {/* Top Banner Disclaimer */}
@@ -138,7 +138,7 @@ export default function Footer({ lang }) {
 
         <div className="flex items-center gap-4">
           <span className="text-[11px] text-emerald-500 font-bold flex items-center gap-1">
-            <ShieldCheck className="w-3.5 h-3.5" /> ১০০% ভেরিফাইড বাজার তথ্য
+            <ShieldCheck className="w-3.5 h-3.5" /> {isStale ? 'রেট হালনাগাদের অপেক্ষায়' : 'রেট শিট অনুযায়ী বাজার তথ্য'}
           </span>
           <a 
             href="#admin" 

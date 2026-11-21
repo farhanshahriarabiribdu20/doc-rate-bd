@@ -1,13 +1,12 @@
 import React, { useState } from 'react';
 import { X, MessageCircle, Phone, Send, CheckCircle2 } from 'lucide-react';
-import { DIVISIONS } from '../data/initialData';
 
 export default function BookingModal(props) {
   if (!props.isOpen || !props.selectedItem) return null;
   return <BookingModalContent {...props} />;
 }
 
-function BookingModalContent({ onClose, selectedItem, lang }) {
+function BookingModalContent({ onClose, selectedItem, settings, lang }) {
   const [quantity, setQuantity] = useState(selectedItem.minBooking || 500);
   const [farmerName, setFarmerName] = useState('');
   const [phone, setPhone] = useState('');
@@ -27,8 +26,10 @@ function BookingModalContent({ onClose, selectedItem, lang }) {
       `দয়া করে ডেলিভারির তারিখ ও বিস্তারিত বুকিং নিশ্চিত করুন।`;
 
     const encoded = encodeURIComponent(message);
-    const targetPhone = selectedItem.bookingPhone ? selectedItem.bookingPhone.replace(/^0/, '880') : '8801619500178';
-    window.open(`https://api.whatsapp.com/send?phone=${targetPhone}&text=${encoded}`, '_blank');
+    // Digits only, Bangladesh country code (880). Admin-set WhatsApp number wins.
+    const digits = (settings?.whatsapp || selectedItem.bookingPhone || '01619500178').replace(/[^0-9]/g, '');
+    const targetPhone = digits.startsWith('880') ? digits : `880${digits.replace(/^0/, '')}`;
+    window.open(`https://api.whatsapp.com/send?phone=${targetPhone}&text=${encoded}`, '_blank', 'noopener,noreferrer');
     setSubmitted(true);
   };
 

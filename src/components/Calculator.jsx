@@ -1,15 +1,23 @@
 import React, { useState } from 'react';
-import { X, Calculator as CalcIcon, Coins, TrendingUp, AlertCircle, RefreshCw } from 'lucide-react';
+import { X, Calculator as CalcIcon, Coins } from 'lucide-react';
 
 export default function Calculator(props) {
   if (!props.isOpen) return null;
   return <CalculatorContent {...props} />;
 }
 
-function CalculatorContent({ onClose, lang }) {
+// Average of today's live rates for one category (0 when none)
+const averageRate = (rates, category) => {
+  const nums = (rates || []).filter((r) => r.category === category).map((r) => Number(r.todayRate)).filter((n) => n > 0);
+  return nums.length ? Math.round(nums.reduce((a, b) => a + b, 0) / nums.length) : 0;
+};
+
+function CalculatorContent({ onClose, rates, lang }) {
+  const liveBroiler = averageRate(rates, 'broiler');
+  const liveSonali = averageRate(rates, 'sonali');
   const [chickType, setChickType] = useState('broiler');
   const [chickCount, setChickCount] = useState(1000);
-  const [chickPrice, setChickPrice] = useState(40); // 100% verified broiler average
+  const [chickPrice, setChickPrice] = useState(liveBroiler || 40); // live broiler average
   const [feedBagPrice, setFeedBagPrice] = useState(3400); // 50kg bag
   const [feedPerBirdKg, setFeedPerBirdKg] = useState(3.0); // 3kg per broiler
   const [medCostPerBird, setMedCostPerBird] = useState(15);
@@ -21,13 +29,13 @@ function CalculatorContent({ onClose, lang }) {
   const handleTypeChange = (type) => {
     setChickType(type);
     if (type === 'broiler') {
-      setChickPrice(40);
+      setChickPrice(liveBroiler || 40);
       setFeedPerBirdKg(3.0);
       setTargetWeightKg(1.8);
       setSellingPricePerKg(185);
       setMedCostPerBird(15);
     } else if (type === 'sonali') {
-      setChickPrice(63);
+      setChickPrice(liveSonali || 63);
       setFeedPerBirdKg(2.2);
       setTargetWeightKg(0.85);
       setSellingPricePerKg(310);
@@ -115,6 +123,17 @@ function CalculatorContent({ onClose, lang }) {
               <label className="block text-xs font-bold text-slate-700 mb-1">
                 {lang === 'bn' ? 'বাচ্চার দর (৳ প্রতি পিস)' : 'Chick Price (৳/pc)'}
               </label>
+              {(chickType === 'broiler' ? liveBroiler : liveSonali) > 0 && (
+                <button
+                  type="button"
+                  onClick={() => setChickPrice(chickType === 'broiler' ? liveBroiler : liveSonali)}
+                  className="mb-1 text-[11px] font-semibold text-emerald-700 hover:underline cursor-pointer"
+                >
+                  {lang === 'bn'
+                    ? `📈 আজকের লাইভ গড় রেট: ৳${chickType === 'broiler' ? liveBroiler : liveSonali} — ব্যবহার করুন`
+                    : `📈 Today's live average: ৳${chickType === 'broiler' ? liveBroiler : liveSonali} — use it`}
+                </button>
+              )}
               <input
                 type="number"
                 value={chickPrice}
@@ -222,7 +241,7 @@ function CalculatorContent({ onClose, lang }) {
 
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <div className="bg-slate-800/80 p-3.5 rounded-xl border border-slate-700">
-                <span className="text-xs text-slate-400 block">{lang === 'bn' ? 'মোট খামার খরচ (খরচ/কেজি)' : 'Total Investment'}</span>
+                <span className="text-xs text-slate-400 block">{lang === 'bn' ? 'মোট বিনিয়োগ' : 'Total Investment'}</span>
                 <span className="text-xl sm:text-2xl font-black text-amber-400">৳{Math.round(totalInvestment).toLocaleString()}</span>
                 <span className="text-[11px] text-slate-400 block mt-0.5">উৎপাদন খরচ: ৳{costPerKgLive}/কেজি</span>
               </div>

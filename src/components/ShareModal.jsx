@@ -23,30 +23,36 @@ function ShareModalContent({ onClose, rates, notice, settings, lang }) {
   const sonaliList = rates.filter(r => r.category === 'sonali').slice(0, 6);
   const layerList = rates.filter(r => (r.category || '').startsWith('layer')).slice(0, 4);
 
-  let shareText = `🌾 *আজকের মুরগির বাচ্চার বাজার দর (FosholNexa BD)* 🌾\n`;
+  const change = (r) => {
+    const diff = Number(r.todayRate) - Number(r.yesterdayRate);
+    if (!Number(r.yesterdayRate) || !diff) return '';
+    return diff > 0 ? ` (▲৳${diff})` : ` (▼৳${Math.abs(diff)})`;
+  };
+
+  let shareText = `🌾 *মুরগির বাচ্চার বাজার দর (FosholNexa BD)* 🌾\n`;
   shareText += `📅 কার্যকর তারিখ: ${effectiveDate}\n`;
   shareText += `--------------------------------------\n\n`;
 
   shareText += `🔥 *ব্রয়লার বাচ্চার দর:* \n`;
   broilerList.forEach(r => {
-    shareText += `▫️ ${r.companyEn || r.company}: ৳${r.todayRate}\n`;
+    shareText += `▫️ ${r.companyEn || r.company}: ৳${r.todayRate}${change(r)}\n`;
   });
 
   shareText += `\n✨ *সোনালী বাচ্চার দর:* \n`;
   sonaliList.forEach(r => {
-    shareText += `▫️ ${r.companyEn || r.company}: ৳${r.todayRate}\n`;
+    shareText += `▫️ ${r.companyEn || r.company}: ৳${r.todayRate}${change(r)}\n`;
   });
 
   if (layerList.length > 0) {
     shareText += `\n🥚 *লেয়ার বাচ্চার দর:* \n`;
     layerList.forEach(r => {
-      shareText += `▫️ ${r.companyEn || r.company}: ৳${r.todayRate}\n`;
+      shareText += `▫️ ${r.companyEn || r.company}: ৳${r.todayRate}${change(r)}\n`;
     });
   }
 
   shareText += `\n📢 *মার্কেট নোট:* ${notice}\n`;
   shareText += `📞 বুকিং ও তথ্যের জন্য: ${settings?.hotline || '01619-500178'}\n`;
-  shareText += `🌐 ভিজিট করুন: FosholNexa BD\n`;
+  shareText += `🌐 সকল রেট দেখুন: ${window.location.origin}\n`;
 
   const handleCopy = async () => {
     try {

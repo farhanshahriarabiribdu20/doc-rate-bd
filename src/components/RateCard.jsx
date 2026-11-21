@@ -1,26 +1,13 @@
 import React from 'react';
-import { Phone, MessageCircle, Check, Clock, AlertTriangle, MapPin, ShieldCheck, Building2 } from 'lucide-react';
+import { Phone, AlertTriangle, MapPin } from 'lucide-react';
+import PriceChange from './PriceChange';
 
-export default function RateCard({ item, selectedDivision, settings, onOpenBooking, lang }) {
+export default function RateCard({ item, selectedDivision, settings, onOpenBooking, isStale = false, lang }) {
   const currentRate = (selectedDivision !== 'all' && item.divisionRates && item.divisionRates[selectedDivision]) 
     ? item.divisionRates[selectedDivision] 
     : item.todayRate;
 
-  const rawPhone = (settings?.whatsapp || item.bookingPhone || '01619500178').replace(/[^0-9]/g, '');
-  let cleanPhone = rawPhone;
-  if (rawPhone.startsWith('880')) {
-    cleanPhone = rawPhone;
-  } else if (rawPhone.startsWith('0')) {
-    cleanPhone = '880' + rawPhone.slice(1);
-  } else {
-    cleanPhone = '880' + rawPhone;
-  }
-
   const hotline = settings?.hotline || item.bookingPhone || '01619-500178';
-
-  const waMessage = encodeURIComponent(
-    `আসসালামু আলাইকুম, আমি ফসলনেক্সা (FosholNexa BD) পোর্টাল থেকে ${item.company} (${item.breed}) বাচ্চার আজকের দর ৳${currentRate} দেখেছি। আমি বাচ্চা বুকিং দিতে চাই।`
-  );
 
   const divisionRegionNames = {
     dhaka: { bn: 'সেন্ট্রাল জোন (ঢাকা বিভাগ)', en: 'Central Zone (Dhaka)' },
@@ -64,10 +51,17 @@ export default function RateCard({ item, selectedDivision, settings, onOpenBooki
             <span>{catTag.label}</span>
           </span>
 
-          <span className="inline-flex items-center gap-1 text-[11px] font-bold text-emerald-800 bg-emerald-50 px-2.5 py-0.5 rounded-full border border-emerald-200/80">
-            <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse"></span>
-            <span>{lang === 'bn' ? 'ভেরিফাইড রেট' : 'Verified'}</span>
-          </span>
+          {isStale ? (
+            <span className="inline-flex items-center gap-1 text-[11px] font-bold text-amber-800 bg-amber-50 px-2.5 py-0.5 rounded-full border border-amber-300">
+              <AlertTriangle className="w-3 h-3" />
+              <span>{lang === 'bn' ? 'পুরনো রেট' : 'Outdated'}</span>
+            </span>
+          ) : (
+            <span className="inline-flex items-center gap-1 text-[11px] font-bold text-emerald-800 bg-emerald-50 px-2.5 py-0.5 rounded-full border border-emerald-200/80">
+              <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse"></span>
+              <span>{lang === 'bn' ? 'ভেরিফাইড রেট' : 'Verified'}</span>
+            </span>
+          )}
         </div>
 
         {/* Company info */}
@@ -103,13 +97,12 @@ export default function RateCard({ item, selectedDivision, settings, onOpenBooki
             </div>
           </div>
 
-          <div className="text-right">
-            <span className="inline-flex items-center gap-1 text-[11px] font-extrabold text-emerald-800 bg-emerald-100/90 border border-emerald-300 px-2.5 py-1 rounded-full shadow-2xs">
-              <ShieldCheck className="w-3.5 h-3.5 text-emerald-600" />
-              <span>১০০% নিশ্চিত</span>
-            </span>
-            <span className="block text-[10px] text-slate-400 mt-1 font-semibold">
-              অফিসিয়াল রেট শিট
+          <div className="text-right space-y-1">
+            {selectedDivision === 'all' && (
+              <PriceChange today={item.todayRate} yesterday={item.yesterdayRate} lang={lang} />
+            )}
+            <span className="block text-[10px] text-slate-400 font-semibold">
+              {lang === 'bn' ? 'অফিসিয়াল রেট শিট' : 'Official rate sheet'}
             </span>
           </div>
         </div>
@@ -131,17 +124,16 @@ export default function RateCard({ item, selectedDivision, settings, onOpenBooki
 
       {/* Action Buttons: WhatsApp & Direct Call */}
       <div className="p-3.5 sm:p-4 bg-slate-50/90 border-t border-slate-100 grid grid-cols-2 gap-2.5">
-        <a
-          href={`https://wa.me/${cleanPhone}?text=${waMessage}`}
-          target="_blank"
-          rel="noopener noreferrer"
+        <button
+          type="button"
+          onClick={() => onOpenBooking({ ...item, todayRate: currentRate })}
           className="flex items-center justify-center gap-1.5 py-2.5 px-3 rounded-xl bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-500 hover:to-teal-500 text-white text-xs font-bold transition shadow-xs cursor-pointer active:scale-95"
         >
           <svg className="w-4 h-4 fill-white shrink-0" viewBox="0 0 24 24">
             <path d="M12.031 6.172c-3.181 0-5.767 2.586-5.768 5.766-.001 1.298.38 2.27 1.019 3.287l-.711 2.598 2.669-.699c.969.587 1.745.882 2.791.882 3.181 0 5.768-2.587 5.768-5.766.001-3.181-2.585-5.768-5.768-5.768zm0-2.172c4.386 0 7.94 3.554 7.94 7.938 0 4.385-3.554 7.939-7.94 7.939-1.258 0-2.457-.308-3.528-.863l-4.503 1.18 1.203-4.397c-.636-1.121-.972-2.386-.972-3.859 0-4.384 3.554-7.938 7.94-7.938z"/>
           </svg>
           <span>{lang === 'bn' ? 'WhatsApp বুকিং' : 'WhatsApp'}</span>
-        </a>
+        </button>
 
         <a
           href={`tel:${hotline.replace(/[^0-9+]/g, '')}`}
