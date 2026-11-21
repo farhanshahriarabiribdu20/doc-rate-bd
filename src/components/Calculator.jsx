@@ -1,9 +1,12 @@
 import React, { useState } from 'react';
 import { X, Calculator as CalcIcon, Coins, TrendingUp, AlertCircle, RefreshCw } from 'lucide-react';
 
-export default function Calculator({ isOpen, onClose, lang }) {
-  if (!isOpen) return null;
+export default function Calculator(props) {
+  if (!props.isOpen) return null;
+  return <CalculatorContent {...props} />;
+}
 
+function CalculatorContent({ onClose, lang }) {
   const [chickType, setChickType] = useState('broiler');
   const [chickCount, setChickCount] = useState(1000);
   const [chickPrice, setChickPrice] = useState(40); // 100% verified broiler average

@@ -32,6 +32,33 @@ import {
 import { INITIAL_READY_RATES } from './data/readyMarketData';
 import { Bird, AlertCircle } from 'lucide-react';
 
+// Rates saved in localStorage must not outlive a new deploy of the bundled data.
+// The hash changes automatically whenever INITIAL_* data (or report date / notice) changes,
+// so returning visitors always get the latest published rates instead of a stale cache.
+const hashString = (str) => {
+  let h = 5381;
+  for (let i = 0; i < str.length; i++) h = ((h << 5) + h + str.charCodeAt(i)) | 0;
+  return String(h >>> 0);
+};
+const DATA_HASH = hashString(JSON.stringify([
+  INITIAL_RATES,
+  INITIAL_READY_RATES,
+  SITE_SETTINGS.reportDateBn,
+  SITE_SETTINGS.reportDateEn,
+  INITIAL_TICKER_NOTICE
+]));
+const DATA_HASH_KEY = 'fosholnexa_data_hash';
+const isCacheFresh = (() => {
+  try { return localStorage.getItem(DATA_HASH_KEY) === DATA_HASH; } catch { return false; }
+})();
+const loadCached = (key) => {
+  if (!isCacheFresh) return null;
+  try {
+    const saved = localStorage.getItem(key);
+    return saved ? JSON.parse(saved) : null;
+  } catch { return null; }
+};
+
 export default function App() {
   const [lang, setLang] = useState('bn');
   const [activeTab, setActiveTab] = useState('doc'); // 'doc' | 'feed' | 'medicine'
@@ -46,6 +73,10 @@ export default function App() {
           parsed.hotline = '01619-500178';
           parsed.whatsapp = '01619500178';
         }
+        if (!isCacheFresh) {
+          parsed.reportDateBn = SITE_SETTINGS.reportDateBn;
+          parsed.reportDateEn = SITE_SETTINGS.reportDateEn;
+        }
         return parsed;
       } catch (e) {}
     }
@@ -53,22 +84,15 @@ export default function App() {
   });
 
   // Rates
-  const [rates, setRates] = useState(() => {
-    const saved = localStorage.getItem('fosholnexa_rates_sheet_v3_clean');
-    if (saved) {
-      try { return JSON.parse(saved); } catch (e) {}
-    }
-    return INITIAL_RATES;
-  });
+  const [rates, setRates] = useState(() => loadCached('fosholnexa_rates_sheet_v3_clean') || INITIAL_RATES);
 
   // Ready Poultry & Egg Rates
-  const [readyRates, setReadyRates] = useState(() => {
-    const saved = localStorage.getItem('fosholnexa_ready_rates');
-    if (saved) {
-      try { return JSON.parse(saved); } catch (e) {}
-    }
-    return INITIAL_READY_RATES;
-  });
+  const [readyRates, setReadyRates] = useState(() => loadCached('fosholnexa_ready_rates') || INITIAL_READY_RATES);
+
+  // Mark the cache as belonging to the current bundled data
+  useEffect(() => {
+    localStorage.setItem(DATA_HASH_KEY, DATA_HASH);
+  }, []);
 
   useEffect(() => {
     localStorage.setItem('fosholnexa_ready_rates', JSON.stringify(readyRates));
@@ -94,7 +118,8 @@ export default function App() {
 
   // Ticker Notice
   const [notice, setNotice] = useState(() => {
-    return INITIAL_TICKER_NOTICE;
+    if (!isCacheFresh) return INITIAL_TICKER_NOTICE;
+    try { return localStorage.getItem('fosholnexa_notice') || INITIAL_TICKER_NOTICE; } catch { return INITIAL_TICKER_NOTICE; }
   });
 
   // User Feedbacks synced across all devices via Vercel Cloud Storage
@@ -222,7 +247,14 @@ export default function App() {
     setMedicines(INITIAL_MEDICINES);
     setNotice(INITIAL_TICKER_NOTICE);
     setSettings(SITE_SETTINGS);
-    localStorage.clear();
+    [
+      'fosholnexa_settings_v2',
+      'fosholnexa_rates_sheet_v3_clean',
+      'fosholnexa_ready_rates',
+      'fosholnexa_feeds',
+      'fosholnexa_medicines',
+      'fosholnexa_notice'
+    ].forEach((k) => localStorage.removeItem(k));
   };
 
   // Filter pipeline for DOC rates

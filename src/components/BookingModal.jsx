@@ -2,9 +2,12 @@ import React, { useState } from 'react';
 import { X, MessageCircle, Phone, Send, CheckCircle2 } from 'lucide-react';
 import { DIVISIONS } from '../data/initialData';
 
-export default function BookingModal({ isOpen, onClose, selectedItem, lang }) {
-  if (!isOpen || !selectedItem) return null;
+export default function BookingModal(props) {
+  if (!props.isOpen || !props.selectedItem) return null;
+  return <BookingModalContent {...props} />;
+}
 
+function BookingModalContent({ onClose, selectedItem, lang }) {
   const [quantity, setQuantity] = useState(selectedItem.minBooking || 500);
   const [farmerName, setFarmerName] = useState('');
   const [phone, setPhone] = useState('');

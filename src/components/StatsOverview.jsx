@@ -4,7 +4,7 @@ import { Flame, Sparkles, Egg, ShieldCheck, CheckCircle } from 'lucide-react';
 export default function StatsOverview({ rates, lang }) {
   const broilerRates = rates.filter(r => r.category === 'broiler');
   const sonaliRates = rates.filter(r => r.category === 'sonali');
-  const layerRates = rates.filter(r => r.category.startsWith('layer'));
+  const layerRates = rates.filter(r => (r.category || '').startsWith('layer'));
 
   const getAvg = (list) => {
     if (!list.length) return 0;
@@ -15,6 +15,7 @@ export default function StatsOverview({ rates, lang }) {
   const getMinMax = (list) => {
     if (!list.length) return { min: 0, max: 0 };
     const nums = list.map(r => Number(r.todayRate) || 0).filter(n => n > 0);
+    if (!nums.length) return { min: 0, max: 0 };
     return { min: Math.min(...nums), max: Math.max(...nums) };
   };
 

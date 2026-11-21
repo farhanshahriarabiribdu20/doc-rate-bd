@@ -28,7 +28,7 @@ export default function PriceChart({ rates = [], lang }) {
     .filter(r => {
       if (selectedCat === 'broiler') return r.category === 'broiler';
       if (selectedCat === 'sonali') return r.category === 'sonali';
-      return r.category.startsWith('layer');
+      return (r.category || '').startsWith('layer');
     })
     .sort((a, b) => a.todayRate - b.todayRate)
     .slice(0, 8); // Top 8 companies for clean bar layout

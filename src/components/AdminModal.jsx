@@ -2,8 +2,12 @@ import React, { useState } from 'react';
 import { X, Lock, ShieldCheck, Plus, Trash2, Save, Download, RotateCcw, Check, Settings, Wheat, Pill, Bird, Phone, Globe, MessageSquareText } from 'lucide-react';
 import { CATEGORIES } from '../data/initialData';
 
-export default function AdminModal({ 
-  isOpen, 
+export default function AdminModal(props) {
+  if (!props.isOpen) return null;
+  return <AdminModalContent {...props} />;
+}
+
+function AdminModalContent({ 
   onClose, 
   rates, 
   setRates, 
@@ -23,8 +27,6 @@ export default function AdminModal({
   onResetDefaults, 
   lang 
 }) {
-  if (!isOpen) return null;
-
   const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [pin, setPin] = useState('');
   const [pinError, setPinError] = useState('');
@@ -59,7 +61,7 @@ export default function AdminModal({
   const handleLogin = (e) => {
     e.preventDefault();
     const correctPin = settings.adminPin || '1234';
-    if (pin === correctPin || pin === 'admin' || pin === '1234') {
+    if (pin === correctPin) {
       setIsAuthenticated(true);
       setPinError('');
     } else {

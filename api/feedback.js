@@ -4,6 +4,20 @@ const BLOB_PATH = 'feedbacks.json';
 
 const getToken = () => process.env.BLOB_READ_WRITE_TOKEN;
 
+// Input limits to keep abuse / oversized payloads out of the stored JSON
+const MAX_FEEDBACK_LEN = 2000;
+const MAX_NAME_LEN = 80;
+const MAX_PHONE_LEN = 20;
+const MAX_STORED = 500;
+const ALLOWED_CATEGORIES = ['পরামর্শ', 'তথ্য আপডেট', 'সমস্যা', 'সাধারণ'];
+
+const parseBody = (req) => {
+  if (typeof req.body === 'string') {
+    try { return JSON.parse(req.body); } catch { return null; }
+  }
+  return req.body || {};
+};
+
 async function getStoredFeedbacks() {
   const token = getToken();
   try {
@@ -45,13 +59,9 @@ export default async function handler(req, res) {
   res.setHeader('Pragma', 'no-cache');
   res.setHeader('Expires', '0');
 
-  // Enable CORS
-  res.setHeader('Access-Control-Allow-Origin', '*');
-  res.setHeader('Access-Control-Allow-Methods', 'GET, POST, DELETE, OPTIONS');
-  res.setHeader('Access-Control-Allow-Headers', 'Content-Type');
-
+  // The site calls this API from the same origin, so no CORS headers are needed.
   if (req.method === 'OPTIONS') {
-    return res.status(200).end();
+    return res.status(204).end();
   }
 
   try {
@@ -63,19 +73,25 @@ export default async function handler(req, res) {
 
     // POST: Add new feedback
     if (req.method === 'POST') {
-      const body = typeof req.body === 'string' ? JSON.parse(req.body) : req.body;
-      const { category, name, phone, feedback } = body || {};
+      const body = parseBody(req);
+      if (!body) {
+        return res.status(400).json({ success: false, error: 'Invalid JSON body' });
+      }
+      const { category, name, phone, feedback } = body;
 
-      if (!feedback || !feedback.trim()) {
+      if (typeof feedback !== 'string' || !feedback.trim()) {
         return res.status(400).json({ success: false, error: 'Feedback text is required' });
+      }
+      if (feedback.trim().length > MAX_FEEDBACK_LEN) {
+        return res.status(400).json({ success: false, error: 'Feedback is too long' });
       }
 
       const existing = await getStoredFeedbacks();
       const newEntry = {
         id: `fb-${Date.now()}-${Math.random().toString(36).substring(2, 7)}`,
-        category: category || 'পরামর্শ',
-        name: (name && name.trim()) || 'সম্মানিত ভিজিটর',
-        phone: (phone && phone.trim()) || '',
+        category: ALLOWED_CATEGORIES.includes(category) ? category : 'পরামর্শ',
+        name: (typeof name === 'string' && name.trim().slice(0, MAX_NAME_LEN)) || 'সম্মানিত ভিজিটর',
+        phone: (typeof phone === 'string' && phone.trim().slice(0, MAX_PHONE_LEN)) || '',
         feedback: feedback.trim(),
         date: new Intl.DateTimeFormat('bn-BD', {
           dateStyle: 'medium',
@@ -84,7 +100,7 @@ export default async function handler(req, res) {
         dateRaw: new Date().toISOString()
       };
 
-      const updated = [newEntry, ...existing];
+      const updated = [newEntry, ...existing].slice(0, MAX_STORED);
       await saveStoredFeedbacks(updated);
 
       return res.status(201).json({ success: true, feedback: newEntry, count: updated.length });
@@ -92,7 +108,10 @@ export default async function handler(req, res) {
 
     // DELETE: Delete single or all feedbacks
     if (req.method === 'DELETE') {
-      const body = typeof req.body === 'string' ? JSON.parse(req.body) : (req.body || {});
+      const body = parseBody(req);
+      if (!body) {
+        return res.status(400).json({ success: false, error: 'Invalid JSON body' });
+      }
       const { id, all } = body;
 
       if (all) {
@@ -113,6 +132,6 @@ export default async function handler(req, res) {
     return res.status(405).json({ success: false, error: 'Method not allowed' });
   } catch (err) {
     console.error('API Error:', err);
-    return res.status(500).json({ success: false, error: err.message });
+    return res.status(500).json({ success: false, error: 'Internal server error' });
   }
 }

@@ -1,9 +1,12 @@
 import React, { useRef, useEffect, useState } from 'react';
 import { X, Download, Share2, Sparkles, Image as ImageIcon, Check } from 'lucide-react';
 
-export default function BannerGeneratorModal({ isOpen, onClose, rates, feeds, settings, notice, lang }) {
-  if (!isOpen) return null;
+export default function BannerGeneratorModal(props) {
+  if (!props.isOpen) return null;
+  return <BannerGeneratorModalContent {...props} />;
+}
 
+function BannerGeneratorModalContent({ onClose, rates, feeds, settings, notice, lang }) {
   const canvasRef = useRef(null);
   const [downloading, setDownloading] = useState(false);
   const [bannerTheme, setBannerTheme] = useState('emerald'); // emerald, midnight, orange
@@ -19,7 +22,7 @@ export default function BannerGeneratorModal({ isOpen, onClose, rates, feeds, se
 
   const broilerList = rates.filter(r => r.category === 'broiler').slice(0, 5);
   const sonaliList = rates.filter(r => r.category === 'sonali').slice(0, 4);
-  const layerList = rates.filter(r => r.category.startsWith('layer')).slice(0, 3);
+  const layerList = rates.filter(r => (r.category || '').startsWith('layer')).slice(0, 3);
 
   // Redraw canvas whenever theme or rates change
   useEffect(() => {
