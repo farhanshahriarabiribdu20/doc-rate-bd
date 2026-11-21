@@ -1,13 +1,12 @@
 import React from 'react';
-import { Phone, Printer, MapPin, ShieldCheck } from 'lucide-react';
+import { Phone, Printer, MapPin, ShieldCheck, AlertTriangle } from 'lucide-react';
+import PriceChange from './PriceChange';
 
-export default function RateTable({ rates, selectedDivision, settings, onOpenBooking, lang }) {
+export default function RateTable({ rates, selectedDivision, settings, onOpenBooking, isStale = false, lang }) {
   const handlePrint = () => {
     window.print();
   };
 
-  const rawPhone = (settings?.whatsapp || '01619500178').replace(/[^0-9]/g, '');
-  const cleanPhone = rawPhone.startsWith('880') ? rawPhone : (rawPhone.startsWith('0') ? '880' + rawPhone.slice(1) : '880' + rawPhone);
   const hotline = settings?.hotline || '01619-500178';
 
   const divisionRegionNames = {
@@ -70,10 +69,6 @@ export default function RateTable({ rates, selectedDivision, settings, onOpenBoo
                 ? (lang === 'bn' ? divisionRegionNames[selectedDivision].bn : divisionRegionNames[selectedDivision].en)
                 : (lang === 'bn' ? (item.regionBn || 'সেন্ট্রাল ও ইস্ট জোন') : (item.regionEn || 'Central & East Zone'));
 
-              const waMessage = encodeURIComponent(
-                `আসসালামু আলাইকুম, আমি ফসলনেক্সা (FosholNexa BD) তালিকা থেকে ${item.company} (${item.breed}) বাচ্চার রেট ৳${currentRate} দেখেছি। আমি বুকিং দিতে চাই।`
-              );
-
               return (
                 <tr key={item.id} className="hover:bg-emerald-50/40 transition-colors">
                   <td className="py-3.5 px-4">
@@ -92,6 +87,9 @@ export default function RateTable({ rates, selectedDivision, settings, onOpenBoo
                   <td className="py-3.5 px-4 text-right">
                     <span className="text-base sm:text-lg font-black text-slate-900">৳{currentRate}</span>
                     <span className="text-xs text-slate-400 font-semibold"> /পিস</span>
+                    {selectedDivision === 'all' && (
+                      <div className="mt-0.5"><PriceChange today={item.todayRate} yesterday={item.yesterdayRate} lang={lang} compact /></div>
+                    )}
                   </td>
                   <td className="py-3.5 px-4 text-xs">
                     {item.notes ? (
@@ -103,24 +101,30 @@ export default function RateTable({ rates, selectedDivision, settings, onOpenBoo
                     )}
                   </td>
                   <td className="py-3.5 px-4 text-center">
-                    <span className="inline-flex items-center gap-1 text-[11px] font-bold text-emerald-800 bg-emerald-50 border border-emerald-200 px-2.5 py-0.5 rounded-full">
-                      <ShieldCheck className="w-3 h-3 text-emerald-600" />
-                      <span>১০০% নিশ্চিত</span>
-                    </span>
+                    {isStale ? (
+                      <span className="inline-flex items-center gap-1 text-[11px] font-bold text-amber-800 bg-amber-50 border border-amber-300 px-2.5 py-0.5 rounded-full">
+                        <AlertTriangle className="w-3 h-3" />
+                        <span>পুরনো রেট</span>
+                      </span>
+                    ) : (
+                      <span className="inline-flex items-center gap-1 text-[11px] font-bold text-emerald-800 bg-emerald-50 border border-emerald-200 px-2.5 py-0.5 rounded-full">
+                        <ShieldCheck className="w-3 h-3 text-emerald-600" />
+                        <span>যাচাইকৃত</span>
+                      </span>
+                    )}
                   </td>
                   <td className="py-3.5 px-4 text-center print:hidden">
                     <div className="flex items-center justify-center gap-1.5">
-                      <a
-                        href={`https://wa.me/${cleanPhone}?text=${waMessage}`}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        title="WhatsApp Booking"
-                        className="p-2 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white transition shadow-2xs active:scale-95"
+                      <button
+                        type="button"
+                        onClick={() => onOpenBooking({ ...item, todayRate: currentRate })}
+                        title="বুকিং করুন"
+                        className="p-2 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white transition shadow-2xs active:scale-95 cursor-pointer"
                       >
                         <svg className="w-3.5 h-3.5 fill-white" viewBox="0 0 24 24">
                           <path d="M12.031 6.172c-3.181 0-5.767 2.586-5.768 5.766-.001 1.298.38 2.27 1.019 3.287l-.711 2.598 2.669-.699c.969.587 1.745.882 2.791.882 3.181 0 5.768-2.587 5.768-5.766.001-3.181-2.585-5.768-5.768-5.768zm0-2.172c4.386 0 7.94 3.554 7.94 7.938 0 4.385-3.554 7.939-7.94 7.939-1.258 0-2.457-.308-3.528-.863l-4.503 1.18 1.203-4.397c-.636-1.121-.972-2.386-.972-3.859 0-4.384 3.554-7.938 7.94-7.938z"/>
                         </svg>
-                      </a>
+                      </button>
                       <a
                         href={`tel:${hotline.replace(/[^0-9+]/g, '')}`}
                         title="Call Hotline"

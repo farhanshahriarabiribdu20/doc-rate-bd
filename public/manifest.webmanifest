@@ -1,0 +1,15 @@
+{
+  "name": "FosholNexa BD — আজকের মুরগির বাচ্চার বাজারদর",
+  "short_name": "FosholNexa",
+  "description": "প্রতিদিনের DOC (এক দিনের বাচ্চা), রেডি মুরগি ও ডিমের লাইভ বাজারদর",
+  "lang": "bn",
+  "start_url": "/",
+  "scope": "/",
+  "display": "standalone",
+  "background_color": "#f8fafc",
+  "theme_color": "#064e3b",
+  "icons": [
+    { "src": "/icon-192.png", "sizes": "192x192", "type": "image/png", "purpose": "any" },
+    { "src": "/icon-512.png", "sizes": "512x512", "type": "image/png", "purpose": "any" }
+  ]
+}

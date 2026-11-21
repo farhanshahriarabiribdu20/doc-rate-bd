@@ -9,7 +9,7 @@ export const SITE_SETTINGS = {
   hotline: "01619-500178",
   whatsapp: "01619500178",
   fbPage: "https://facebook.com/FosholNexa",
-  adminPin: "1234",
+  reportDateISO: "2026-10-26",
   reportDateBn: "২৬ অক্টোবর, ২০২৬ (সোমবার)",
   reportDateEn: "Monday, October 26, 2026",
   verifiedSource: "শীর্ষস্থানীয় কোম্পানির রেট শিট ও জোনাল মার্কেট রিসার্চ (Google Sheet 100% Verified)",

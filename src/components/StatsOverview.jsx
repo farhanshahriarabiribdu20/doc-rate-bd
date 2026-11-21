@@ -1,10 +1,10 @@
 import React from 'react';
-import { Flame, Sparkles, Egg, ShieldCheck, CheckCircle } from 'lucide-react';
+import { Flame, Sparkles, Egg, ShieldCheck, CheckCircle, AlertTriangle } from 'lucide-react';
 
-export default function StatsOverview({ rates, lang }) {
+export default function StatsOverview({ rates, lang, isStale = false }) {
   const broilerRates = rates.filter(r => r.category === 'broiler');
   const sonaliRates = rates.filter(r => r.category === 'sonali');
-  const layerRates = rates.filter(r => r.category.startsWith('layer'));
+  const layerRates = rates.filter(r => (r.category || '').startsWith('layer'));
 
   const getAvg = (list) => {
     if (!list.length) return 0;
@@ -15,6 +15,7 @@ export default function StatsOverview({ rates, lang }) {
   const getMinMax = (list) => {
     if (!list.length) return { min: 0, max: 0 };
     const nums = list.map(r => Number(r.todayRate) || 0).filter(n => n > 0);
+    if (!nums.length) return { min: 0, max: 0 };
     return { min: Math.min(...nums), max: Math.max(...nums) };
   };
 
@@ -27,11 +28,15 @@ export default function StatsOverview({ rates, lang }) {
   const layerAvg = getAvg(layerRates);
   const layerRange = getMinMax(layerRates);
 
-  const renderVerifiedBadge = () => (
+  const renderVerifiedBadge = () => (isStale ? (
+    <span className="flex items-center text-[10px] font-extrabold text-amber-800 bg-amber-100 px-2 py-0.5 rounded-full border border-amber-300">
+      <AlertTriangle className="w-2.5 h-2.5 mr-1 text-amber-600" /> {lang === 'bn' ? 'পুরনো' : 'Outdated'}
+    </span>
+  ) : (
     <span className="flex items-center text-[10px] font-extrabold text-emerald-800 bg-emerald-100/80 px-2 py-0.5 rounded-full border border-emerald-300/80">
       <CheckCircle className="w-2.5 h-2.5 mr-1 text-emerald-600" /> {lang === 'bn' ? 'যাচাইকৃত' : 'Verified'}
     </span>
-  );
+  ));
 
   return (
     <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4 my-6">
@@ -126,7 +131,7 @@ export default function StatsOverview({ rates, lang }) {
             </span>
           </div>
           <span className="text-[10px] font-extrabold text-emerald-800 bg-emerald-100 px-2 py-0.5 rounded-full">
-            ১০০% অথেনটিক
+            {isStale ? (lang === 'bn' ? 'রেট পুরনো' : 'Outdated') : (lang === 'bn' ? 'যাচাইকৃত' : 'Verified')}
           </span>
         </div>
         <div className="flex items-baseline gap-1 mt-1">

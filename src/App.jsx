@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import Navbar from './components/Navbar';
 import Ticker from './components/Ticker';
 import StatsOverview from './components/StatsOverview';
@@ -6,8 +6,6 @@ import FilterBar from './components/FilterBar';
 import RateCard from './components/RateCard';
 import RateTable from './components/RateTable';
 import PriceChart from './components/PriceChart';
-import FeedSection from './components/FeedSection';
-import MedicineSection from './components/MedicineSection';
 import Calculator from './components/Calculator';
 import ShareModal from './components/ShareModal';
 import BookingModal from './components/BookingModal';
@@ -16,145 +14,119 @@ import AdminModal from './components/AdminModal';
 import FeedbackWidget from './components/FeedbackWidget';
 import ReadyMarketSection from './components/ReadyMarketSection';
 import Footer from './components/Footer';
-import { 
-  fetchFeedbacks, 
-  submitFeedback, 
-  deleteFeedback, 
-  clearAllFeedbacks 
-} from './services/feedbackService';
-import { 
-  INITIAL_RATES, 
-  INITIAL_FEEDS, 
-  INITIAL_MEDICINES, 
-  INITIAL_TICKER_NOTICE, 
-  SITE_SETTINGS 
+import { fetchSiteData } from './services/api';
+import { ageInDays, formatBn, formatEn, toBnDigits } from './utils/date';
+import {
+  INITIAL_RATES,
+  INITIAL_FEEDS,
+  INITIAL_TICKER_NOTICE,
+  SITE_SETTINGS
 } from './data/initialData';
 import { INITIAL_READY_RATES } from './data/readyMarketData';
-import { Bird, AlertCircle } from 'lucide-react';
+import { Bird, AlertTriangle } from 'lucide-react';
+
+// Last data published by the admin (kept for instant load / offline use).
+const CACHE_KEY = 'fosholnexa_published_v1';
+// Rates older than this many days are clearly marked as outdated.
+const STALE_AFTER_DAYS = 2;
+// Old per-browser keys from earlier versions (incl. cached visitor feedback) are removed.
+const LEGACY_KEYS = [
+  'fosholnexa_settings_v2',
+  'fosholnexa_rates_sheet_v3_clean',
+  'fosholnexa_ready_rates',
+  'fosholnexa_feeds',
+  'fosholnexa_medicines',
+  'fosholnexa_notice',
+  'fosholnexa_user_feedbacks',
+  'fosholnexa_data_hash'
+];
+
+const readCache = () => {
+  try {
+    const raw = localStorage.getItem(CACHE_KEY);
+    return raw ? JSON.parse(raw) : null;
+  } catch {
+    return null;
+  }
+};
+
+// Bundled defaults < published settings. Dates are always derived from reportDateISO.
+const buildSettings = (published) => {
+  const merged = { ...SITE_SETTINGS, ...(published || {}) };
+  if (merged.reportDateISO) {
+    merged.reportDateBn = formatBn(merged.reportDateISO);
+    merged.reportDateEn = formatEn(merged.reportDateISO);
+  }
+  return merged;
+};
 
 export default function App() {
+  const [cached] = useState(readCache);
   const [lang, setLang] = useState('bn');
-  const [activeTab, setActiveTab] = useState('doc'); // 'doc' | 'feed' | 'medicine'
+  const [activeTab, setActiveTab] = useState('doc'); // 'doc' | 'ready'
 
-  // Settings
-  const [settings, setSettings] = useState(() => {
-    const saved = localStorage.getItem('fosholnexa_settings_v2');
-    if (saved) {
-      try {
-        const parsed = JSON.parse(saved);
-        if (parsed.hotline === '01711-000000') {
-          parsed.hotline = '01619-500178';
-          parsed.whatsapp = '01619500178';
-        }
-        return parsed;
-      } catch (e) {}
-    }
-    return SITE_SETTINGS;
-  });
+  // Site data: published (server) data wins over bundled defaults.
+  const [settings, setSettings] = useState(() => buildSettings(cached?.settings));
+  const [rates, setRates] = useState(() => (cached?.rates?.length ? cached.rates : INITIAL_RATES));
+  const [readyRates, setReadyRates] = useState(() => (cached?.readyRates?.length ? cached.readyRates : INITIAL_READY_RATES));
+  const [notice, setNotice] = useState(() => cached?.notice || INITIAL_TICKER_NOTICE);
+  const [updatedAt, setUpdatedAt] = useState(cached?.updatedAt || null);
+  const feeds = INITIAL_FEEDS;
 
-  // Rates
-  const [rates, setRates] = useState(() => {
-    const saved = localStorage.getItem('fosholnexa_rates_sheet_v3_clean');
-    if (saved) {
-      try { return JSON.parse(saved); } catch (e) {}
-    }
-    return INITIAL_RATES;
-  });
+  // Admin drafts: edits stay local until the admin presses "Publish".
+  const [dirty, setDirty] = useState(false);
+  const dirtyRef = useRef(false);
+  const draft = (setter) => (value) => {
+    dirtyRef.current = true;
+    setDirty(true);
+    setter(value);
+  };
+  const setRatesDraft = draft(setRates);
+  const setReadyRatesDraft = draft(setReadyRates);
+  const setNoticeDraft = draft(setNotice);
+  const setSettingsDraft = draft((value) => setSettings((prev) => buildSettings(typeof value === 'function' ? value(prev) : value)));
 
-  // Ready Poultry & Egg Rates
-  const [readyRates, setReadyRates] = useState(() => {
-    const saved = localStorage.getItem('fosholnexa_ready_rates');
-    if (saved) {
-      try { return JSON.parse(saved); } catch (e) {}
-    }
-    return INITIAL_READY_RATES;
-  });
-
+  // Load the latest published data for every visitor.
   useEffect(() => {
-    localStorage.setItem('fosholnexa_ready_rates', JSON.stringify(readyRates));
-  }, [readyRates]);
-
-  // Feeds
-  const [feeds, setFeeds] = useState(() => {
-    const saved = localStorage.getItem('fosholnexa_feeds');
-    if (saved) {
-      try { return JSON.parse(saved); } catch (e) {}
-    }
-    return INITIAL_FEEDS;
-  });
-
-  // Medicines
-  const [medicines, setMedicines] = useState(() => {
-    const saved = localStorage.getItem('fosholnexa_medicines');
-    if (saved) {
-      try { return JSON.parse(saved); } catch (e) {}
-    }
-    return INITIAL_MEDICINES;
-  });
-
-  // Ticker Notice
-  const [notice, setNotice] = useState(() => {
-    return INITIAL_TICKER_NOTICE;
-  });
-
-  // User Feedbacks synced across all devices via Vercel Cloud Storage
-  const [feedbacks, setFeedbacks] = useState(() => {
-    const saved = localStorage.getItem('fosholnexa_user_feedbacks');
-    if (saved) {
-      try { return JSON.parse(saved); } catch (e) {}
-    }
-    return [];
-  });
-
-  // Fetch latest feedbacks from cloud on mount
-  useEffect(() => {
-    fetchFeedbacks().then(data => {
-      if (Array.isArray(data) && data.length > 0) {
-        setFeedbacks(data);
-      }
+    LEGACY_KEYS.forEach((k) => { try { localStorage.removeItem(k); } catch { /* ignore */ } });
+    let cancelled = false;
+    fetchSiteData().then((data) => {
+      if (cancelled || !data || dirtyRef.current) return;
+      if (Array.isArray(data.rates) && data.rates.length) setRates(data.rates);
+      if (Array.isArray(data.readyRates) && data.readyRates.length) setReadyRates(data.readyRates);
+      if (data.notice) setNotice(data.notice);
+      if (data.settings) setSettings(buildSettings(data.settings));
+      if (data.updatedAt) setUpdatedAt(data.updatedAt);
+      try { localStorage.setItem(CACHE_KEY, JSON.stringify(data)); } catch { /* ignore */ }
     });
+    return () => { cancelled = true; };
   }, []);
 
-  const handleAddFeedback = async (newFb) => {
-    // 1. Optimistic local update
-    const tempEntry = {
-      id: `fb-${Date.now()}`,
-      date: new Intl.DateTimeFormat(lang === 'bn' ? 'bn-BD' : 'en-US', {
-        dateStyle: 'medium',
-        timeStyle: 'short'
-      }).format(new Date()),
-      dateRaw: new Date().toISOString(),
-      ...newFb
-    };
-    setFeedbacks(prev => [tempEntry, ...(prev || [])]);
+  // Warn before leaving the page with unpublished admin changes.
+  useEffect(() => {
+    if (!dirty) return undefined;
+    const warn = (e) => { e.preventDefault(); e.returnValue = ''; };
+    window.addEventListener('beforeunload', warn);
+    return () => window.removeEventListener('beforeunload', warn);
+  }, [dirty]);
 
-    // 2. Persist to Cloud API across all devices
-    try {
-      const saved = await submitFeedback(newFb);
-      if (saved && saved.id) {
-        setFeedbacks(prev => [saved, ...(prev.filter(f => f.id !== tempEntry.id))]);
-      }
-    } catch (err) {
-      console.error('Feedback cloud submit failed:', err);
-    }
+  const handlePublished = (payload) => {
+    dirtyRef.current = false;
+    setDirty(false);
+    if (payload.updatedAt) setUpdatedAt(payload.updatedAt);
+    try { localStorage.setItem(CACHE_KEY, JSON.stringify(payload)); } catch { /* ignore */ }
   };
 
-  const handleDeleteFeedback = async (id) => {
-    setFeedbacks(prev => prev.filter(f => f.id !== id));
-    await deleteFeedback(id);
+  const handleResetDefaults = () => {
+    setRatesDraft(INITIAL_RATES);
+    setReadyRatesDraft(INITIAL_READY_RATES);
+    setNoticeDraft(INITIAL_TICKER_NOTICE);
+    setSettingsDraft(SITE_SETTINGS);
   };
 
-  const handleClearAllFeedbacks = async () => {
-    setFeedbacks([]);
-    await clearAllFeedbacks();
-  };
-
-  const handleRefreshFeedbacks = async () => {
-    const data = await fetchFeedbacks();
-    if (Array.isArray(data)) {
-      setFeedbacks(data);
-    }
-  };
+  // Data freshness: very old rates must never look "verified".
+  const reportAge = ageInDays(settings.reportDateISO);
+  const isStale = reportAge !== null && reportAge >= STALE_AFTER_DAYS;
 
   // Filters & Views
   const [selectedCategory, setSelectedCategory] = useState('all');
@@ -193,37 +165,6 @@ export default function App() {
       window.removeEventListener('keydown', handleKeyDown);
     };
   }, []);
-
-  // Sync to localStorage
-  useEffect(() => {
-    localStorage.setItem('fosholnexa_settings_v2', JSON.stringify(settings));
-  }, [settings]);
-
-  useEffect(() => {
-    localStorage.setItem('fosholnexa_rates_sheet_v3_clean', JSON.stringify(rates));
-  }, [rates]);
-
-  useEffect(() => {
-    localStorage.setItem('fosholnexa_feeds', JSON.stringify(feeds));
-  }, [feeds]);
-
-  useEffect(() => {
-    localStorage.setItem('fosholnexa_medicines', JSON.stringify(medicines));
-  }, [medicines]);
-
-  useEffect(() => {
-    localStorage.setItem('fosholnexa_notice', notice);
-  }, [notice]);
-
-  const handleResetDefaults = () => {
-    setRates(INITIAL_RATES);
-    setReadyRates(INITIAL_READY_RATES);
-    setFeeds(INITIAL_FEEDS);
-    setMedicines(INITIAL_MEDICINES);
-    setNotice(INITIAL_TICKER_NOTICE);
-    setSettings(SITE_SETTINGS);
-    localStorage.clear();
-  };
 
   // Filter pipeline for DOC rates
   const filteredRates = rates.filter((item) => {
@@ -277,6 +218,18 @@ export default function App() {
 
       {/* Main Container */}
       <main className="flex-1 max-w-7xl w-full mx-auto px-4 py-6">
+        {/* Outdated-rate warning */}
+        {isStale && (
+          <div role="alert" className="mb-5 flex items-start gap-3 rounded-2xl border border-amber-300 bg-amber-50 p-4 text-amber-950">
+            <AlertTriangle className="w-5 h-5 text-amber-600 shrink-0 mt-0.5" />
+            <p className="text-xs sm:text-sm font-semibold leading-relaxed">
+              {lang === 'bn'
+                ? `⚠️ এই রেটগুলো ${toBnDigits(reportAge)} দিন আগের (${settings.reportDateBn})। বুকিংয়ের আগে আজকের সঠিক দর জানতে কল করুন: ${settings.hotline}`
+                : `⚠️ These rates are ${reportAge} days old (${settings.reportDateEn}). Please call ${settings.hotline} to confirm today's price before booking.`}
+            </p>
+          </div>
+        )}
+
         {/* Hero Section */}
         <div className="mb-6 flex flex-col md:flex-row md:items-center justify-between gap-6 bg-gradient-to-br from-emerald-950 via-teal-950 to-slate-950 text-white p-6 sm:p-8 rounded-3xl shadow-xl shadow-emerald-950/20 relative overflow-hidden border border-emerald-800/40">
           {/* Subtle Ambient Glow */}
@@ -300,9 +253,13 @@ export default function App() {
               <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-white/10 text-emerald-200 text-xs font-semibold border border-white/10">
                 <span>📈 {rates.length}টি জাত/কোম্পানির লাইভ দর</span>
               </span>
-              <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-emerald-400/20 text-emerald-200 text-xs font-extrabold border border-emerald-400/30">
-                <span>🛡️</span>
-                <span>{lang === 'bn' ? '১০০% নিশ্চিত মার্কেট ডাটা' : '100% Verified Market Data'}</span>
+              <span className={`inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-extrabold border ${
+                isStale
+                  ? 'bg-amber-400/20 text-amber-200 border-amber-400/40'
+                  : 'bg-emerald-400/20 text-emerald-200 border-emerald-400/30'
+              }`}>
+                <span>{isStale ? '⚠️' : '🛡️'}</span>
+                <span>{lang === 'bn' ? `সর্বশেষ আপডেট: ${settings.reportDateBn}` : `Updated: ${settings.reportDateEn}`}</span>
               </span>
             </div>
           </div>
@@ -360,7 +317,7 @@ export default function App() {
         {activeTab === 'doc' && (
           <>
             {/* Live Averages & Stats Overview */}
-            <StatsOverview rates={rates} lang={lang} />
+            <StatsOverview rates={rates} lang={lang} isStale={isStale} />
 
             {/* Real Top Hatcheries Live Price Comparison Chart */}
             <PriceChart rates={rates} lang={lang} />
@@ -401,6 +358,7 @@ export default function App() {
                     selectedDivision={selectedDivision}
                     settings={settings}
                     onOpenBooking={(it) => setBookingItem(it)}
+                    isStale={isStale}
                     lang={lang}
                   />
                 ))}
@@ -411,6 +369,7 @@ export default function App() {
                 selectedDivision={selectedDivision}
                 settings={settings}
                 onOpenBooking={(it) => setBookingItem(it)}
+                isStale={isStale}
                 lang={lang}
               />
             )}
@@ -516,6 +475,7 @@ export default function App() {
         isOpen={isBannerOpen}
         onClose={() => setIsBannerOpen(false)}
         rates={rates}
+        readyRates={readyRates}
         feeds={feeds}
         settings={settings}
         notice={notice}
@@ -525,6 +485,7 @@ export default function App() {
       <Calculator
         isOpen={isCalculatorOpen}
         onClose={() => setIsCalculatorOpen(false)}
+        rates={rates}
         lang={lang}
       />
 
@@ -541,6 +502,7 @@ export default function App() {
         isOpen={!!bookingItem}
         onClose={() => setBookingItem(null)}
         selectedItem={bookingItem}
+        settings={settings}
         lang={lang}
       />
 
@@ -548,33 +510,28 @@ export default function App() {
         isOpen={isAdminOpen}
         onClose={() => setIsAdminOpen(false)}
         rates={rates}
-        setRates={setRates}
-        feeds={feeds}
-        setFeeds={setFeeds}
-        medicines={medicines}
-        setMedicines={setMedicines}
-        feedbacks={feedbacks}
-        setFeedbacks={setFeedbacks}
-        onDeleteFeedback={handleDeleteFeedback}
-        onClearFeedbacks={handleClearAllFeedbacks}
-        onRefreshFeedbacks={handleRefreshFeedbacks}
+        setRates={setRatesDraft}
+        readyRates={readyRates}
+        setReadyRates={setReadyRatesDraft}
         notice={notice}
-        setNotice={setNotice}
+        setNotice={setNoticeDraft}
         settings={settings}
-        setSettings={setSettings}
+        setSettings={setSettingsDraft}
+        dirty={dirty}
+        updatedAt={updatedAt}
+        onPublished={handlePublished}
         onResetDefaults={handleResetDefaults}
         lang={lang}
       />
 
       {/* Floating Website Feedback Widget (Bottom-Right) */}
-      <FeedbackWidget 
-        lang={lang} 
-        whatsappNumber={settings.whatsapp?.replace(/[^0-9]/g, '') || "8801619500178"} 
-        onAddFeedback={handleAddFeedback}
+      <FeedbackWidget
+        lang={lang}
+        whatsappNumber={settings.whatsapp?.replace(/[^0-9]/g, '') || "8801619500178"}
       />
 
       {/* Footer */}
-      <Footer lang={lang} />
+      <Footer lang={lang} isStale={isStale} />
     </div>
   );
 }

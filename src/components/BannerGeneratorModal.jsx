@@ -1,12 +1,29 @@
 import React, { useRef, useEffect, useState } from 'react';
-import { X, Download, Share2, Sparkles, Image as ImageIcon, Check } from 'lucide-react';
+import { X, Download, Share2, Image as ImageIcon, Check } from 'lucide-react';
+import { getReadyMarketStats } from '../data/readyMarketData';
 
-export default function BannerGeneratorModal({ isOpen, onClose, rates, feeds, settings, notice, lang }) {
-  if (!isOpen) return null;
+export default function BannerGeneratorModal(props) {
+  if (!props.isOpen) return null;
+  return <BannerGeneratorModalContent {...props} />;
+}
 
+function BannerGeneratorModalContent({ onClose, rates, readyRates, feeds, settings, notice, lang }) {
   const canvasRef = useRef(null);
   const [downloading, setDownloading] = useState(false);
   const [bannerTheme, setBannerTheme] = useState('emerald'); // emerald, midnight, orange
+  const [fontsReady, setFontsReady] = useState(false);
+
+  // Redraw once the Bengali web font is available, otherwise the PNG uses a fallback font.
+  useEffect(() => {
+    let cancelled = false;
+    const fonts = document.fonts;
+    if (!fonts?.load) { setFontsReady(true); return undefined; }
+    Promise.all([
+      fonts.load('900 44px "Hind Siliguri"'),
+      fonts.load('600 20px "Hind Siliguri"')
+    ]).catch(() => {}).finally(() => { if (!cancelled) setFontsReady(true); });
+    return () => { cancelled = true; };
+  }, []);
 
   const fallbackDate = new Intl.DateTimeFormat('bn-BD', {
     weekday: 'long',
@@ -19,7 +36,7 @@ export default function BannerGeneratorModal({ isOpen, onClose, rates, feeds, se
 
   const broilerList = rates.filter(r => r.category === 'broiler').slice(0, 5);
   const sonaliList = rates.filter(r => r.category === 'sonali').slice(0, 4);
-  const layerList = rates.filter(r => r.category.startsWith('layer')).slice(0, 3);
+  const layerList = rates.filter(r => (r.category || '').startsWith('layer')).slice(0, 3);
 
   // Redraw canvas whenever theme or rates change
   useEffect(() => {
@@ -124,7 +141,11 @@ export default function BannerGeneratorModal({ isOpen, onClose, rates, feeds, se
     drawCategoryBox(ctx, 40, 630, 480, 270, '🥚 লেয়ার ও ককরেল বাচ্চার রেট', layerList, '#059669');
 
     // Section 4: Feeds Highlight (Bottom Right)
-    drawFeedsBox(ctx, 560, 630, 480, 270, feeds.slice(0, 3));
+    if (feeds && feeds.length > 0) {
+      drawFeedsBox(ctx, 560, 630, 480, 270, feeds.slice(0, 3));
+    } else {
+      drawReadyBox(ctx, 560, 630, 480, 270, getReadyMarketStats(readyRates));
+    }
 
     // Footer Contact Bar
     ctx.fillStyle = '#f59e0b';
@@ -143,7 +164,7 @@ export default function BannerGeneratorModal({ isOpen, onClose, rates, feeds, se
     ctx.fillStyle = '#064e3b';
     ctx.fillText('(WhatsApp ও কল সুবিধা চালু আছে)', 840, 985);
 
-  }, [bannerTheme, rates, feeds, settings, notice]);
+  }, [bannerTheme, rates, readyRates, feeds, settings, notice, fontsReady]);
 
   const drawCategoryBox = (ctx, x, y, w, h, title, list, accentColor) => {
     // Card background
@@ -183,6 +204,41 @@ export default function BannerGeneratorModal({ isOpen, onClose, rates, feeds, se
       ctx.fillText(`৳${item.todayRate}`, x + w - 105, curY + 6);
 
       curY += 56;
+    });
+  };
+
+  // Shown when no feed prices are available: national averages of the ready-bird market.
+  const drawReadyBox = (ctx, x, y, w, h, stats) => {
+    ctx.fillStyle = 'rgba(255, 255, 255, 0.05)';
+    ctx.roundRect(x, y, w, h, 20);
+    ctx.fill();
+    ctx.strokeStyle = 'rgba(255, 255, 255, 0.12)';
+    ctx.lineWidth = 1.5;
+    ctx.stroke();
+
+    ctx.fillStyle = '#0284c7';
+    ctx.roundRect(x + 15, y + 15, w - 30, 48, 12);
+    ctx.fill();
+
+    ctx.font = 'bold 22px "Hind Siliguri", "Segoe UI", sans-serif';
+    ctx.fillStyle = '#ffffff';
+    ctx.fillText('🍗 রেডি মুরগি ও ডিমের গড় দর', x + 30, y + 47);
+
+    if (!stats) return;
+    const rows = [
+      ['ব্রয়লার (গ্রিল) /কেজি', stats.avgGrill],
+      ['সোনালী মুরগি /কেজি', stats.avgSonali],
+      ['লাল ডিম /পিস', stats.avgEggBrown]
+    ];
+    let curY = y + 100;
+    rows.forEach(([label, value]) => {
+      ctx.font = 'bold 20px "Hind Siliguri", "Segoe UI", sans-serif';
+      ctx.fillStyle = '#e2e8f0';
+      ctx.fillText(label, x + 30, curY + 4);
+      ctx.font = '900 24px "Hind Siliguri", "Segoe UI", sans-serif';
+      ctx.fillStyle = '#38bdf8';
+      ctx.fillText(`৳${value}`, x + w - 120, curY + 6);
+      curY += 54;
     });
   };
 
