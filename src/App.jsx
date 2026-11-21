@@ -110,9 +110,11 @@ export default function App() {
     return () => window.removeEventListener('beforeunload', warn);
   }, [dirty]);
 
-  const handlePublished = (payload) => {
-    dirtyRef.current = false;
-    setDirty(false);
+  const handlePublished = (payload, { keepDirty = false } = {}) => {
+    if (!keepDirty) {
+      dirtyRef.current = false;
+      setDirty(false);
+    }
     if (payload.updatedAt) setUpdatedAt(payload.updatedAt);
     try { localStorage.setItem(CACHE_KEY, JSON.stringify(payload)); } catch { /* ignore */ }
   };

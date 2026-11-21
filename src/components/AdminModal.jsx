@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useCallback, useRef } from 'react';
 import {
   X, Lock, ShieldCheck, Plus, Trash2, Download, Upload, RotateCcw, Check, Settings,
   Bird, Phone, MessageSquareText, CloudUpload, LogOut, ChevronDown, ChevronUp, CalendarClock, Egg, AlertTriangle
@@ -161,22 +161,72 @@ function AdminModalContent({
     return true;
   });
 
-  // ---- publish ----
-  const handlePublish = async () => {
+  // ---- publish (automatic) ----
+  // Every admin edit is published on its own a few seconds after the last change,
+  // so there is no separate "publish" step. The button stays as a manual retry.
+  const AUTO_PUBLISH_DELAY_MS = 2500;
+  const [autoError, setAutoError] = useState('');
+  const latestRef = useRef({ rates, readyRates, notice, settings });
+  const dirtyRef = useRef(dirty);
+  const adminKeyRef = useRef(adminKey);
+  const publishingRef = useRef(false);
+  const onPublishedRef = useRef(onPublished);
+
+  useEffect(() => {
+    latestRef.current = { rates, readyRates, notice, settings };
+    dirtyRef.current = dirty;
+    adminKeyRef.current = adminKey;
+    onPublishedRef.current = onPublished;
+  });
+
+  const publishLatest = useCallback(async ({ silent = false } = {}) => {
+    if (publishingRef.current || !adminKeyRef.current) return;
+    publishingRef.current = true;
     setPublishing(true);
-    const payload = { rates, readyRates, notice, settings };
-    const r = await publishSiteData(adminKey, payload);
+    const payload = latestRef.current;
+    const r = await publishSiteData(adminKeyRef.current, payload);
+    publishingRef.current = false;
     setPublishing(false);
     if (r.ok) {
-      onPublished({ ...payload, updatedAt: r.updatedAt });
-      showToast('✅ সফলভাবে প্রকাশিত হয়েছে! সব ভিজিটর এখন নতুন রেট দেখবে (১-২ মিনিটের মধ্যে)।');
+      setAutoError('');
+      // Edits made while the request was in flight stay "dirty" and go out next.
+      const changedMeanwhile = latestRef.current !== payload
+        && (latestRef.current.rates !== payload.rates
+          || latestRef.current.readyRates !== payload.readyRates
+          || latestRef.current.notice !== payload.notice
+          || latestRef.current.settings !== payload.settings);
+      onPublishedRef.current({ ...payload, updatedAt: r.updatedAt }, { keepDirty: changedMeanwhile });
+      if (!silent) showToast('✅ সফলভাবে প্রকাশিত হয়েছে! সব ভিজিটর এখন নতুন রেট দেখবে (১-২ মিনিটের মধ্যে)।');
+      else showToast('✅ অটো-প্রকাশিত হয়েছে');
     } else if (r.status === 401) {
       logout();
       showToast('পাসওয়ার্ড মেলেনি, আবার লগইন করুন।', 'error');
     } else {
-      showToast(`প্রকাশ করা যায়নি: ${r.error}`, 'error');
+      setAutoError(r.error || 'unknown');
+      showToast(`প্রকাশ করা যায়নি: ${r.error}। "প্রকাশ করুন" বাটন চেপে আবার চেষ্টা করুন।`, 'error');
     }
-  };
+  }, [logout, showToast]);
+
+  const handlePublish = () => publishLatest({ silent: false });
+
+  // Debounced auto-publish: waits for the admin to stop typing.
+  useEffect(() => {
+    if (!adminKey || !dirty) return undefined;
+    const t = setTimeout(() => {
+      if (publishingRef.current) return;
+      publishLatest({ silent: true });
+    }, AUTO_PUBLISH_DELAY_MS);
+    return () => clearTimeout(t);
+  }, [adminKey, dirty, rates, readyRates, notice, settings, publishLatest]);
+
+  // If the admin closes the panel while an edit is still waiting, send it right away.
+  useEffect(() => () => {
+    if (dirtyRef.current && adminKeyRef.current && !publishingRef.current) {
+      publishSiteData(adminKeyRef.current, latestRef.current).then((r) => {
+        if (r.ok) onPublishedRef.current({ ...latestRef.current, updatedAt: r.updatedAt }, { keepDirty: false });
+      });
+    }
+  }, []);
 
   // ---- DOC rate actions ----
   const handleDocChange = (id, field, value) => {
@@ -261,7 +311,7 @@ function AdminModalContent({
       try {
         const data = JSON.parse(String(reader.result));
         if (!Array.isArray(data.rates)) throw new Error('rates missing');
-        if (!window.confirm('ব্যাকআপ ফাইল থেকে ডাটা ইমপোর্ট করবেন? বর্তমান অপ্রকাশিত ডাটা বদলে যাবে।')) return;
+        if (!window.confirm('ব্যাকআপ ফাইল থেকে ডাটা ইমপোর্ট করবেন? বর্তমান ডাটা বদলে অটো-প্রকাশ হয়ে যাবে।')) return;
         setRates(data.rates);
         if (Array.isArray(data.readyRates)) setReadyRates(data.readyRates);
         if (typeof data.notice === 'string') setNotice(data.notice);
@@ -309,10 +359,10 @@ function AdminModalContent({
                     ? 'bg-amber-400 hover:bg-amber-300 text-slate-950 shadow-md animate-pulse'
                     : 'bg-emerald-600 hover:bg-emerald-700 text-white'
                 }`}
-                title="সব ভিজিটরের জন্য রেট প্রকাশ করুন"
+                title="পরিবর্তন কয়েক সেকেন্ড পরে নিজে থেকেই প্রকাশ হয়। চাইলে এখনই প্রকাশ করুন।"
               >
                 <CloudUpload className="w-4 h-4" />
-                <span>{publishing ? 'প্রকাশ হচ্ছে...' : dirty ? 'অপ্রকাশিত পরিবর্তন — প্রকাশ করুন' : 'প্রকাশ করুন'}</span>
+                <span>{publishing ? 'প্রকাশ হচ্ছে...' : autoError && dirty ? 'প্রকাশ হয়নি — আবার চেষ্টা করুন' : dirty ? 'অটো-প্রকাশ হচ্ছে... (এখনই করুন)' : '✓ অটো-প্রকাশ চালু'}</span>
               </button>
             )}
             <button
@@ -772,7 +822,7 @@ function AdminModalContent({
                 <div className="pt-2 flex flex-wrap justify-between items-center gap-3">
                   <button
                     onClick={() => {
-                      if (window.confirm('সবকিছু প্রোগ্রামের ডিফল্ট ডাটাতে ফিরিয়ে নিতে চান? (প্রকাশ না করা পর্যন্ত ভিজিটররা কিছু দেখবে না)')) {
+                      if (window.confirm('সবকিছু প্রোগ্রামের ডিফল্ট ডাটাতে ফিরিয়ে নিতে চান? (এটা অটো-প্রকাশ হয়ে সব ভিজিটরের কাছে চলে যাবে)')) {
                         onResetDefaults();
                         showToast('ডিফল্ট ডাটা বসানো হয়েছে। প্রকাশ করতে ভুলবেন না।');
                       }
