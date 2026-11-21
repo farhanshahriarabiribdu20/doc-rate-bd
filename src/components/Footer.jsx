@@ -131,7 +131,7 @@ export default function Footer({ lang, isStale = false }) {
       </div>
 
       {/* Copyright Bar */}
-      <div className="border-t border-slate-900 py-5 px-4 text-center text-xs text-slate-500 flex flex-wrap items-center justify-between max-w-7xl mx-auto gap-3">
+      <div className="border-t border-slate-900 pt-5 pb-24 sm:pb-20 px-4 text-center text-xs text-slate-500 flex flex-wrap items-center justify-between max-w-7xl mx-auto gap-3">
         <p className="font-medium">
           © {new Date().getFullYear()} FosholNexa BD. সর্বস্বত্ব সংরক্ষিত (All rights reserved).
         </p>
