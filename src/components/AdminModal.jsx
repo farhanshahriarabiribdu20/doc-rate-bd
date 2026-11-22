@@ -1,17 +1,19 @@
 import React, { useState, useEffect, useCallback, useRef } from 'react';
 import {
   X, Lock, ShieldCheck, Plus, Trash2, Download, Upload, RotateCcw, Check, Settings,
-  Bird, Phone, MessageSquareText, CloudUpload, LogOut, ChevronDown, ChevronUp, CalendarClock, Egg, AlertTriangle, ClipboardPaste, Undo2, History, Megaphone, FileSpreadsheet
+  Bird, Phone, MessageSquareText, CloudUpload, LogOut, ChevronDown, ChevronUp, CalendarClock, Egg, AlertTriangle, ClipboardPaste, Undo2, History, Megaphone, FileSpreadsheet, Inbox
 } from 'lucide-react';
 import WhatsAppPastePanel from './WhatsAppPastePanel';
 import VersionHistoryPanel from './VersionHistoryPanel';
 import ExcelImportPanel from './ExcelImportPanel';
 import ReadyExcelPanel from './ReadyExcelPanel';
+import SubmissionsPanel from './SubmissionsPanel';
 import { applyReadyPlan } from '../utils/readyExcel';
 import { applyExcelPlan } from '../utils/excelRates';
 import { clearZoneRates } from '../data/zones';
 import {
-  adminLogin, publishSiteData, fetchFeedbacks, deleteFeedback, clearAllFeedbacks, saveRateDays
+  adminLogin, publishSiteData, fetchFeedbacks, deleteFeedback, clearAllFeedbacks, saveRateDays,
+  fetchRateSubmissions, deleteRateSubmissions
 } from '../services/api';
 import { todayISO } from '../utils/date';
 import { DIVISIONS } from '../data/initialData';
@@ -75,7 +77,7 @@ function AdminModalContent({
   const [loginError, setLoginError] = useState('');
   const [notConfigured, setNotConfigured] = useState(false);
 
-  const [activeTab, setActiveTab] = useState('doc'); // 'doc' | 'ready' | 'feedback' | 'settings'
+  const [activeTab, setActiveTab] = useState('doc'); // 'doc' | 'ready' | 'submissions' | 'feedback' | 'settings'
   const [toast, setToast] = useState({ msg: '', type: 'ok' });
   const [publishing, setPublishing] = useState(false);
 
@@ -85,6 +87,10 @@ function AdminModalContent({
   const [fbError, setFbError] = useState('');
   const [selectedFbCat, setSelectedFbCat] = useState('all');
   const [feedbackSearch, setFeedbackSearch] = useState('');
+  // visitor-submitted rates waiting for approval
+  const [subs, setSubs] = useState([]);
+  const [subsLoading, setSubsLoading] = useState(false);
+  const [subsError, setSubsError] = useState('');
 
   // DOC editor state
   const [expandedId, setExpandedId] = useState(null);
@@ -140,6 +146,51 @@ function AdminModalContent({
     } else {
       setLoginError('সার্ভারে যোগাযোগ করা যাচ্ছে না। ইন্টারনেট চেক করুন (লোকালে চালালে `vercel dev` ব্যবহার করুন)।');
     }
+  };
+
+  // ---- visitor-submitted rates (approval queue) ----
+  const loadSubs = useCallback(async () => {
+    setSubsLoading(true);
+    setSubsError('');
+    const list = await fetchRateSubmissions(adminKey);
+    if (list === null) setSubsError('ইউজারদের রেট লোড করা যায়নি। আবার রিফ্রেশ করুন।');
+    else setSubs(list);
+    setSubsLoading(false);
+  }, [adminKey]);
+
+  // loaded right after login (for the badge) and again whenever the tab is opened
+  const onSubsTab = activeTab === 'submissions';
+  useEffect(() => {
+    if (adminKey) loadSubs();
+  }, [adminKey, onSubsTab, loadSubs]);
+
+  const handleApproveSub = async (sub) => {
+    if (sub.kind === 'ready') {
+      if (!readyRates.some((r) => r.id === sub.targetId)) return;
+      forceSnapshotRef.current = true; // the state before approving stays in history, so it can be undone
+      setReadyRates((prev) => prev.map((r) => (r.id === sub.targetId ? { ...r, ...sub.values } : r)));
+      setSettings((prev) => (prev.readyDateISO === todayISO() ? prev : { ...prev, readyDateISO: todayISO() }));
+    } else {
+      if (!rates.some((r) => r.id === sub.targetId)) return;
+      forceSnapshotRef.current = true;
+      const rate = Number(sub.values?.rate);
+      setRates((prev) => prev.map((item) => {
+        if (item.id !== sub.targetId) return item;
+        if (sub.zoneId) return { ...item, zoneRates: { ...(item.zoneRates || {}), [sub.zoneId]: rate } };
+        return { ...item, todayRate: rate, rateDate: '' };
+      }));
+    }
+    const ok = await deleteRateSubmissions(adminKey, [sub.id]);
+    setSubs((prev) => prev.filter((x) => x.id !== sub.id));
+    showToast(ok ? '✅ রেট অনুমোদিত হয়েছে। কিছুক্ষণের মধ্যে অটো-প্রকাশ হবে।' : '✅ রেট বসানো হয়েছে, কিন্তু তালিকা থেকে মুছতে পারিনি (রিফ্রেশ করুন)।', ok ? undefined : 'error');
+  };
+
+  const handleRejectSub = async (sub) => {
+    const ok = await deleteRateSubmissions(adminKey, [sub.id]);
+    if (ok) {
+      setSubs((prev) => prev.filter((x) => x.id !== sub.id));
+      showToast('রেটটি বাতিল করা হয়েছে।');
+    } else showToast('বাতিল করা যায়নি। আবার চেষ্টা করুন।', 'error');
   };
 
   // ---- feedback inbox ----
@@ -558,6 +609,12 @@ function AdminModalContent({
               <button onClick={() => setActiveTab('ready')} className={tabClass('ready')}>
                 <Egg className="w-4 h-4" /> রেডি মুরগি ও ডিম
               </button>
+              <button onClick={() => setActiveTab('submissions')} className={tabClass('submissions')}>
+                <Inbox className="w-4 h-4" /> ইউজার রেট
+                {subs.length > 0 && (
+                  <span className="ml-1 px-1.5 py-0.5 rounded-full text-[10px] bg-amber-400 text-slate-950 font-black">{subs.length}</span>
+                )}
+              </button>
               <button onClick={() => setActiveTab('feedback')} className={tabClass('feedback')}>
                 <MessageSquareText className="w-4 h-4" /> মতামত ও পরামর্শ
                 {feedbacks.length > 0 && (
@@ -816,6 +873,19 @@ function AdminModalContent({
             )}
 
             {/* TAB: FEEDBACKS */}
+            {activeTab === 'submissions' && (
+              <SubmissionsPanel
+                subs={subs}
+                loading={subsLoading}
+                error={subsError}
+                readyRates={readyRates}
+                rates={rates}
+                onReload={loadSubs}
+                onApprove={handleApproveSub}
+                onReject={handleRejectSub}
+              />
+            )}
+
             {activeTab === 'feedback' && (
               <div className="space-y-4">
                 <div className="flex flex-wrap items-center justify-between gap-3 bg-emerald-50/70 p-4 rounded-2xl border border-emerald-200/80">

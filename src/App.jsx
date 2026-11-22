@@ -26,6 +26,7 @@ import { INITIAL_READY_RATES } from './data/readyMarketData';
 import { Bird, AlertTriangle } from 'lucide-react';
 import { rateForRegion } from './data/zones';
 import DateRatePicker from './components/DateRatePicker';
+import RateSubmitModal from './components/RateSubmitModal';
 
 // Last data published by the admin (kept for instant load / offline use).
 const CACHE_KEY = 'fosholnexa_published_v1';
@@ -199,6 +200,7 @@ export default function App() {
   const [isCalculatorOpen, setIsCalculatorOpen] = useState(false);
   const [isShareOpen, setIsShareOpen] = useState(false);
   const [isBannerOpen, setIsBannerOpen] = useState(false);
+  const [submitKind, setSubmitKind] = useState(null); // visitor rate form: null | 'ready' | 'doc'
   const [isAdminOpen, setIsAdminOpen] = useState(false);
   const [bookingItem, setBookingItem] = useState(null);
 
@@ -390,6 +392,15 @@ export default function App() {
               onBackToLive={backToLatest}
             />
 
+            <div className="mt-4 flex flex-wrap items-center justify-between gap-3 p-3.5 rounded-2xl bg-amber-50 border border-amber-200">
+              <p className="text-xs sm:text-sm font-bold text-amber-900">
+                {lang === 'bn' ? 'আপনার কাছে কোনো বাচ্চার রেট আছে? জানান — যাচাই করে প্রকাশ করা হবে।' : 'Know a chick rate? Tell us and we publish it after checking.'}
+              </p>
+              <button onClick={() => setSubmitKind('doc')} className="px-4 py-2 rounded-xl bg-amber-400 hover:bg-amber-300 text-slate-950 font-black text-xs sm:text-sm shadow-sm cursor-pointer">
+                ✍️ {lang === 'bn' ? 'রেট জানান' : 'Share a rate'}
+              </button>
+            </div>
+
             <StatsOverview rates={shownRates} lang={lang} isStale={shownStale} />
 
             {/* Real Top Hatcheries Live Price Comparison Chart */}
@@ -496,6 +507,15 @@ export default function App() {
               </div>
             )}
 
+            <div className="mt-4 flex flex-wrap items-center justify-between gap-3 p-3.5 rounded-2xl bg-amber-50 border border-amber-200">
+              <p className="text-xs sm:text-sm font-bold text-amber-900">
+                {lang === 'bn' ? 'আপনার মোকামের রেট জানান — অ্যাডমিন যাচাই করে সাইটে প্রকাশ করবেন।' : 'Share your mokam rate. It is published after the admin checks it.'}
+              </p>
+              <button onClick={() => setSubmitKind('ready')} className="px-4 py-2 rounded-xl bg-amber-400 hover:bg-amber-300 text-slate-950 font-black text-xs sm:text-sm shadow-sm cursor-pointer">
+                ✍️ {lang === 'bn' ? 'রেট জানান' : 'Share a rate'}
+              </button>
+            </div>
+
             <ReadyMarketSection
               readyRates={readyArchive ? readyArchive.rates : readyRates}
               lang={lang}
@@ -561,6 +581,15 @@ export default function App() {
       </main>
 
       {/* Modals */}
+      {submitKind && (
+        <RateSubmitModal
+          lang={lang}
+          initialKind={submitKind}
+          readyRates={readyRates}
+          docRates={liveRates}
+          onClose={() => setSubmitKind(null)}
+        />
+      )}
       <BannerGeneratorModal
         isOpen={isBannerOpen}
         onClose={() => setIsBannerOpen(false)}
