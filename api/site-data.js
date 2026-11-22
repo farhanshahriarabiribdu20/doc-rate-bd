@@ -1,13 +1,18 @@
-import { put, get } from '@vercel/blob';
+import { put, get, list, del } from '@vercel/blob';
 import {
   parseBody,
   requireAdmin,
+  snapshotTime,
   sanitizeRates,
   sanitizeReadyRates,
   sanitizeSettings
 } from './_lib.js';
 
 const BLOB_PATH = 'site-data.json';
+const HISTORY_PREFIX = 'history/';
+const HISTORY_KEEP = 40; // versions kept for "undo"
+const SNAPSHOT_MIN_GAP_MS = Number(process.env.SNAPSHOT_MIN_GAP_MS ?? 2 * 60 * 1000); // one burst of edits = one undo step
+
 
 async function readPublished() {
   const result = await get(BLOB_PATH, { access: 'public', useCache: false });
@@ -15,6 +20,29 @@ async function readPublished() {
   const text = await new Response(result.stream).text();
   const data = JSON.parse(text);
   return data && typeof data === 'object' ? data : null;
+}
+
+// Keep the previous published version so the admin can undo a bad publish.
+// Never blocks publishing: any error here is only logged.
+async function snapshotPrevious(force) {
+  try {
+    const prev = await readPublished();
+    if (!prev) return;
+    const { blobs } = await list({ prefix: HISTORY_PREFIX });
+    const sorted = [...blobs].sort((a, b) => snapshotTime(b.pathname) - snapshotTime(a.pathname));
+    const newest = sorted[0] ? snapshotTime(sorted[0].pathname) : 0;
+    if (!force && Date.now() - newest < SNAPSHOT_MIN_GAP_MS) return;
+    const stamp = new Date().toISOString().replace(/[:.]/g, '-');
+    await put(`${HISTORY_PREFIX}${stamp}.json`, JSON.stringify(prev), {
+      access: 'public',
+      addRandomSuffix: true,
+      contentType: 'application/json'
+    });
+    const extra = sorted.slice(HISTORY_KEEP - 1);
+    if (extra.length) await del(extra.map((b) => b.url));
+  } catch (err) {
+    console.error('history snapshot failed:', err);
+  }
 }
 
 // GET (public)  -> latest published rates / notice / public settings
@@ -55,6 +83,8 @@ export default async function handler(req, res) {
         settings: sanitizeSettings(body.settings),
         updatedAt: new Date().toISOString()
       };
+
+      await snapshotPrevious(body.snapshot === 'force');
 
       await put(BLOB_PATH, JSON.stringify(payload), {
         access: 'public',

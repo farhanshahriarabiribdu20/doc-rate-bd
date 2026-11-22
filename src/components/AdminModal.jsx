@@ -1,8 +1,10 @@
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useCallback, useRef } from 'react';
 import {
   X, Lock, ShieldCheck, Plus, Trash2, Download, Upload, RotateCcw, Check, Settings,
-  Bird, Phone, MessageSquareText, CloudUpload, LogOut, ChevronDown, ChevronUp, CalendarClock, Egg, AlertTriangle
+  Bird, Phone, MessageSquareText, CloudUpload, LogOut, ChevronDown, ChevronUp, CalendarClock, Egg, AlertTriangle, ClipboardPaste, Undo2, History
 } from 'lucide-react';
+import WhatsAppPastePanel from './WhatsAppPastePanel';
+import VersionHistoryPanel from './VersionHistoryPanel';
 import {
   adminLogin, publishSiteData, fetchFeedbacks, deleteFeedback, clearAllFeedbacks
 } from '../services/api';
@@ -161,22 +163,78 @@ function AdminModalContent({
     return true;
   });
 
-  // ---- publish ----
-  const handlePublish = async () => {
+  // ---- publish (automatic) ----
+  // Every admin edit is published on its own a few seconds after the last change,
+  // so there is no separate "publish" step. The button stays as a manual retry.
+  const AUTO_PUBLISH_DELAY_MS = 2500;
+  const [autoError, setAutoError] = useState('');
+  const [historyToken, setHistoryToken] = useState(0);
+  const forceSnapshotRef = useRef(false);
+  const latestRef = useRef({ rates, readyRates, notice, settings });
+  const dirtyRef = useRef(dirty);
+  const adminKeyRef = useRef(adminKey);
+  const publishingRef = useRef(false);
+  const onPublishedRef = useRef(onPublished);
+
+  useEffect(() => {
+    latestRef.current = { rates, readyRates, notice, settings };
+    dirtyRef.current = dirty;
+    adminKeyRef.current = adminKey;
+    onPublishedRef.current = onPublished;
+  });
+
+  const publishLatest = useCallback(async ({ silent = false } = {}) => {
+    if (publishingRef.current || !adminKeyRef.current) return;
+    publishingRef.current = true;
     setPublishing(true);
-    const payload = { rates, readyRates, notice, settings };
-    const r = await publishSiteData(adminKey, payload);
+    const payload = latestRef.current;
+    const force = forceSnapshotRef.current;
+    forceSnapshotRef.current = false;
+    const r = await publishSiteData(adminKeyRef.current, force ? { ...payload, snapshot: 'force' } : payload);
+    publishingRef.current = false;
     setPublishing(false);
     if (r.ok) {
-      onPublished({ ...payload, updatedAt: r.updatedAt });
-      showToast('✅ সফলভাবে প্রকাশিত হয়েছে! সব ভিজিটর এখন নতুন রেট দেখবে (১-২ মিনিটের মধ্যে)।');
+      setAutoError('');
+      setHistoryToken((n) => n + 1);
+      // Edits made while the request was in flight stay "dirty" and go out next.
+      const changedMeanwhile = latestRef.current !== payload
+        && (latestRef.current.rates !== payload.rates
+          || latestRef.current.readyRates !== payload.readyRates
+          || latestRef.current.notice !== payload.notice
+          || latestRef.current.settings !== payload.settings);
+      onPublishedRef.current({ ...payload, updatedAt: r.updatedAt }, { keepDirty: changedMeanwhile });
+      if (!silent) showToast('✅ সফলভাবে প্রকাশিত হয়েছে! সব ভিজিটর এখন নতুন রেট দেখবে (১-২ মিনিটের মধ্যে)।');
+      else showToast('✅ অটো-প্রকাশিত হয়েছে');
     } else if (r.status === 401) {
       logout();
       showToast('পাসওয়ার্ড মেলেনি, আবার লগইন করুন।', 'error');
     } else {
-      showToast(`প্রকাশ করা যায়নি: ${r.error}`, 'error');
+      if (force) forceSnapshotRef.current = true;
+      setAutoError(r.error || 'unknown');
+      showToast(`প্রকাশ করা যায়নি: ${r.error}। "প্রকাশ করুন" বাটন চেপে আবার চেষ্টা করুন।`, 'error');
     }
-  };
+  }, [logout, showToast]);
+
+  const handlePublish = () => publishLatest({ silent: false });
+
+  // Debounced auto-publish: waits for the admin to stop typing.
+  useEffect(() => {
+    if (!adminKey || !dirty) return undefined;
+    const t = setTimeout(() => {
+      if (publishingRef.current) return;
+      publishLatest({ silent: true });
+    }, AUTO_PUBLISH_DELAY_MS);
+    return () => clearTimeout(t);
+  }, [adminKey, dirty, rates, readyRates, notice, settings, publishLatest]);
+
+  // If the admin closes the panel while an edit is still waiting, send it right away.
+  useEffect(() => () => {
+    if (dirtyRef.current && adminKeyRef.current && !publishingRef.current) {
+      publishSiteData(adminKeyRef.current, latestRef.current).then((r) => {
+        if (r.ok) onPublishedRef.current({ ...latestRef.current, updatedAt: r.updatedAt }, { keepDirty: false });
+      });
+    }
+  }, []);
 
   // ---- DOC rate actions ----
   const handleDocChange = (id, field, value) => {
@@ -235,6 +293,33 @@ function AdminModalContent({
     }
   };
 
+  // Paste from WhatsApp: set today's rates for the chosen companies (auto-published afterwards).
+  const [showPaste, setShowPaste] = useState(false);
+  const handleApplyPaste = (updates, newDay) => {
+    setRates((prev) => prev.map((r) => {
+      const base = newDay ? { ...r, yesterdayRate: r.todayRate } : r;
+      return Object.prototype.hasOwnProperty.call(updates, r.id) ? { ...base, todayRate: updates[r.id] } : base;
+    }));
+    if (newDay) setSettings((prev) => ({ ...prev, reportDateISO: todayISO() }));
+    setShowPaste(false);
+    showToast(`✅ ${Object.keys(updates).length}টি রেট বসানো হয়েছে। কিছুক্ষণের মধ্যে অটো-প্রকাশ হবে।`);
+  };
+
+  // Undo: load an earlier version back into the editor; auto-publish then publishes it.
+  const handleRestoreVersion = (data) => {
+    if (!Array.isArray(data.rates) || !Array.isArray(data.readyRates)) {
+      showToast('এই ভার্সনটি ঠিকমতো লোড হয়নি।', 'error');
+      return;
+    }
+    forceSnapshotRef.current = true; // keep the current state in history too, so an undo can be undone
+    setRates(data.rates);
+    setReadyRates(data.readyRates);
+    setNotice(typeof data.notice === 'string' ? data.notice : '');
+    if (data.settings) setSettings((prev) => ({ ...prev, ...data.settings }));
+    setActiveTab('doc');
+    showToast('↩️ আগের অবস্থা ফিরে এসেছে। কিছুক্ষণের মধ্যে সবার জন্য প্রকাশ হবে।');
+  };
+
   // ---- ready market ----
   const handleReadyChange = (id, field, value) => {
     setReadyRates((prev) => prev.map((r) => (r.id === id ? { ...r, [field]: value } : r)));
@@ -261,7 +346,7 @@ function AdminModalContent({
       try {
         const data = JSON.parse(String(reader.result));
         if (!Array.isArray(data.rates)) throw new Error('rates missing');
-        if (!window.confirm('ব্যাকআপ ফাইল থেকে ডাটা ইমপোর্ট করবেন? বর্তমান অপ্রকাশিত ডাটা বদলে যাবে।')) return;
+        if (!window.confirm('ব্যাকআপ ফাইল থেকে ডাটা ইমপোর্ট করবেন? বর্তমান ডাটা বদলে অটো-প্রকাশ হয়ে যাবে।')) return;
         setRates(data.rates);
         if (Array.isArray(data.readyRates)) setReadyRates(data.readyRates);
         if (typeof data.notice === 'string') setNotice(data.notice);
@@ -302,6 +387,15 @@ function AdminModalContent({
           <div className="flex items-center gap-2">
             {adminKey && (
               <button
+                onClick={() => setActiveTab('history')}
+                className="flex items-center gap-1.5 px-3 py-2 rounded-xl text-xs font-black bg-slate-100 hover:bg-slate-200 text-slate-800 transition cursor-pointer"
+                title="আগের অবস্থায় ফিরুন (আনডু)"
+              >
+                <Undo2 className="w-4 h-4" /> <span className="hidden sm:inline">আনডু</span>
+              </button>
+            )}
+            {adminKey && (
+              <button
                 onClick={handlePublish}
                 disabled={publishing}
                 className={`flex items-center gap-1.5 px-4 py-2 rounded-xl text-xs font-black transition cursor-pointer disabled:opacity-60 ${
@@ -309,10 +403,10 @@ function AdminModalContent({
                     ? 'bg-amber-400 hover:bg-amber-300 text-slate-950 shadow-md animate-pulse'
                     : 'bg-emerald-600 hover:bg-emerald-700 text-white'
                 }`}
-                title="সব ভিজিটরের জন্য রেট প্রকাশ করুন"
+                title="পরিবর্তন কয়েক সেকেন্ড পরে নিজে থেকেই প্রকাশ হয়। চাইলে এখনই প্রকাশ করুন।"
               >
                 <CloudUpload className="w-4 h-4" />
-                <span>{publishing ? 'প্রকাশ হচ্ছে...' : dirty ? 'অপ্রকাশিত পরিবর্তন — প্রকাশ করুন' : 'প্রকাশ করুন'}</span>
+                <span>{publishing ? 'প্রকাশ হচ্ছে...' : autoError && dirty ? 'প্রকাশ হয়নি — আবার চেষ্টা করুন' : dirty ? 'অটো-প্রকাশ হচ্ছে... (এখনই করুন)' : '✓ অটো-প্রকাশ চালু'}</span>
               </button>
             )}
             <button
@@ -392,6 +486,9 @@ function AdminModalContent({
                   <span className="ml-1 px-1.5 py-0.5 rounded-full text-[10px] bg-amber-400 text-slate-950 font-black">{feedbacks.length}</span>
                 )}
               </button>
+              <button onClick={() => setActiveTab('history')} className={tabClass('history')}>
+                <History className="w-4 h-4" /> ইতিহাস ও আনডু
+              </button>
               <button onClick={() => setActiveTab('settings')} className={tabClass('settings')}>
                 <Settings className="w-4 h-4" /> সেটিংস ও নোটিশ
               </button>
@@ -427,7 +524,23 @@ function AdminModalContent({
                   >
                     <CalendarClock className="w-4 h-4" /> নতুন দিন শুরু করুন
                   </button>
+                  <button
+                    onClick={() => setShowPaste((v) => !v)}
+                    className="flex items-center gap-1.5 px-3 py-2 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl text-xs font-black cursor-pointer"
+                    title="WhatsApp-এর রেটের মেসেজ পেস্ট করে একসাথে সব রেট বসান"
+                  >
+                    <ClipboardPaste className="w-4 h-4" /> WhatsApp থেকে পেস্ট
+                  </button>
                 </div>
+
+                {showPaste && (
+                  <WhatsAppPastePanel
+                    rates={rates}
+                    reportDateISO={settings.reportDateISO}
+                    onApply={handleApplyPaste}
+                    onClose={() => setShowPaste(false)}
+                  />
+                )}
 
                 <div className="flex flex-wrap items-center justify-between gap-2">
                   <button
@@ -731,6 +844,11 @@ function AdminModalContent({
               </div>
             )}
 
+            {/* TAB: HISTORY / UNDO */}
+            {activeTab === 'history' && (
+              <VersionHistoryPanel adminKey={adminKey} onRestore={handleRestoreVersion} refreshToken={historyToken} />
+            )}
+
             {/* TAB: SETTINGS */}
             {activeTab === 'settings' && (
               <div className="space-y-4">
@@ -772,7 +890,7 @@ function AdminModalContent({
                 <div className="pt-2 flex flex-wrap justify-between items-center gap-3">
                   <button
                     onClick={() => {
-                      if (window.confirm('সবকিছু প্রোগ্রামের ডিফল্ট ডাটাতে ফিরিয়ে নিতে চান? (প্রকাশ না করা পর্যন্ত ভিজিটররা কিছু দেখবে না)')) {
+                      if (window.confirm('সবকিছু প্রোগ্রামের ডিফল্ট ডাটাতে ফিরিয়ে নিতে চান? (এটা অটো-প্রকাশ হয়ে সব ভিজিটরের কাছে চলে যাবে)')) {
                         onResetDefaults();
                         showToast('ডিফল্ট ডাটা বসানো হয়েছে। প্রকাশ করতে ভুলবেন না।');
                       }

@@ -143,3 +143,9 @@ export function sanitizeSettings(input) {
   Object.keys(out).forEach((k) => { if (out[k] === '') delete out[k]; });
   return out;
 }
+
+/** Timestamp (ms) encoded in a history snapshot path, or 0. */
+export const snapshotTime = (pathname) => {
+  const m = /history\/(\d{4})-(\d{2})-(\d{2})T(\d{2})-(\d{2})-(\d{2})-(\d{3})Z/.exec(pathname || '');
+  return m ? Date.UTC(+m[1], +m[2] - 1, +m[3], +m[4], +m[5], +m[6], +m[7]) : 0;
+};
