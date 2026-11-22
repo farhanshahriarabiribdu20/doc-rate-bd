@@ -73,6 +73,10 @@ export default function RateCard({ item, selectedDivision, isStale = false, rate
           <p className="text-xs text-slate-500 font-semibold mt-0.5">
             {lang === 'bn' ? 'জাত:' : 'Breed:'} <span className="text-slate-800 font-bold">{item.breed}</span>
           </p>
+          <span className="inline-flex items-center gap-1 mt-2 text-[11px] font-black px-2.5 py-0.5 rounded-full bg-emerald-600 text-white shadow-xs">
+            <span>★</span>
+            <span>{lang === 'bn' ? 'গ্রেড-এ (Grade-A)' : 'Grade-A'}</span>
+          </span>
         </div>
 
         {/* Region / Zone */}
