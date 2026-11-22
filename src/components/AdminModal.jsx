@@ -1041,7 +1041,7 @@ function AdminModalContent({
                       onChange={(e) => setSettings((p) => ({ ...p, showLiveVisitors: e.target.checked }))}
                       className="mt-0.5 cursor-pointer"
                     />
-                    <span><b>"এখন অনলাইনে N জন" দেখান</b> — সাইটের উপরের বারে এই মুহূর্তে কতজন সাইটে আছে তা দেখায়। (সার্ভারে Upstash Redis যুক্ত থাকলে কাজ করে; না থাকলে কিছুই দেখায় না।)</span>
+                    <span><b>"এখন অনলাইনে N জন" দেখান</b> — সাইটের উপরের বারে এই মুহূর্তে কতজন সাইটে আছে তা দেখায়। (বিনা খরচে চলে; সংখ্যাটি আনুমানিক। সবসময় নিখুঁত সংখ্যা চাইলে পরে Upstash Redis যুক্ত করা যাবে।)</span>
                   </label>
                   <div>
                     <label className="block text-xs font-bold text-slate-700 mb-1">ব্র্যান্ড নাম</label>
