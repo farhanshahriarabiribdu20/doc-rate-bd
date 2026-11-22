@@ -1,12 +1,14 @@
 import React, { useState, useEffect, useCallback, useRef } from 'react';
 import {
   X, Lock, ShieldCheck, Plus, Trash2, Download, Upload, RotateCcw, Check, Settings,
-  Bird, Phone, MessageSquareText, CloudUpload, LogOut, ChevronDown, ChevronUp, CalendarClock, Egg, AlertTriangle, ClipboardPaste, Undo2, History, Megaphone, FileSpreadsheet, Inbox, Store } from 'lucide-react';
+  Bird, Phone, MessageSquareText, CloudUpload, LogOut, ChevronDown, ChevronUp, CalendarClock, Egg, AlertTriangle, ClipboardPaste, Undo2, History, Megaphone, FileSpreadsheet, Inbox, ImagePlus, Store
+} from 'lucide-react';
 import WhatsAppPastePanel from './WhatsAppPastePanel';
 import VersionHistoryPanel from './VersionHistoryPanel';
 import ExcelImportPanel from './ExcelImportPanel';
 import ReadyExcelPanel from './ReadyExcelPanel';
 import SubmissionsPanel from './SubmissionsPanel';
+import GalleryAdminPanel from './GalleryAdminPanel';
 import MarketAdminPanel from './MarketAdminPanel';
 import { fetchMarketAdmin, marketAdminAction } from '../services/market';
 import { applyReadyPlan } from '../utils/readyExcel';
@@ -14,7 +16,7 @@ import { applyExcelPlan } from '../utils/excelRates';
 import { clearZoneRates } from '../data/zones';
 import {
   adminLogin, publishSiteData, fetchFeedbacks, deleteFeedback, clearAllFeedbacks, saveRateDays,
-  fetchRateSubmissions, deleteRateSubmissions
+  fetchRateSubmissions, fetchGallery, deleteRateSubmissions
 } from '../services/api';
 import { todayISO } from '../utils/date';
 import { DIVISIONS } from '../data/initialData';
@@ -193,6 +195,13 @@ function AdminModalContent({
       showToast('রেটটি বাতিল করা হয়েছে।');
     } else showToast('বাতিল করা যায়নি। আবার চেষ্টা করুন।', 'error');
   };
+
+  // ---- rate pictures (gallery) ----
+  const [gallery, setGallery] = useState([]);
+  const onGalleryTab = activeTab === 'gallery';
+  useEffect(() => {
+    if (adminKey && onGalleryTab) fetchGallery().then((g) => { if (g) setGallery(g); });
+  }, [adminKey, onGalleryTab]);
 
   // ---- seller marketplace moderation ----
   const [market, setMarket] = useState(null);
@@ -643,6 +652,9 @@ function AdminModalContent({
                   <span className="ml-1 px-1.5 py-0.5 rounded-full text-[10px] bg-amber-400 text-slate-950 font-black">{subs.length}</span>
                 )}
               </button>
+              <button onClick={() => setActiveTab('gallery')} className={tabClass('gallery')}>
+                <ImagePlus className="w-4 h-4" /> রেট চার্ট ও ছবি
+              </button>
               <button onClick={() => setActiveTab('market')} className={tabClass('market')}>
                 <Store className="w-4 h-4" /> বিক্রেতার বিজ্ঞাপন
                 {(market?.items || []).some((i) => i.status === 'pending') && (
@@ -918,6 +930,10 @@ function AdminModalContent({
                 onApprove={handleApproveSub}
                 onReject={handleRejectSub}
               />
+            )}
+
+            {activeTab === 'gallery' && (
+              <GalleryAdminPanel adminKey={adminKey} images={gallery} onChange={setGallery} showToast={showToast} />
             )}
 
             {activeTab === 'market' && (
