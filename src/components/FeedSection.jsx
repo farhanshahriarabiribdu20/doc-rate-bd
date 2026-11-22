@@ -1,5 +1,5 @@
 import React from 'react';
-import { Wheat, TrendingUp, TrendingDown, Minus, Phone, MessageCircle } from 'lucide-react';
+import { Wheat, TrendingUp, TrendingDown, Minus } from 'lucide-react';
 
 export default function FeedSection({ feeds, settings, lang }) {
   return (

@@ -1,5 +1,5 @@
 import React from 'react';
-import { Radio } from 'lucide-react';
+import {  } from 'lucide-react';
 
 export default function Ticker({ notice, lang }) {
   return (
