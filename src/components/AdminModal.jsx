@@ -1034,6 +1034,15 @@ function AdminModalContent({
                     <label className="block text-xs font-bold text-slate-700 mb-1">WhatsApp নম্বর (বুকিংয়ের জন্য)</label>
                     <input type="text" value={settings.whatsapp || ''} onChange={(e) => setSettings((p) => ({ ...p, whatsapp: e.target.value }))} className="w-full px-3 py-2 border rounded-xl text-xs font-bold" />
                   </div>
+                  <label className="sm:col-span-2 flex items-start gap-2 p-3 bg-amber-50 border border-amber-200 rounded-xl text-xs text-slate-700 cursor-pointer">
+                    <input
+                      type="checkbox"
+                      checked={settings.showLiveVisitors !== false}
+                      onChange={(e) => setSettings((p) => ({ ...p, showLiveVisitors: e.target.checked }))}
+                      className="mt-0.5 cursor-pointer"
+                    />
+                    <span><b>"এখন অনলাইনে N জন" দেখান</b> — সাইটের উপরের বারে এই মুহূর্তে কতজন সাইটে আছে তা দেখায়। (সার্ভারে Upstash Redis যুক্ত থাকলে কাজ করে; না থাকলে কিছুই দেখায় না।)</span>
+                  </label>
                   <div>
                     <label className="block text-xs font-bold text-slate-700 mb-1">ব্র্যান্ড নাম</label>
                     <input type="text" value={settings.brandName || ''} onChange={(e) => setSettings((p) => ({ ...p, brandName: e.target.value }))} className="w-full px-3 py-2 border rounded-xl text-xs" />

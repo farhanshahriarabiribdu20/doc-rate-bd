@@ -10,6 +10,7 @@ export default function Navbar({
   onOpenShare, 
   onOpenCalculator,
   onOpenBanner,
+  liveVisitors,
   settings 
 }) {
   const today = new Intl.DateTimeFormat(lang === 'bn' ? 'bn-BD' : 'en-US', {
@@ -35,6 +36,22 @@ export default function Navbar({
               <Calendar className="w-3.5 h-3.5 text-emerald-400" />
               {today}
             </span>
+            {liveVisitors?.enabled && (
+              <span
+                className="flex items-center gap-1.5 px-2 py-0.5 rounded-full bg-amber-400/15 text-amber-200 font-bold text-[11px] border border-amber-300/30"
+                title={lang === 'bn' ? 'এই মুহূর্তে সাইটে থাকা মানুষ' : 'People on the site right now'}
+              >
+                <span className="relative flex h-1.5 w-1.5">
+                  <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-amber-300 opacity-75"></span>
+                  <span className="relative inline-flex rounded-full h-1.5 w-1.5 bg-amber-300"></span>
+                </span>
+                <span>
+                  {lang === 'bn'
+                    ? `এখন অনলাইনে ${liveVisitors.count.toLocaleString('bn-BD')} জন`
+                    : `${liveVisitors.count} online now`}
+                </span>
+              </span>
+            )}
           </div>
 
           {/* Right hotline & language */}

@@ -27,6 +27,7 @@ import { Bird, AlertTriangle } from 'lucide-react';
 import { rateForRegion } from './data/zones';
 import DateRatePicker from './components/DateRatePicker';
 import RateSubmitModal from './components/RateSubmitModal';
+import { useLiveVisitors } from './utils/useLiveVisitors';
 
 // Last data published by the admin (kept for instant load / offline use).
 const CACHE_KEY = 'fosholnexa_published_v1';
@@ -200,6 +201,7 @@ export default function App() {
   const [isCalculatorOpen, setIsCalculatorOpen] = useState(false);
   const [isShareOpen, setIsShareOpen] = useState(false);
   const [isBannerOpen, setIsBannerOpen] = useState(false);
+  const live = useLiveVisitors(settings.showLiveVisitors !== false);
   const [submitKind, setSubmitKind] = useState(null); // visitor rate form: null | 'ready' | 'doc'
   const [isAdminOpen, setIsAdminOpen] = useState(false);
   const [bookingItem, setBookingItem] = useState(null);
@@ -276,6 +278,7 @@ export default function App() {
           onOpenCalculator={() => setIsCalculatorOpen(true)}
           onOpenBanner={() => setIsBannerOpen(true)}
           settings={settings}
+          liveVisitors={live}
         />
         <Ticker notice={notice} lang={lang} />
       </div>
