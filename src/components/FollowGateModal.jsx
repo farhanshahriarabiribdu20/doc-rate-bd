@@ -31,9 +31,14 @@ export default function FollowGateModal({ image, youtubeUrl, facebookUrl, onClos
   const [agreed, setAgreed] = useState(false);
   const [busy, setBusy] = useState(false);
   const hasYt = Boolean(youtubeUrl);
+  // the visitor must open each follow link (step 1 and 2) before the tick box (step 3) unlocks
+  const [ytOpened, setYtOpened] = useState(false);
+  const [fbOpened, setFbOpened] = useState(false);
+  const linksDone = fbOpened && (!hasYt || ytOpened);
+  const complete = linksDone && agreed; // only then the Download button appears
 
   const go = async () => {
-    if (!agreed || busy) return;
+    if (!complete || busy) return;
     setBusy(true);
     try { localStorage.setItem(FOLLOW_KEY, '1'); } catch { /* private mode */ }
     await downloadPicture(image.url, `fosholnexa-${image.id}.jpg`);
@@ -60,29 +65,39 @@ export default function FollowGateModal({ image, youtubeUrl, facebookUrl, onClos
 
           <div className={`grid gap-2 ${hasYt ? 'grid-cols-2' : 'grid-cols-1'}`}>
             {hasYt && (
-              <a href={youtubeUrl} target="_blank" rel="noopener noreferrer" className="flex items-center justify-center gap-2 px-3 py-3 rounded-xl bg-red-600 hover:bg-red-700 text-white font-black text-sm">
-                ▶ YouTube ফলো করুন
+              <a href={youtubeUrl} onClick={() => setYtOpened(true)} target="_blank" rel="noopener noreferrer" className="flex items-center justify-center gap-2 px-3 py-3 rounded-xl bg-red-600 hover:bg-red-700 text-white font-black text-sm">
+                {ytOpened ? '✔' : '1.'} ▶ YouTube ফলো করুন
               </a>
             )}
-            <a href={facebookUrl} target="_blank" rel="noopener noreferrer" className="flex items-center justify-center gap-2 px-3 py-3 rounded-xl bg-blue-600 hover:bg-blue-700 text-white font-black text-sm">
-              f Facebook ফলো করুন
+            <a href={facebookUrl} onClick={() => setFbOpened(true)} target="_blank" rel="noopener noreferrer" className="flex items-center justify-center gap-2 px-3 py-3 rounded-xl bg-blue-600 hover:bg-blue-700 text-white font-black text-sm">
+              {fbOpened ? '✔' : (hasYt ? '2.' : '1.')} f Facebook ফলো করুন
             </a>
           </div>
 
-          <label className="flex items-start gap-2.5 p-3 rounded-xl border-2 border-emerald-200 bg-emerald-50/60 cursor-pointer">
-            <input type="checkbox" checked={agreed} onChange={(e) => setAgreed(e.target.checked)} className="mt-1 w-4 h-4 accent-emerald-600 cursor-pointer" />
+          <label className={`flex items-start gap-2.5 p-3 rounded-xl border-2 border-emerald-200 bg-emerald-50/60 ${linksDone ? 'cursor-pointer' : 'opacity-60 cursor-not-allowed'}`}>
+            <input type="checkbox" checked={agreed} disabled={!linksDone} onChange={(e) => setAgreed(e.target.checked)} className="mt-1 w-4 h-4 accent-emerald-600 cursor-pointer disabled:cursor-not-allowed" />
             <span className="text-sm font-bold text-slate-800">
               {hasYt ? 'আমি আপনাদের YouTube ও Facebook ফলো করেছি।' : 'আমি আপনাদের Facebook পেজ ফলো করেছি।'}
             </span>
           </label>
 
-          <button
-            onClick={go}
-            disabled={!agreed || busy}
-            className="w-full flex items-center justify-center gap-2 px-4 py-3 rounded-xl bg-emerald-600 hover:bg-emerald-700 disabled:bg-slate-300 disabled:text-slate-500 disabled:cursor-not-allowed text-white font-black text-sm cursor-pointer"
-          >
-            {busy ? <Loader2 className="w-4 h-4 animate-spin" /> : <Download className="w-4 h-4" />} ডাউনলোড করুন
-          </button>
+          {!linksDone && (
+            <p className="text-xs font-bold text-amber-700 bg-amber-50 border border-amber-200 rounded-xl px-3 py-2">
+              {hasYt ? 'আগে উপরের দুটো বাটনে চেপে ফলো করুন, তারপর নিচের টিক বক্সটি চালু হবে।' : 'আগে উপরের বাটনে চেপে ফলো করুন, তারপর নিচের টিক বক্সটি চালু হবে।'}
+            </p>
+          )}
+          {linksDone && !agreed && (
+            <p className="text-xs font-bold text-emerald-700">✔ ফলো করা হয়েছে — এবার নিচের বক্সে টিক দিন, তাহলেই ডাউনলোড বাটন আসবে।</p>
+          )}
+          {complete && (
+            <button
+              onClick={go}
+              disabled={busy}
+              className="w-full flex items-center justify-center gap-2 px-4 py-3 rounded-xl bg-emerald-600 hover:bg-emerald-700 disabled:opacity-60 text-white font-black text-sm cursor-pointer"
+            >
+              {busy ? <Loader2 className="w-4 h-4 animate-spin" /> : <Download className="w-4 h-4" />} ডাউনলোড করুন
+            </button>
+          )}
           <p className="text-[11px] text-slate-500 text-center">আপনার সম্মতি এই ব্রাউজারে মনে রাখা হবে, পরের বার আবার জিজ্ঞেস করা হবে না।</p>
         </div>
       </div>
