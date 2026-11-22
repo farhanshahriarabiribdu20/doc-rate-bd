@@ -1,5 +1,6 @@
 import { DIVISIONS } from '../data/initialData';
 import { DIVISION_IDS } from '../data/regions';
+import { rateForRegion } from '../data/zones';
 
 // Ready-to-post text for Facebook / WhatsApp, built from the current rates.
 const divisionLabel = (id) => (DIVISIONS.find((d) => d.id === id)?.nameBn || id).split('(')[0].trim();
@@ -9,7 +10,7 @@ const SHORT = { dhaka: 'ঢাকা', chittagong: 'চট্টগ্রাম'
 export function ratesForRegion(rates, division) {
   if (!division || division === 'all' || division === 'matrix') return rates;
   return rates.map((r) => {
-    const v = Number(r.divisionRates?.[division]);
+    const v = Number(rateForRegion(r, division));
     // Yesterday's rate exists only for the national figure, so no ▲▼ in a region view.
     return Number.isFinite(v) && v > 0 ? { ...r, todayRate: v, yesterdayRate: 0 } : { ...r, yesterdayRate: 0 };
   });

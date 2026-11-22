@@ -1,6 +1,7 @@
 import React from 'react';
 import { Search, LayoutGrid, Table, ArrowUpDown, MapPin, X, SlidersHorizontal } from 'lucide-react';
-import { CATEGORIES, DIVISIONS } from '../data/initialData';
+import { CATEGORIES } from '../data/initialData';
+import { ZONES, ZONE_GROUPS } from '../data/zones';
 
 export default function FilterBar({
   selectedCategory,
@@ -68,10 +69,13 @@ export default function FilterBar({
               onChange={(e) => setSelectedDivision(e.target.value)}
               className="w-full bg-transparent text-xs sm:text-sm font-semibold text-slate-700 focus:outline-none cursor-pointer"
             >
-              {DIVISIONS.map((div) => (
-                <option key={div.id} value={div.id}>
-                  {lang === 'bn' ? div.nameBn : div.nameEn}
-                </option>
+              <option value="all">{lang === 'bn' ? 'সমগ্র বাংলাদেশ (জাতীয় গড়)' : 'All Bangladesh (National Avg)'}</option>
+              {ZONE_GROUPS.map((g) => (
+                <optgroup key={g.id} label={lang === 'bn' ? g.bn : g.en}>
+                  {ZONES.filter((z) => z.group === g.id).map((z) => (
+                    <option key={z.id} value={z.id}>{lang === 'bn' ? z.bn : z.en}</option>
+                  ))}
+                </optgroup>
               ))}
             </select>
           </div>

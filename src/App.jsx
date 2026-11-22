@@ -24,6 +24,7 @@ import {
 } from './data/initialData';
 import { INITIAL_READY_RATES } from './data/readyMarketData';
 import { Bird, AlertTriangle } from 'lucide-react';
+import { rateForRegion } from './data/zones';
 
 // Last data published by the admin (kept for instant load / offline use).
 const CACHE_KEY = 'fosholnexa_published_v1';
@@ -191,8 +192,8 @@ export default function App() {
   });
 
   const sortedRates = [...filteredRates].sort((a, b) => {
-    const rateA = (selectedDivision !== 'all' && a.divisionRates && a.divisionRates[selectedDivision]) ? a.divisionRates[selectedDivision] : a.todayRate;
-    const rateB = (selectedDivision !== 'all' && b.divisionRates && b.divisionRates[selectedDivision]) ? b.divisionRates[selectedDivision] : b.todayRate;
+    const rateA = rateForRegion(a, selectedDivision);
+    const rateB = rateForRegion(b, selectedDivision);
 
     if (sortBy === 'price_asc') return rateA - rateB;
     if (sortBy === 'price_desc') return rateB - rateA;

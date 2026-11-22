@@ -6,27 +6,36 @@
 // Change the `division` of a zone below if that ever needs to be different.
 
 export const ZONES = [
-  { id: 'narayanganj', en: 'Narayanganj', division: 'dhaka' },
-  { id: 'gazipur', en: 'Gazipur', division: 'dhaka' },
-  { id: 'narsingdi', en: 'Narsingdi', division: 'dhaka' },
-  { id: 'tangail', en: 'Tangail', division: 'dhaka' },
-  { id: 'kishoreganj', en: 'Kishoreganj', division: 'dhaka' },
-  { id: 'mymensingh', en: 'Mymensingh', division: 'mymensingh' },
-  { id: 'cumilla', en: 'Cumilla', division: 'chittagong' },
-  { id: 'noakhali', en: 'Noakhali', division: 'chittagong' },
-  { id: 'chattogram', en: 'Chattogram', division: 'chittagong' },
-  { id: 'sylhet', en: 'Sylhet', division: 'sylhet' },
-  { id: 'faridpur', en: 'Faridpur', division: 'khulna' },
-  { id: 'gopalgonj', en: 'Gopalgonj', division: 'khulna' },
-  { id: 'jhenaidah', en: 'Jhenaidah', division: 'khulna' },
-  { id: 'khulna', en: 'Khulna', division: 'khulna' },
-  { id: 'barishal', en: 'Barishal', division: 'barisal' },
-  { id: 'bogura', en: 'Bogura', division: 'rajshahi' },
-  { id: 'rajshahi', en: 'Rajshahi', division: 'rajshahi' },
-  { id: 'sirajgonj', en: 'Sirajgonj', division: 'rajshahi' },
-  { id: 'rangpur', en: 'Rangpur', division: 'rangpur' },
-  { id: 'dinajpur', en: 'Dinajpur', division: 'rangpur' }
+  { id: 'narayanganj', en: 'Narayanganj', bn: 'নারায়ণগঞ্জ', group: 'central', division: 'dhaka' },
+  { id: 'gazipur', en: 'Gazipur', bn: 'গাজীপুর', group: 'central', division: 'dhaka' },
+  { id: 'narsingdi', en: 'Narsingdi', bn: 'নরসিংদী', group: 'central', division: 'dhaka' },
+  { id: 'tangail', en: 'Tangail', bn: 'টাঙ্গাইল', group: 'central', division: 'dhaka' },
+  { id: 'kishoreganj', en: 'Kishoreganj', bn: 'কিশোরগঞ্জ', group: 'central', division: 'dhaka' },
+  { id: 'mymensingh', en: 'Mymensingh', bn: 'ময়মনসিংহ', group: 'central', division: 'mymensingh' },
+  { id: 'cumilla', en: 'Cumilla', bn: 'কুমিল্লা', group: 'east', division: 'chittagong' },
+  { id: 'noakhali', en: 'Noakhali', bn: 'নোয়াখালী', group: 'east', division: 'chittagong' },
+  { id: 'chattogram', en: 'Chattogram', bn: 'চট্টগ্রাম', group: 'east', division: 'chittagong' },
+  { id: 'sylhet', en: 'Sylhet', bn: 'সিলেট', group: 'east', division: 'sylhet' },
+  { id: 'faridpur', en: 'Faridpur', bn: 'ফরিদপুর', group: 'south', division: 'khulna' },
+  { id: 'gopalgonj', en: 'Gopalgonj', bn: 'গোপালগঞ্জ', group: 'south', division: 'khulna' },
+  { id: 'jhenaidah', en: 'Jhenaidah', bn: 'ঝিনাইদহ', group: 'south', division: 'khulna' },
+  { id: 'khulna', en: 'Khulna', bn: 'খুলনা', group: 'south', division: 'khulna' },
+  { id: 'barishal', en: 'Barishal', bn: 'বরিশাল', group: 'south', division: 'barisal' },
+  { id: 'bogura', en: 'Bogura', bn: 'বগুড়া', group: 'north', division: 'rajshahi' },
+  { id: 'rajshahi', en: 'Rajshahi', bn: 'রাজশাহী', group: 'north', division: 'rajshahi' },
+  { id: 'sirajgonj', en: 'Sirajgonj', bn: 'সিরাজগঞ্জ', group: 'north', division: 'rajshahi' },
+  { id: 'rangpur', en: 'Rangpur', bn: 'রংপুর', group: 'north', division: 'rangpur' },
+  { id: 'dinajpur', en: 'Dinajpur', bn: 'দিনাজপুর', group: 'north', division: 'rangpur' }
 ];
+
+export const ZONE_GROUPS = [
+  { id: 'central', bn: 'সেন্ট্রাল জোন', en: 'Central Zone' },
+  { id: 'east', bn: 'ইস্ট জোন', en: 'East Zone' },
+  { id: 'south', bn: 'সাউথ জোন', en: 'South Zone' },
+  { id: 'north', bn: 'নর্থ জোন', en: 'North Zone' }
+];
+
+export const ZONE_BY_ID = Object.fromEntries(ZONES.map((z) => [z.id, z]));
 
 // Spelling variants seen in Excel sheets -> zone id
 const ZONE_ALIASES = {
@@ -71,4 +80,38 @@ export function deriveFromZones(zoneRates) {
   const ds = Object.values(divisionRates);
   const todayRate = ds.length ? Math.round(ds.reduce((a, b) => a + b, 0) / ds.length) : 0;
   return { divisionRates, todayRate };
+}
+
+/**
+ * The rate an item has for a region. `region` is 'all', a division id or a zone id.
+ * A zone uses its own rate when the item has one, otherwise the rate of the division it belongs to,
+ * otherwise the national rate.
+ */
+export function rateForRegion(item, region) {
+  if (!region || region === 'all') return item.todayRate;
+  const zone = ZONE_BY_ID[region];
+  if (zone) {
+    if (valid(item.zoneRates?.[zone.id])) return Number(item.zoneRates[zone.id]);
+    if (valid(item.divisionRates?.[zone.division])) return Number(item.divisionRates[zone.division]);
+    return item.todayRate;
+  }
+  return valid(item.divisionRates?.[region]) ? Number(item.divisionRates[region]) : item.todayRate;
+}
+
+/** Drop the item's own zone rates for the given division (or all of them) so the division rate applies again. */
+export function clearZoneRates(item, divisionId) {
+  if (!item.zoneRates) return item;
+  const rest = {};
+  for (const z of ZONES) {
+    if (item.zoneRates[z.id] !== undefined && divisionId && divisionId !== 'all' && z.division !== divisionId) rest[z.id] = item.zoneRates[z.id];
+  }
+  return { ...item, zoneRates: rest };
+}
+
+/** "সেন্ট্রাল জোন (গাজীপুর)" for a zone id; null for anything else. */
+export function zoneRegionName(region, lang = 'bn') {
+  const z = ZONE_BY_ID[region];
+  if (!z) return null;
+  const g = ZONE_GROUPS.find((x) => x.id === z.group);
+  return lang === 'bn' ? `${g.bn} (${z.bn})` : `${g.en} (${z.en})`;
 }

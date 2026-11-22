@@ -179,6 +179,7 @@ export function applyExcelPlan(items, rows, { dateISO, previousDateISO, bookingP
       todayRate: row.todayRate,
       yesterdayRate: row.prevRate ?? (dayChanged ? item.todayRate : item.yesterdayRate),
       divisionRates: row.divisionRates,
+      zoneRates: row.column.zones,
       status: 'available'
     };
   });
@@ -197,6 +198,7 @@ export function applyExcelPlan(items, rows, { dateISO, previousDateISO, bookingP
       bookingPhone: bookingPhone || '',
       notes: '',
       divisionRates: row.divisionRates,
+      zoneRates: row.column.zones,
       verified: true
     };
   });
