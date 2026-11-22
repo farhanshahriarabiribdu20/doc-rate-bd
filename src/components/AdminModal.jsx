@@ -1,13 +1,14 @@
 import React, { useState, useEffect, useCallback, useRef } from 'react';
 import {
   X, Lock, ShieldCheck, Plus, Trash2, Download, Upload, RotateCcw, Check, Settings,
-  Bird, Phone, MessageSquareText, CloudUpload, LogOut, ChevronDown, ChevronUp, CalendarClock, Egg, AlertTriangle, ClipboardPaste, Undo2, History, Megaphone, FileSpreadsheet, Inbox
-} from 'lucide-react';
+  Bird, Phone, MessageSquareText, CloudUpload, LogOut, ChevronDown, ChevronUp, CalendarClock, Egg, AlertTriangle, ClipboardPaste, Undo2, History, Megaphone, FileSpreadsheet, Inbox, Store } from 'lucide-react';
 import WhatsAppPastePanel from './WhatsAppPastePanel';
 import VersionHistoryPanel from './VersionHistoryPanel';
 import ExcelImportPanel from './ExcelImportPanel';
 import ReadyExcelPanel from './ReadyExcelPanel';
 import SubmissionsPanel from './SubmissionsPanel';
+import MarketAdminPanel from './MarketAdminPanel';
+import { fetchMarketAdmin, marketAdminAction } from '../services/market';
 import { applyReadyPlan } from '../utils/readyExcel';
 import { applyExcelPlan } from '../utils/excelRates';
 import { clearZoneRates } from '../data/zones';
@@ -191,6 +192,33 @@ function AdminModalContent({
       setSubs((prev) => prev.filter((x) => x.id !== sub.id));
       showToast('রেটটি বাতিল করা হয়েছে।');
     } else showToast('বাতিল করা যায়নি। আবার চেষ্টা করুন।', 'error');
+  };
+
+  // ---- seller marketplace moderation ----
+  const [market, setMarket] = useState(null);
+  const [marketLoading, setMarketLoading] = useState(false);
+  const [marketError, setMarketError] = useState('');
+
+  const loadMarket = useCallback(async () => {
+    setMarketLoading(true);
+    setMarketError('');
+    const data = await fetchMarketAdmin(adminKey);
+    if (data === null) setMarketError('বিক্রেতাদের বিজ্ঞাপন লোড করা যায়নি। আবার রিফ্রেশ করুন।');
+    else setMarket(data);
+    setMarketLoading(false);
+  }, [adminKey]);
+
+  const onMarketTab = activeTab === 'market';
+  useEffect(() => {
+    if (adminKey) loadMarket();
+  }, [adminKey, onMarketTab, loadMarket]);
+
+  const handleMarketAction = async (payload) => {
+    const r = await marketAdminAction(adminKey, payload);
+    if (r.ok) {
+      setMarket({ items: r.items, banned: r.banned, requireApproval: r.requireApproval });
+      showToast('✅ হয়েছে।');
+    } else showToast(r.error || 'করা যায়নি। আবার চেষ্টা করুন।', 'error');
   };
 
   // ---- feedback inbox ----
@@ -615,6 +643,12 @@ function AdminModalContent({
                   <span className="ml-1 px-1.5 py-0.5 rounded-full text-[10px] bg-amber-400 text-slate-950 font-black">{subs.length}</span>
                 )}
               </button>
+              <button onClick={() => setActiveTab('market')} className={tabClass('market')}>
+                <Store className="w-4 h-4" /> বিক্রেতার বিজ্ঞাপন
+                {(market?.items || []).some((i) => i.status === 'pending') && (
+                  <span className="ml-1 px-1.5 py-0.5 rounded-full text-[10px] bg-amber-400 text-slate-950 font-black">{market.items.filter((i) => i.status === 'pending').length}</span>
+                )}
+              </button>
               <button onClick={() => setActiveTab('feedback')} className={tabClass('feedback')}>
                 <MessageSquareText className="w-4 h-4" /> মতামত ও পরামর্শ
                 {feedbacks.length > 0 && (
@@ -884,6 +918,10 @@ function AdminModalContent({
                 onApprove={handleApproveSub}
                 onReject={handleRejectSub}
               />
+            )}
+
+            {activeTab === 'market' && (
+              <MarketAdminPanel data={market} loading={marketLoading} error={marketError} onReload={loadMarket} onAction={handleMarketAction} />
             )}
 
             {activeTab === 'feedback' && (
