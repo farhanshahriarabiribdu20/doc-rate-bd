@@ -1,5 +1,5 @@
 import React from 'react';
-import { Calendar, PhoneCall, ShieldCheck, Calculator as CalcIcon } from 'lucide-react';
+import { Calendar, PhoneCall, ShieldCheck, Calculator as CalcIcon, Moon, Sun } from 'lucide-react';
 
 export default function Navbar({ 
   lang, 
@@ -11,6 +11,8 @@ export default function Navbar({
   onOpenCalculator,
   onOpenBanner,
   liveVisitors,
+  isDark,
+  toggleTheme,
   settings 
 }) {
   const today = new Intl.DateTimeFormat(lang === 'bn' ? 'bn-BD' : 'en-US', {
@@ -63,6 +65,14 @@ export default function Navbar({
               <PhoneCall className="w-3 h-3 text-emerald-400" />
               <span>{lang === 'bn' ? 'হটলাইন:' : 'Hotline:'} {settings.hotline || '01619-500178'}</span>
             </a>
+            <button
+              onClick={toggleTheme}
+              aria-label={isDark ? 'Light mode' : 'Dark mode'}
+              title={isDark ? 'লাইট মোড' : 'ডার্ক মোড'}
+              className="flex items-center justify-center w-7 h-6 rounded-full bg-emerald-900/80 hover:bg-emerald-800 text-amber-300 border border-emerald-700/60 transition cursor-pointer"
+            >
+              {isDark ? <Sun className="w-3.5 h-3.5" /> : <Moon className="w-3.5 h-3.5" />}
+            </button>
             <button 
               onClick={() => setLang(lang === 'bn' ? 'en' : 'bn')}
               className="font-bold tracking-wider text-[11px] px-2.5 py-0.5 rounded-full bg-emerald-900/80 hover:bg-emerald-800 text-emerald-100 border border-emerald-700/60 transition cursor-pointer"
