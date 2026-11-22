@@ -9,7 +9,7 @@ import ExcelImportPanel from './ExcelImportPanel';
 import { applyExcelPlan } from '../utils/excelRates';
 import { clearZoneRates } from '../data/zones';
 import {
-  adminLogin, publishSiteData, fetchFeedbacks, deleteFeedback, clearAllFeedbacks
+  adminLogin, publishSiteData, fetchFeedbacks, deleteFeedback, clearAllFeedbacks, saveRateDays
 } from '../services/api';
 import { todayISO } from '../utils/date';
 import { DIVISIONS } from '../data/initialData';
@@ -337,7 +337,7 @@ function AdminModalContent({
   };
 
   // Excel upload: today's rates from the chosen date sheet (auto-published afterwards).
-  const handleApplyExcel = ({ sheet, plan }) => {
+  const handleApplyExcel = ({ sheet, plan, archive }) => {
     forceSnapshotRef.current = true; // the state before the import stays in history, so it can be undone
     setRates((prev) => applyExcelPlan(prev, plan.rows, {
       dateISO: sheet.dateISO,
@@ -347,6 +347,12 @@ function AdminModalContent({
     setSettings((prev) => ({ ...prev, reportDateISO: sheet.dateISO }));
     setActiveTab('doc');
     showToast(`✅ ${plan.rows.length}টি রেট এক্সেল থেকে বসানো হয়েছে। কিছুক্ষণের মধ্যে অটো-প্রকাশ হবে।`);
+    if (archive?.length) {
+      saveRateDays(adminKey, archive).then((r) => {
+        if (r.ok) showToast(`📅 ${r.saved}টি আগের তারিখের রেট "তারিখ অনুযায়ী রেট"-এর জন্য সংরক্ষিত হয়েছে।`);
+        else showToast('আগের তারিখগুলো সংরক্ষণ করা যায়নি। আবার আপলোড করে দেখুন।', 'error');
+      });
+    }
   };
 
   // Undo: load an earlier version back into the editor; auto-publish then publishes it.
@@ -902,7 +908,7 @@ function AdminModalContent({
 
             {/* TAB: EXCEL UPLOAD */}
             {activeTab === 'excel' && (
-              <ExcelImportPanel rates={rates} reportDateISO={settings.reportDateISO} onApply={handleApplyExcel} />
+              <ExcelImportPanel rates={rates} reportDateISO={settings.reportDateISO} bookingPhone={settings.whatsapp || settings.hotline || ''} onApply={handleApplyExcel} />
             )}
 
             {/* TAB: HISTORY / UNDO */}
