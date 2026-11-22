@@ -106,19 +106,14 @@ export default function RateCard({ item, selectedDivision, isStale = false, lang
           </div>
         </div>
 
-        {/* Notes & Extra Info */}
-        <div className="mt-3 pt-3 border-t border-slate-100 flex items-center justify-between text-xs text-slate-500">
-          <span className="font-medium">
-            {lang === 'bn' ? `ন্যূনতম বুকিং: ${item.minBooking || 500} পিস` : `Min: ${item.minBooking || 500} pcs`}
-          </span>
-          {item.notes ? (
+        {/* Company note (only when there is one) */}
+        {item.notes && (
+          <div className="mt-3 pt-3 border-t border-slate-100 flex items-center justify-end text-xs">
             <span className="text-emerald-700 font-bold bg-emerald-50 px-2 py-0.5 rounded-md border border-emerald-200/60 text-[11px]">
               {item.notes}
             </span>
-          ) : (
-            <span className="text-slate-400 text-[11px]">{lang === 'bn' ? 'ডেলিভারি প্রস্তুত' : 'Ready Delivery'}</span>
-          )}
-        </div>
+          </div>
+        )}
       </div>
     </div>
   );

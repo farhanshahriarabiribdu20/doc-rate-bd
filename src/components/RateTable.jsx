@@ -33,7 +33,7 @@ export default function RateTable({ rates, selectedDivision, isStale = false, la
             </span>
           </div>
           <p className="text-xs text-slate-500 font-medium mt-0.5">
-            {lang === 'bn' ? 'প্রতিটি কোম্পানির অফিশিয়াল দর, জোন ও বুকিং সরাসরি সম্পন্ন করুন' : 'Official rates, zones, and direct booking across all brands'}
+            {lang === 'bn' ? 'প্রতিটি কোম্পানির অফিশিয়াল দর, জোন ও বুকিং সরাসরি সম্পন্ন করুন' : 'Official rates and zone-wise prices across all brands'}
           </p>
         </div>
 
@@ -94,9 +94,7 @@ export default function RateTable({ rates, selectedDivision, isStale = false, la
                       <span className="inline-block px-2 py-0.5 rounded-md bg-emerald-50 text-emerald-800 border border-emerald-200/80 font-semibold text-[11px]">
                         {item.notes}
                       </span>
-                    ) : (
-                      <span className="text-slate-400 font-medium">ন্যূনতম {item.minBooking || 500} পিস</span>
-                    )}
+                    ) : null}
                   </td>
                   <td className="py-3.5 px-4 text-center">
                     {isStale ? (
