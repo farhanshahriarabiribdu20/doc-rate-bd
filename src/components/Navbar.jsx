@@ -135,6 +135,17 @@ export default function Navbar({
             <span>{lang === 'bn' ? 'রেডি মুরগি ও ডিম' : 'Ready & Eggs'}</span>
             <span className="w-2 h-2 rounded-full bg-amber-400 animate-pulse"></span>
           </button>
+          <button
+            onClick={() => setActiveTab('market')}
+            className={`px-3 sm:px-4 py-1.5 rounded-xl font-black text-xs transition-all cursor-pointer flex items-center gap-1.5 ${
+              activeTab === 'market'
+                ? 'bg-emerald-700 text-white shadow-xs'
+                : 'text-slate-600 hover:text-slate-900'
+            }`}
+          >
+            <span>🛒</span>
+            <span>{lang === 'bn' ? 'বিক্রির বাজার' : 'Marketplace'}</span>
+          </button>
         </nav>
 
         {/* Action Buttons: Facebook, WhatsApp, Calculator */}

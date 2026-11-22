@@ -29,6 +29,8 @@ import DateRatePicker from './components/DateRatePicker';
 import RateSubmitModal from './components/RateSubmitModal';
 import RateCta from './components/RateCta';
 import GallerySection from './components/GallerySection';
+import MarketSection from './components/MarketSection';
+import SellerModal from './components/SellerModal';
 import { useLiveVisitors } from './utils/useLiveVisitors';
 
 // Last data published by the admin (kept for instant load / offline use).
@@ -76,7 +78,7 @@ export default function App() {
     document.documentElement.classList.toggle('dark', isDark);
     try { localStorage.setItem('fn_theme', isDark ? 'dark' : 'light'); } catch { /* ignore */ }
   }, [isDark]);
-  const [activeTab, setActiveTab] = useState('doc'); // 'doc' | 'ready'
+  const [activeTab, setActiveTab] = useState('doc'); // 'doc' | 'ready' | 'market'
 
   // Site data: published (server) data wins over bundled defaults.
   const [settings, setSettings] = useState(() => buildSettings(cached?.settings));
@@ -215,6 +217,8 @@ export default function App() {
   const [isShareOpen, setIsShareOpen] = useState(false);
   const [isBannerOpen, setIsBannerOpen] = useState(false);
   const live = useLiveVisitors(settings.showLiveVisitors !== false);
+  const [sellerOpen, setSellerOpen] = useState(false); // seller login / ads modal
+  const [marketKey, setMarketKey] = useState(0); // bump to reload the public listings
   const [submitKind, setSubmitKind] = useState(null); // visitor rate form: null | 'ready' | 'doc'
   const [isAdminOpen, setIsAdminOpen] = useState(false);
   const [bookingItem, setBookingItem] = useState(null);
@@ -391,6 +395,18 @@ export default function App() {
               <span className="text-[10px] px-2 py-0.5 rounded-full bg-amber-400 text-slate-950 font-black animate-pulse">
                 {readyRates.length} মোকাম
               </span>
+            </button>
+
+            <button
+              onClick={() => setActiveTab('market')}
+              className={`flex items-center gap-2 px-4 sm:px-6 py-2.5 rounded-xl font-black text-xs sm:text-sm transition-all cursor-pointer ${
+                activeTab === 'market'
+                  ? 'bg-emerald-600 text-white shadow-md shadow-emerald-950/20'
+                  : 'text-slate-600 hover:text-slate-900 hover:bg-slate-50'
+              }`}
+            >
+              <span>🛒</span>
+              <span>{lang === 'bn' ? 'বিক্রির বাজার' : 'Marketplace'}</span>
             </button>
           </div>
         </div>
@@ -584,9 +600,13 @@ export default function App() {
             <span>➔</span>
           </a>
         </div>
+        {activeTab === 'market' && (
+          <MarketSection lang={lang} onOpenSeller={() => setSellerOpen(true)} refreshKey={marketKey} />
+        )}
       </main>
 
       {/* Modals */}
+      {sellerOpen && <SellerModal onClose={() => setSellerOpen(false)} onChanged={() => setMarketKey((k) => k + 1)} />}
       {submitKind && (
         <RateSubmitModal
           lang={lang}
