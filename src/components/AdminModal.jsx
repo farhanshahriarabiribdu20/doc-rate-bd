@@ -6,6 +6,8 @@ import {
 import WhatsAppPastePanel from './WhatsAppPastePanel';
 import VersionHistoryPanel from './VersionHistoryPanel';
 import ExcelImportPanel from './ExcelImportPanel';
+import ReadyExcelPanel from './ReadyExcelPanel';
+import { applyReadyPlan } from '../utils/readyExcel';
 import { applyExcelPlan } from '../utils/excelRates';
 import { clearZoneRates } from '../data/zones';
 import {
@@ -355,6 +357,13 @@ function AdminModalContent({
         else showToast('আগের তারিখগুলো সংরক্ষণ করা যায়নি। আবার আপলোড করে দেখুন।', 'error');
       });
     }
+  };
+
+  // Ready broiler/color Excel: the 21 mokam rates (auto-published afterwards).
+  const handleApplyReadyExcel = ({ sheet, plan }) => {
+    forceSnapshotRef.current = true; // the state before the import stays in history, so it can be undone
+    setReadyRates((prev) => applyReadyPlan(prev, plan.rows));
+    showToast(`✅ ${plan.rows.length}টি মোকামের রেডি রেট (${sheet.name}) বসানো হয়েছে। কিছুক্ষণের মধ্যে অটো-প্রকাশ হবে।`);
   };
 
   // Undo: load an earlier version back into the editor; auto-publish then publishes it.
@@ -913,7 +922,10 @@ function AdminModalContent({
 
             {/* TAB: EXCEL UPLOAD */}
             {activeTab === 'excel' && (
-              <ExcelImportPanel rates={rates} reportDateISO={settings.reportDateISO} bookingPhone={settings.whatsapp || settings.hotline || ''} onApply={handleApplyExcel} />
+              <div className="space-y-5">
+                <ExcelImportPanel rates={rates} reportDateISO={settings.reportDateISO} bookingPhone={settings.whatsapp || settings.hotline || ''} onApply={handleApplyExcel} />
+                <ReadyExcelPanel readyRates={readyRates} onApply={handleApplyReadyExcel} />
+              </div>
             )}
 
             {/* TAB: HISTORY / UNDO */}
