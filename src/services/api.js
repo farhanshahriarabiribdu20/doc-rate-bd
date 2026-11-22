@@ -133,3 +133,35 @@ export async function saveRateDays(key, days, kind = 'doc') {
     return { ok: true, saved };
   } catch { return { ok: false, saved }; }
 }
+
+/** Public: a visitor proposes a rate; it is only stored for the admin to approve. Returns { ok, error }. */
+export async function submitRate(data) {
+  try {
+    const res = await fetch('/api/rate-submissions', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(data)
+    });
+    const body = await json(res);
+    return { ok: res.ok, error: body?.error || '' };
+  } catch {
+    return { ok: false, error: '' };
+  }
+}
+
+/** Admin: the pending visitor rates, or null on failure. */
+export async function fetchRateSubmissions(key) {
+  try {
+    const res = await fetch('/api/rate-submissions', { headers: adminHeaders(key) });
+    const body = await json(res);
+    return res.ok && body?.success && Array.isArray(body.submissions) ? body.submissions : null;
+  } catch { return null; }
+}
+
+/** Admin: drop handled submissions (approved or rejected). */
+export async function deleteRateSubmissions(key, ids) {
+  try {
+    const res = await fetch('/api/rate-submissions', { method: 'DELETE', headers: adminHeaders(key), body: JSON.stringify({ ids }) });
+    return res.ok;
+  } catch { return false; }
+}
