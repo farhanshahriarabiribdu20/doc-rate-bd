@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { X, MessageCircle, Phone, Send, CheckCircle2 } from 'lucide-react';
+import { X, MessageCircle, Phone, CheckCircle2 } from 'lucide-react';
 
 export default function BookingModal(props) {
   if (!props.isOpen || !props.selectedItem) return null;

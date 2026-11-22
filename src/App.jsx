@@ -366,40 +366,40 @@ export default function App() {
 
         {/* Primary Market Section Switcher Tabs */}
         <div className="flex items-center justify-center mb-6">
-          <div className="inline-flex p-1.5 rounded-2xl bg-white border border-slate-200/90 shadow-xs gap-1.5">
+          <div className="grid grid-cols-3 w-full sm:w-auto sm:inline-flex p-1.5 rounded-2xl bg-white border border-slate-200/90 shadow-xs gap-1.5">
             <button
               onClick={() => setActiveTab('doc')}
-              className={`flex items-center gap-2 px-4 sm:px-6 py-2.5 rounded-xl font-black text-xs sm:text-sm transition-all cursor-pointer ${
+              className={`flex flex-col sm:flex-row items-center justify-center text-center gap-0.5 sm:gap-2 px-1 sm:px-6 py-2 sm:py-2.5 rounded-xl font-black text-[11px] sm:text-sm leading-tight transition-all cursor-pointer ${
                 activeTab === 'doc'
                   ? 'bg-emerald-600 text-white shadow-md shadow-emerald-950/20'
                   : 'text-slate-600 hover:text-slate-900 hover:bg-slate-50'
               }`}
             >
               <span>🐣</span>
-              <span>{lang === 'bn' ? 'বাচ্চার বাজার দর (DOC)' : 'Day-Old Chicks (DOC)'}</span>
-              <span className="text-[10px] px-2 py-0.5 rounded-full bg-white/20 text-white font-bold">
+              <span>{lang === 'bn' ? <>বাচ্চার দর<span className="hidden sm:inline"> (DOC)</span></> : 'Day-Old Chicks (DOC)'}</span>
+              <span className="hidden sm:inline text-[10px] px-2 py-0.5 rounded-full bg-white/20 text-white font-bold">
                 {shownRates.length}
               </span>
             </button>
 
             <button
               onClick={() => setActiveTab('ready')}
-              className={`flex items-center gap-2 px-4 sm:px-6 py-2.5 rounded-xl font-black text-xs sm:text-sm transition-all cursor-pointer ${
+              className={`flex flex-col sm:flex-row items-center justify-center text-center gap-0.5 sm:gap-2 px-1 sm:px-6 py-2 sm:py-2.5 rounded-xl font-black text-[11px] sm:text-sm leading-tight transition-all cursor-pointer ${
                 activeTab === 'ready'
                   ? 'bg-emerald-600 text-white shadow-md shadow-emerald-950/20'
                   : 'text-slate-600 hover:text-slate-900 hover:bg-slate-50'
               }`}
             >
               <span>🍗</span>
-              <span>{lang === 'bn' ? 'রেডি মুরগি ও ডিমের দর' : 'Ready Birds & Eggs'}</span>
-              <span className="text-[10px] px-2 py-0.5 rounded-full bg-amber-400 text-slate-950 font-black animate-pulse">
+              <span>{lang === 'bn' ? <>রেডি মুরগি<span className="hidden sm:inline"> ও ডিমের দর</span></> : 'Ready Birds & Eggs'}</span>
+              <span className="hidden sm:inline text-[10px] px-2 py-0.5 rounded-full bg-amber-400 text-slate-950 font-black animate-pulse">
                 {readyRates.length} মোকাম
               </span>
             </button>
 
             <button
               onClick={() => setActiveTab('market')}
-              className={`flex items-center gap-2 px-4 sm:px-6 py-2.5 rounded-xl font-black text-xs sm:text-sm transition-all cursor-pointer ${
+              className={`flex flex-col sm:flex-row items-center justify-center text-center gap-0.5 sm:gap-2 px-1 sm:px-6 py-2 sm:py-2.5 rounded-xl font-black text-[11px] sm:text-sm leading-tight transition-all cursor-pointer ${
                 activeTab === 'market'
                   ? 'bg-emerald-600 text-white shadow-md shadow-emerald-950/20'
                   : 'text-slate-600 hover:text-slate-900 hover:bg-slate-50'

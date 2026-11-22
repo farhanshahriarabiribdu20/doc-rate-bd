@@ -1,16 +1,5 @@
 import React, { useState } from 'react';
-import { 
-  ShoppingBag, 
-  MapPin, 
-  Search, 
-  LayoutGrid, 
-  Table as TableIcon, 
-  TrendingUp, 
-  Egg, 
-  Bird, 
-  Feather, 
-  ExternalLink 
-} from 'lucide-react';
+import { ShoppingBag, MapPin, Search, LayoutGrid, Table as TableIcon, Egg, Bird } from 'lucide-react';
 import { getReadyMarketStats } from '../data/readyMarketData';
 import { formatBn, formatEn, todayISO } from '../utils/date';
 

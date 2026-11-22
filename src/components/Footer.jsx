@@ -1,6 +1,6 @@
 import React from 'react';
 import { YOUTUBE_URL, FB_PAGE_URL } from '../data/links';
-import { Phone, MessageCircle, MapPin, ShieldAlert, ShieldCheck, Heart } from 'lucide-react';
+import { Phone, MessageCircle, MapPin, ShieldAlert, ShieldCheck } from 'lucide-react';
 
 export default function Footer({ lang, isStale = false }) {
   return (

@@ -1,6 +1,6 @@
 import React from 'react';
 import { YOUTUBE_URL, FB_PAGE_URL } from '../data/links';
-import { Calendar, PhoneCall, ShieldCheck, Calculator as CalcIcon, Moon, Sun } from 'lucide-react';
+import { Calendar, PhoneCall, Calculator as CalcIcon, Moon, Sun } from 'lucide-react';
 
 export default function Navbar({ 
   lang, 
@@ -112,33 +112,33 @@ export default function Navbar({
         </div>
 
         {/* Middle Section Navigation Tabs */}
-        <nav className="flex items-center bg-slate-100 p-1 rounded-2xl border border-slate-200/90 shadow-2xs">
+        <nav className="order-last sm:order-none w-full sm:w-auto flex items-center bg-slate-100 p-1 rounded-2xl border border-slate-200/90 shadow-2xs">
           <button
             onClick={() => setActiveTab('doc')}
-            className={`px-3 sm:px-4 py-1.5 rounded-xl font-black text-xs transition-all cursor-pointer flex items-center gap-1.5 ${
+            className={`flex-1 sm:flex-none justify-center whitespace-nowrap px-1.5 sm:px-4 py-1.5 rounded-xl font-black text-[11px] sm:text-xs transition-all cursor-pointer flex items-center gap-1 sm:gap-1.5 ${
               activeTab === 'doc'
                 ? 'bg-emerald-700 text-white shadow-xs'
                 : 'text-slate-600 hover:text-slate-900'
             }`}
           >
             <span>🐣</span>
-            <span>{lang === 'bn' ? 'বাচ্চার দর (DOC)' : 'DOC Rates'}</span>
+            <span>{lang === 'bn' ? <>বাচ্চার দর<span className="hidden sm:inline"> (DOC)</span></> : 'DOC Rates'}</span>
           </button>
           <button
             onClick={() => setActiveTab('ready')}
-            className={`px-3 sm:px-4 py-1.5 rounded-xl font-black text-xs transition-all cursor-pointer flex items-center gap-1.5 ${
+            className={`flex-1 sm:flex-none justify-center whitespace-nowrap px-1.5 sm:px-4 py-1.5 rounded-xl font-black text-[11px] sm:text-xs transition-all cursor-pointer flex items-center gap-1 sm:gap-1.5 ${
               activeTab === 'ready'
                 ? 'bg-emerald-700 text-white shadow-xs'
                 : 'text-slate-600 hover:text-slate-900'
             }`}
           >
             <span>🍗</span>
-            <span>{lang === 'bn' ? 'রেডি মুরগি ও ডিম' : 'Ready & Eggs'}</span>
-            <span className="w-2 h-2 rounded-full bg-amber-400 animate-pulse"></span>
+            <span>{lang === 'bn' ? <>রেডি মুরগি<span className="hidden sm:inline"> ও ডিম</span></> : 'Ready & Eggs'}</span>
+            <span className="hidden sm:inline-block w-2 h-2 rounded-full bg-amber-400 animate-pulse"></span>
           </button>
           <button
             onClick={() => setActiveTab('market')}
-            className={`px-3 sm:px-4 py-1.5 rounded-xl font-black text-xs transition-all cursor-pointer flex items-center gap-1.5 ${
+            className={`flex-1 sm:flex-none justify-center whitespace-nowrap px-1.5 sm:px-4 py-1.5 rounded-xl font-black text-[11px] sm:text-xs transition-all cursor-pointer flex items-center gap-1 sm:gap-1.5 ${
               activeTab === 'market'
                 ? 'bg-emerald-700 text-white shadow-xs'
                 : 'text-slate-600 hover:text-slate-900'

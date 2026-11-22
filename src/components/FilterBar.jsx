@@ -1,5 +1,5 @@
 import React from 'react';
-import { Search, LayoutGrid, Table, ArrowUpDown, MapPin, X, SlidersHorizontal } from 'lucide-react';
+import { Search, LayoutGrid, Table, ArrowUpDown, MapPin, X } from 'lucide-react';
 import { CATEGORIES } from '../data/initialData';
 import { ZONES, ZONE_GROUPS } from '../data/zones';
 

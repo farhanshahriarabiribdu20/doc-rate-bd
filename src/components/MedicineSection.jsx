@@ -1,5 +1,5 @@
 import React from 'react';
-import { Pill, ShieldCheck, CheckCircle2 } from 'lucide-react';
+import { Pill, CheckCircle2 } from 'lucide-react';
 
 export default function MedicineSection({ medicines, settings, lang }) {
   return (
