@@ -148,6 +148,8 @@ export function sanitizeSettings(input) {
   };
   const iso = str(s.reportDateISO, 10);
   if (/^\d{4}-\d{2}-\d{2}$/.test(iso)) out.reportDateISO = iso;
+  const readyIso = str(s.readyDateISO, 10);
+  if (/^\d{4}-\d{2}-\d{2}$/.test(readyIso)) out.readyDateISO = readyIso;
   // drop empty strings so bundled defaults can fill the gaps on the client
   Object.keys(out).forEach((k) => { if (out[k] === '') delete out[k]; });
   return out;

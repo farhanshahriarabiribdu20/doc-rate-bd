@@ -363,6 +363,7 @@ function AdminModalContent({
   const handleApplyReadyExcel = ({ sheet, plan }) => {
     forceSnapshotRef.current = true; // the state before the import stays in history, so it can be undone
     setReadyRates((prev) => applyReadyPlan(prev, plan.rows));
+    if (sheet.dateISO) setSettings((prev) => ({ ...prev, readyDateISO: sheet.dateISO }));
     showToast(`✅ ${plan.rows.length}টি মোকামের রেডি রেট (${sheet.name}) বসানো হয়েছে। কিছুক্ষণের মধ্যে অটো-প্রকাশ হবে।`);
   };
 
@@ -384,6 +385,7 @@ function AdminModalContent({
   // ---- ready market ----
   const handleReadyChange = (id, field, value) => {
     setReadyRates((prev) => prev.map((r) => (r.id === id ? { ...r, [field]: value } : r)));
+    setSettings((prev) => (prev.readyDateISO === todayISO() ? prev : { ...prev, readyDateISO: todayISO() })); // hand-edited rates are today's
   };
 
   // ---- backup ----
@@ -763,6 +765,17 @@ function AdminModalContent({
               <div className="space-y-3">
                 <h4 className="text-sm font-bold text-slate-800">রেডি ব্রয়লার, সোনালী, কালার, ডিম ও পিএস কাল (মোকামভিত্তিক)</h4>
                 <p className="text-[11px] text-slate-500">ব্রয়লার/সোনালী/কালার/পিএস কাল — ৳/কেজি। ডিম — ৳/পিস। বদলানোর পর উপরের "প্রকাশ করুন" চাপুন।</p>
+                <div className="flex flex-wrap items-center gap-2 p-3 bg-emerald-50 border border-emerald-200 rounded-2xl">
+                  <span className="text-xs font-bold text-emerald-900">📅 এই রেটগুলো কোন তারিখের:</span>
+                  <input
+                    type="date"
+                    value={settings.readyDateISO || ''}
+                    onChange={(e) => e.target.value && setSettings((p) => ({ ...p, readyDateISO: e.target.value }))}
+                    className="px-2 py-1 border rounded-lg text-xs font-bold bg-white"
+                  />
+                  <button type="button" onClick={() => setSettings((p) => ({ ...p, readyDateISO: todayISO() }))} className="px-2.5 py-1 rounded-lg bg-emerald-600 text-white text-[11px] font-bold">আজ</button>
+                  <span className="text-[11px] text-emerald-800">Excel দিলে শিটের তারিখ নিজে বসে; হাতে রেট বদলালে আজকের তারিখ বসে।</span>
+                </div>
                 <div className="overflow-x-auto border border-slate-200 rounded-2xl">
                   <table className="w-full text-xs">
                     <thead className="bg-slate-100 text-slate-700">
