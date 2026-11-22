@@ -14,7 +14,7 @@ import AdminModal from './components/AdminModal';
 import FeedbackWidget from './components/FeedbackWidget';
 import ReadyMarketSection from './components/ReadyMarketSection';
 import Footer from './components/Footer';
-import { fetchSiteData } from './services/api';
+import { fetchSiteData, fetchRateDates, fetchRateDay } from './services/api';
 import { ageInDays, formatBn, formatEn, toBnDigits } from './utils/date';
 import {
   INITIAL_RATES,
@@ -25,6 +25,7 @@ import {
 import { INITIAL_READY_RATES } from './data/readyMarketData';
 import { Bird, AlertTriangle } from 'lucide-react';
 import { rateForRegion } from './data/zones';
+import DateRatePicker from './components/DateRatePicker';
 
 // Last data published by the admin (kept for instant load / offline use).
 const CACHE_KEY = 'fosholnexa_published_v1';
@@ -103,6 +104,31 @@ export default function App() {
     return () => { cancelled = true; };
   }, []);
 
+  // Date-wise view: visitors can look at an earlier day. Default = the latest published rates.
+  const [archiveDates, setArchiveDates] = useState([]);
+  const [archive, setArchive] = useState(null); // { date, rates } while an earlier day is shown
+  const [archiveNotice, setArchiveNotice] = useState('');
+  const [archiveBusy, setArchiveBusy] = useState(false);
+  useEffect(() => { fetchRateDates().then(setArchiveDates); }, []);
+
+  const backToLatest = () => { setArchive(null); setArchiveNotice(''); };
+  const handlePickDate = async (date) => {
+    const live = settings.reportDateISO;
+    if (!live || date >= live) { backToLatest(); return; }
+    setArchiveBusy(true);
+    const result = await fetchRateDay(date);
+    setArchiveBusy(false);
+    if (!result || !result.date || !result.rates.length) {
+      setArchiveNotice(lang === 'bn' ? 'এই তারিখে বা এর আগে কোনো রেট সংরক্ষিত নেই।' : 'No rates are saved for this date or any earlier date.');
+      return;
+    }
+    if (result.date >= live) { backToLatest(); return; }
+    setArchive({ date: result.date, rates: result.rates });
+    setArchiveNotice(result.exact ? '' : (lang === 'bn'
+      ? `${formatBn(date)} তারিখে রেট নেই, তাই ${formatBn(result.date)} তারিখের রেট দেখানো হচ্ছে।`
+      : `No rates on ${formatEn(date)}; showing ${formatEn(result.date)} instead.`));
+  };
+
   // Warn before leaving the page with unpublished admin changes.
   useEffect(() => {
     if (!dirty) return undefined;
@@ -130,6 +156,11 @@ export default function App() {
   // Data freshness: very old rates must never look "verified".
   const reportAge = ageInDays(settings.reportDateISO);
   const isStale = reportAge !== null && reportAge >= STALE_AFTER_DAYS;
+  // What the public sections show: an archived day while one is picked, otherwise the latest rates.
+  const shownRates = archive ? archive.rates : rates;
+  const shownStale = archive ? false : isStale;
+  const shownDateBn = archive ? formatBn(archive.date) : settings.reportDateBn;
+  const shownDateEn = archive ? formatEn(archive.date) : settings.reportDateEn;
 
   // Filters & Views
   const [selectedCategory, setSelectedCategory] = useState('all');
@@ -170,7 +201,7 @@ export default function App() {
   }, []);
 
   // Filter pipeline for DOC rates
-  const filteredRates = rates.filter((item) => {
+  const filteredRates = shownRates.filter((item) => {
     if (selectedCategory !== 'all') {
       if (selectedCategory === 'layer_brown' && item.category !== 'layer_brown') return false;
       if (selectedCategory === 'layer_white' && item.category !== 'layer_white') return false;
@@ -222,7 +253,7 @@ export default function App() {
       {/* Main Container */}
       <main className="flex-1 max-w-7xl w-full mx-auto px-4 py-6">
         {/* Outdated-rate warning */}
-        {isStale && (
+        {shownStale && (
           <div role="alert" className="mb-5 flex items-start gap-3 rounded-2xl border border-amber-300 bg-amber-50 p-4 text-amber-950">
             <AlertTriangle className="w-5 h-5 text-amber-600 shrink-0 mt-0.5" />
             <p className="text-xs sm:text-sm font-semibold leading-relaxed">
@@ -254,15 +285,15 @@ export default function App() {
             </p>
             <div className="flex flex-wrap items-center gap-2 mt-3.5">
               <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-white/10 text-emerald-200 text-xs font-semibold border border-white/10">
-                <span>📈 {rates.length}টি জাত/কোম্পানির লাইভ দর</span>
+                <span>📈 {shownRates.length}টি জাত/কোম্পানির {archive ? 'দর' : 'লাইভ দর'}</span>
               </span>
               <span className={`inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-extrabold border ${
-                isStale
+                shownStale
                   ? 'bg-amber-400/20 text-amber-200 border-amber-400/40'
                   : 'bg-emerald-400/20 text-emerald-200 border-emerald-400/30'
               }`}>
-                <span>{isStale ? '⚠️' : '🛡️'}</span>
-                <span>{lang === 'bn' ? `সর্বশেষ আপডেট: ${settings.reportDateBn}` : `Updated: ${settings.reportDateEn}`}</span>
+                <span>{shownStale ? '⚠️' : archive ? '📅' : '🛡️'}</span>
+                <span>{lang === 'bn' ? (archive ? `রেটের তারিখ: ${shownDateBn}` : `সর্বশেষ আপডেট: ${shownDateBn}`) : (archive ? `Rates of: ${shownDateEn}` : `Updated: ${shownDateEn}`)}</span>
               </span>
             </div>
           </div>
@@ -320,10 +351,21 @@ export default function App() {
         {activeTab === 'doc' && (
           <>
             {/* Live Averages & Stats Overview */}
-            <StatsOverview rates={rates} lang={lang} isStale={isStale} />
+            <DateRatePicker
+              lang={lang}
+              liveDate={settings.reportDateISO}
+              dates={archiveDates}
+              viewing={archive?.date || null}
+              notice={archiveNotice}
+              busy={archiveBusy}
+              onPick={handlePickDate}
+              onBackToLive={backToLatest}
+            />
+
+            <StatsOverview rates={shownRates} lang={lang} isStale={shownStale} />
 
             {/* Real Top Hatcheries Live Price Comparison Chart */}
-            <PriceChart rates={rates} lang={lang} />
+            <PriceChart rates={shownRates} lang={lang} />
 
             {/* Filters */}
             <FilterBar
@@ -361,7 +403,7 @@ export default function App() {
                     selectedDivision={selectedDivision}
                     settings={settings}
                     onOpenBooking={(it) => setBookingItem(it)}
-                    isStale={isStale}
+                    isStale={shownStale}
                     lang={lang}
                   />
                 ))}
@@ -372,7 +414,7 @@ export default function App() {
                 selectedDivision={selectedDivision}
                 settings={settings}
                 onOpenBooking={(it) => setBookingItem(it)}
-                isStale={isStale}
+                isStale={shownStale}
                 lang={lang}
               />
             )}

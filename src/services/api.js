@@ -101,3 +101,35 @@ export async function clearAllFeedbacks(key) {
     return res.ok;
   } catch { return false; }
 }
+
+/** Dates that have archived rates, newest first ([] on failure). */
+export async function fetchRateDates() {
+  try {
+    const res = await fetch('/api/rate-days');
+    const body = await json(res);
+    return res.ok && body?.success && Array.isArray(body.dates) ? body.dates : [];
+  } catch { return []; }
+}
+
+/** Rates of `date` or of the latest earlier day that has rates: { date, requested, exact, rates } or null. */
+export async function fetchRateDay(date) {
+  try {
+    const res = await fetch(`/api/rate-days?date=${encodeURIComponent(date)}`);
+    const body = await json(res);
+    return res.ok && body?.success ? body : null;
+  } catch { return null; }
+}
+
+/** Admin: save the archive of several days ([{ date, rates }]) in small batches. Returns { ok, saved }. */
+export async function saveRateDays(key, days) {
+  let saved = 0;
+  try {
+    for (let i = 0; i < days.length; i += 8) {
+      const res = await fetch('/api/rate-days', { method: 'PUT', headers: adminHeaders(key), body: JSON.stringify({ days: days.slice(i, i + 8) }) });
+      const body = await json(res);
+      if (!res.ok || !body?.success) return { ok: false, saved };
+      saved += body.saved || 0;
+    }
+    return { ok: true, saved };
+  } catch { return { ok: false, saved }; }
+}

@@ -1,13 +1,13 @@
 import React, { useMemo, useRef, useState } from 'react';
 import { FileSpreadsheet, Upload, Check, AlertTriangle, Loader2 } from 'lucide-react';
-import { parseCompetitorWorkbook, planExcelImport } from '../utils/excelRates';
+import { parseCompetitorWorkbook, planExcelImport, buildArchiveDays } from '../utils/excelRates';
 import { formatBn } from '../utils/date';
 
 /**
  * Upload the daily "Competitors DOC Rate" Excel, pick the date sheet, review, apply.
  * Nothing changes until "প্রয়োগ করুন"; the admin panel then auto-publishes.
  */
-export default function ExcelImportPanel({ rates, reportDateISO, onApply }) {
+export default function ExcelImportPanel({ rates, reportDateISO, bookingPhone, onApply }) {
   const fileRef = useRef(null);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState('');
@@ -15,6 +15,7 @@ export default function ExcelImportPanel({ rates, reportDateISO, onApply }) {
   const [sheets, setSheets] = useState([]); // parsed date sheets, oldest first
   const [sheetIdx, setSheetIdx] = useState(-1);
   const [skip, setSkip] = useState(() => new Set()); // plan keys the admin unticked
+  const [saveAll, setSaveAll] = useState(true); // also keep every other date of the file for the date-wise view
 
   const handleFile = async (e) => {
     const file = e.target.files?.[0];
@@ -136,8 +137,19 @@ export default function ExcelImportPanel({ rates, reportDateISO, onApply }) {
             </div>
           )}
 
+          {sheets.length > 1 && (
+            <label className="flex items-start gap-2 text-xs font-semibold text-slate-700 cursor-pointer">
+              <input type="checkbox" checked={saveAll} onChange={(e) => setSaveAll(e.target.checked)} className="mt-0.5 cursor-pointer" />
+              <span>ফাইলের বাকি {sheets.length - 1}টি তারিখের রেটও সংরক্ষণ করুন, যাতে সাইটে "তারিখ অনুযায়ী রেট" দেখা যায়</span>
+            </label>
+          )}
+
           <button
-            onClick={() => onApply({ sheet, plan: { ...plan, rows: chosen } })}
+            onClick={() => onApply({
+              sheet,
+              plan: { ...plan, rows: chosen },
+              archive: saveAll ? buildArchiveDays(sheets, sheet.dateISO, rates, skip, bookingPhone) : []
+            })}
             disabled={!chosen.length}
             className="flex items-center gap-1.5 px-4 py-2.5 bg-emerald-600 hover:bg-emerald-700 disabled:opacity-50 text-white rounded-xl text-sm font-black cursor-pointer"
           >

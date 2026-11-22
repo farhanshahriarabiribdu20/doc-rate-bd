@@ -7,6 +7,7 @@ import {
   sanitizeReadyRates,
   sanitizeSettings
 } from './_lib.js';
+import { isDate, saveRateDay } from './_days.js';
 
 const BLOB_PATH = 'site-data.json';
 const HISTORY_PREFIX = 'history/';
@@ -93,6 +94,13 @@ export default async function handler(req, res) {
         contentType: 'application/json',
         cacheControlMaxAge: 60
       });
+
+      // Remember what the site showed on this date, for the visitors' "date-wise rate" view. Never blocks publishing.
+      try {
+        if (isDate(payload.settings?.reportDateISO) && rates.length) await saveRateDay(payload.settings.reportDateISO, rates);
+      } catch (err) {
+        console.error('rate day archive failed:', err);
+      }
 
       return res.status(200).json({ success: true, updatedAt: payload.updatedAt });
     }

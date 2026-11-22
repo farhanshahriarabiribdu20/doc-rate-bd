@@ -1,6 +1,6 @@
 // Reads the "Competitors DOC Rate" Excel (one sheet per date, zones down, company/breed across)
 // and turns one day's sheet into updated site rates.
-import { ZONES, zoneIdFromName, deriveFromZones } from '../data/zones.js';
+import { zoneIdFromName, deriveFromZones } from '../data/zones.js';
 
 const norm = (s) => String(s ?? '').toLowerCase().replace(/[^a-z0-9]/g, '');
 
@@ -168,7 +168,7 @@ export function planExcelImport(sheet, earlierSheets, items) {
 }
 
 /** Apply the (checked) plan rows to the items and return the new items array. */
-export function applyExcelPlan(items, rows, { dateISO, previousDateISO, bookingPhone }) {
+export function applyExcelPlan(items, rows, { dateISO, previousDateISO, bookingPhone, archive = false }) {
   const byId = new Map(rows.map((r) => [r.itemId, r]));
   const dayChanged = Boolean(previousDateISO) && previousDateISO !== dateISO;
   const updated = items.map((item) => {
@@ -177,7 +177,7 @@ export function applyExcelPlan(items, rows, { dateISO, previousDateISO, bookingP
     return {
       ...item,
       todayRate: row.todayRate,
-      yesterdayRate: row.prevRate ?? (dayChanged ? item.todayRate : item.yesterdayRate),
+      yesterdayRate: row.prevRate ?? (archive ? row.todayRate : dayChanged ? item.todayRate : item.yesterdayRate),
       divisionRates: row.divisionRates,
       zoneRates: row.column.zones,
       status: 'available'
@@ -205,4 +205,21 @@ export function applyExcelPlan(items, rows, { dateISO, previousDateISO, bookingP
   return [...updated, ...added];
 }
 
-export const ZONE_COUNT = ZONES.length;
+/**
+ * The rates of every date sheet except `exceptDate`, as [{ date, rates }] for the visitors' date-wise view.
+ * Each day holds only the items that have a rate in that day's sheet.
+ */
+export function buildArchiveDays(sheets, exceptDate, items, skipKeys, bookingPhone) {
+  const days = [];
+  sheets.forEach((sheet, i) => {
+    if (sheet.dateISO === exceptDate) return;
+    const plan = planExcelImport(sheet, sheets.slice(0, i), items);
+    const rows = plan.rows.filter((r) => !skipKeys.has(r.key));
+    if (!rows.length) return;
+    const ids = new Set(rows.map((r) => r.itemId));
+    const rates = applyExcelPlan(items, rows, { dateISO: sheet.dateISO, bookingPhone, archive: true }).filter((it) => ids.has(it.id));
+    days.push({ date: sheet.dateISO, rates });
+  });
+  return days;
+}
+
