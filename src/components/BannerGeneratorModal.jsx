@@ -1,6 +1,7 @@
-import React, { useRef, useEffect, useState } from 'react';
+import React, { useRef, useEffect, useMemo, useState } from 'react';
 import { X, Download, Share2, Image as ImageIcon, Check, Send } from 'lucide-react';
-import { buildShareText, copyToClipboard } from '../utils/shareText';
+import { buildShareText, copyToClipboard, ratesForRegion, regionTitle } from '../utils/shareText';
+import RegionSelect from './RegionSelect';
 import { getReadyMarketStats } from '../data/readyMarketData';
 
 export default function BannerGeneratorModal(props) {
@@ -8,7 +9,9 @@ export default function BannerGeneratorModal(props) {
   return <BannerGeneratorModalContent {...props} />;
 }
 
-function BannerGeneratorModalContent({ onClose, rates, readyRates, feeds, settings, notice, lang }) {
+function BannerGeneratorModalContent({ onClose, rates: allRates, readyRates, feeds, settings, notice, lang }) {
+  const [division, setDivision] = useState('all'); // banner shows one region at a time
+  const rates = useMemo(() => ratesForRegion(allRates, division === 'matrix' ? 'all' : division), [allRates, division]);
   const canvasRef = useRef(null);
   const [downloading, setDownloading] = useState(false);
   const [kitStatus, setKitStatus] = useState('');
@@ -34,7 +37,8 @@ function BannerGeneratorModalContent({ onClose, rates, readyRates, feeds, settin
     day: 'numeric'
   }).format(new Date());
 
-  const todayStr = settings?.reportDateBn || fallbackDate;
+  const baseDateStr = settings?.reportDateBn || fallbackDate;
+  const todayStr = division === 'all' || division === 'matrix' ? baseDateStr : `${baseDateStr} · 📍 ${regionTitle(division)}`;
 
   const broilerList = rates.filter(r => r.category === 'broiler').slice(0, 5);
   const sonaliList = rates.filter(r => r.category === 'sonali').slice(0, 4);
@@ -298,7 +302,7 @@ function BannerGeneratorModalContent({ onClose, rates, readyRates, feeds, settin
   const handlePostKit = async () => {
     const canvas = canvasRef.current;
     if (!canvas) return;
-    const text = buildShareText({ rates, notice, settings });
+    const text = buildShareText({ rates: allRates, notice, settings, division });
     const copied = await copyToClipboard(text);
     const blob = await new Promise((resolve) => canvas.toBlob(resolve, 'image/png'));
     if (!blob) { setKitStatus('ছবি তৈরি করা যায়নি, আবার চেষ্টা করুন।'); return; }
@@ -319,7 +323,7 @@ function BannerGeneratorModalContent({ onClose, rates, readyRates, feeds, settin
   };
 
   const handlePostKitWhatsApp = () => {
-    window.open(`https://api.whatsapp.com/send?text=${encodeURIComponent(buildShareText({ rates, notice, settings }))}`, '_blank');
+    window.open(`https://api.whatsapp.com/send?text=${encodeURIComponent(buildShareText({ rates: allRates, notice, settings, division }))}`, '_blank');
   };
 
   return (
@@ -394,6 +398,8 @@ function BannerGeneratorModalContent({ onClose, rates, readyRates, feeds, settin
           {/* Post kit: text + image in one tap */}
           <div className="rounded-2xl border border-emerald-700/60 bg-emerald-950/40 p-4 space-y-3">
             <p className="text-sm font-extrabold text-emerald-300">📣 পোস্ট কিট — এক ক্লিকে টেক্সট + ছবি</p>
+            <RegionSelect value={division} onChange={setDivision} withMatrix dark />
+            {division === 'matrix' && <p className="text-[11px] text-slate-300">ছবিতে জাতীয় গড় থাকবে, টেক্সটে সব বিভাগের রেট একসাথে যাবে।</p>}
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
               <button
                 onClick={handlePostKit}

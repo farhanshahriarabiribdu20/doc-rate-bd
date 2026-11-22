@@ -297,13 +297,37 @@ function AdminModalContent({
   // Paste from WhatsApp: set today's rates for the chosen companies (auto-published afterwards).
   const [showPaste, setShowPaste] = useState(false);
   const handleApplyPaste = (updates, newDay) => {
+    const divisionIds = DIVISIONS.filter((d) => d.id !== 'all').map((d) => d.id);
+    const byItem = new Map();
+    updates.forEach((u) => { if (!byItem.has(u.id)) byItem.set(u.id, []); byItem.get(u.id).push(u); });
+
     setRates((prev) => prev.map((r) => {
-      const base = newDay ? { ...r, yesterdayRate: r.todayRate } : r;
-      return Object.prototype.hasOwnProperty.call(updates, r.id) ? { ...base, todayRate: updates[r.id] } : base;
+      let next = newDay ? { ...r, yesterdayRate: r.todayRate } : r;
+      const list = byItem.get(r.id);
+      if (!list) return next;
+      let division = { ...(next.divisionRates || {}) };
+      let main = next.todayRate;
+      let divisionTouched = false;
+      let mainSet = false;
+      // 1) whole-country / main-rate lines first, 2) then region-specific lines override them
+      list.filter((u) => u.region === 'all' || u.region === 'national').forEach((u) => {
+        main = u.rate; mainSet = true;
+        if (u.region === 'all') divisionIds.forEach((id) => { division[id] = u.rate; });
+      });
+      list.filter((u) => u.region !== 'all' && u.region !== 'national').forEach((u) => {
+        division[u.region] = u.rate; divisionTouched = true;
+      });
+      // The main rate is the national average of the regions; keep it in step when regions changed.
+      if (divisionTouched && !mainSet && divisionIds.every((id) => Number.isFinite(Number(division[id])))) {
+        main = Math.round(divisionIds.reduce((sum, id) => sum + Number(division[id]), 0) / divisionIds.length);
+      }
+      next = { ...next, todayRate: main };
+      if (next.divisionRates || divisionTouched || list.some((u) => u.region === 'all')) next.divisionRates = division;
+      return next;
     }));
     if (newDay) setSettings((prev) => ({ ...prev, reportDateISO: todayISO() }));
     setShowPaste(false);
-    showToast(`✅ ${Object.keys(updates).length}টি রেট বসানো হয়েছে। কিছুক্ষণের মধ্যে অটো-প্রকাশ হবে।`);
+    showToast(`✅ ${updates.length}টি রেট বসানো হয়েছে। কিছুক্ষণের মধ্যে অটো-প্রকাশ হবে।`);
   };
 
   // Undo: load an earlier version back into the editor; auto-publish then publishes it.
