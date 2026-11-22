@@ -14,6 +14,9 @@ import {
 import { getReadyMarketStats } from '../data/readyMarketData';
 import { formatBn, formatEn, todayISO } from '../utils/date';
 
+// A rate that was not in the sheet is 0: show a dash instead of ৳0.
+const money = (v) => (Number(v) > 0 ? `৳${v}` : '—');
+
 export default function ReadyMarketSection({ readyRates = [], lang = 'bn', settings = {} }) {
   const [search, setSearch] = useState('');
   const [selectedProduct, setSelectedProduct] = useState('all'); // 'all' | 'broiler' | 'sonali' | 'color' | 'egg' | 'ps'
@@ -258,9 +261,9 @@ export default function ReadyMarketSection({ readyRates = [], lang = 'bn', setti
                       {(selectedProduct === 'all' || selectedProduct === 'broiler') && (
                         <td className="py-3.5 px-3 text-center bg-orange-50/20">
                           <div className="font-black text-slate-900 text-xs sm:text-sm">
-                            <span className="text-orange-700">৳{item.broilerGrill}</span> / 
-                            <span className="text-slate-800"> ৳{item.broilerMedium}</span> / 
-                            <span className="text-slate-600"> ৳{item.broilerBig}</span>
+                            <span className="text-orange-700">{money(item.broilerGrill)}</span> / 
+                            <span className="text-slate-800"> {money(item.broilerMedium)}</span> / 
+                            <span className="text-slate-600"> {money(item.broilerBig)}</span>
                           </div>
                           <span className="text-[10px] text-slate-500 font-medium block">গ্রিল / মিডিয়াম / বড়</span>
                         </td>
@@ -270,8 +273,8 @@ export default function ReadyMarketSection({ readyRates = [], lang = 'bn', setti
                       {(selectedProduct === 'all' || selectedProduct === 'sonali') && (
                         <td className="py-3.5 px-3 text-center bg-amber-50/20">
                           <div className="font-black text-slate-900 text-xs sm:text-sm">
-                            <span className="text-amber-700">৳{item.sonali}</span> / 
-                            <span className="text-amber-900 font-extrabold"> ৳{item.sonaliSuper}</span>
+                            <span className="text-amber-700">{money(item.sonali)}</span> / 
+                            <span className="text-amber-900 font-extrabold"> {money(item.sonaliSuper)}</span>
                           </div>
                           <span className="text-[10px] text-slate-500 font-medium block">রেগুলার / সুপার</span>
                         </td>
@@ -280,7 +283,7 @@ export default function ReadyMarketSection({ readyRates = [], lang = 'bn', setti
                       {/* Color Bird */}
                       {(selectedProduct === 'all' || selectedProduct === 'color') && (
                         <td className="py-3.5 px-3 text-center">
-                          <span className="font-black text-slate-900 text-xs sm:text-sm">৳{item.colorBird}</span>
+                          <span className="font-black text-slate-900 text-xs sm:text-sm">{money(item.colorBird)}</span>
                         </td>
                       )}
 
@@ -288,8 +291,8 @@ export default function ReadyMarketSection({ readyRates = [], lang = 'bn', setti
                       {(selectedProduct === 'all' || selectedProduct === 'egg') && (
                         <td className="py-3.5 px-3 text-center bg-yellow-50/20">
                           <div className="font-black text-xs sm:text-sm">
-                            <span className="text-amber-700">৳{item.eggBrown}</span> | 
-                            <span className="text-slate-600"> ৳{item.eggWhite}</span>
+                            <span className="text-amber-700">{money(item.eggBrown)}</span> | 
+                            <span className="text-slate-600"> {money(item.eggWhite)}</span>
                           </div>
                           <span className="text-[10px] text-slate-500 font-medium block">লাল | সাদা</span>
                         </td>
@@ -298,7 +301,7 @@ export default function ReadyMarketSection({ readyRates = [], lang = 'bn', setti
                       {/* PS-Cull */}
                       {(selectedProduct === 'all' || selectedProduct === 'ps') && (
                         <td className="py-3.5 px-3 text-center">
-                          <span className="font-black text-slate-900 text-xs sm:text-sm">৳{item.psCull}</span>
+                          <span className="font-black text-slate-900 text-xs sm:text-sm">{money(item.psCull)}</span>
                         </td>
                       )}
                     </tr>
@@ -343,33 +346,33 @@ export default function ReadyMarketSection({ readyRates = [], lang = 'bn', setti
                     <div className="bg-orange-50/60 p-2.5 rounded-2xl border border-orange-200/60">
                       <span className="text-[10px] font-bold text-orange-900 block">🍗 ব্রয়লার (কেজি)</span>
                       <div className="font-black text-slate-900 text-sm mt-0.5">
-                        ৳{item.broilerGrill} <span className="text-[10px] font-normal text-slate-500">(গ্রিল)</span>
+                        {money(item.broilerGrill)} <span className="text-[10px] font-normal text-slate-500">(গ্রিল)</span>
                       </div>
-                      <span className="text-[10px] text-slate-500 block">মিডিয়াম ৳{item.broilerMedium} | বড় ৳{item.broilerBig}</span>
+                      <span className="text-[10px] text-slate-500 block">মিডিয়াম {money(item.broilerMedium)} | বড় {money(item.broilerBig)}</span>
                     </div>
 
                     <div className="bg-amber-50/60 p-2.5 rounded-2xl border border-amber-200/60">
                       <span className="text-[10px] font-bold text-amber-900 block">🐓 সোনালী (কেজি)</span>
                       <div className="font-black text-slate-900 text-sm mt-0.5">
-                        ৳{item.sonali} <span className="text-[10px] font-normal text-slate-500">(রেগুলার)</span>
+                        {money(item.sonali)} <span className="text-[10px] font-normal text-slate-500">(রেগুলার)</span>
                       </div>
-                      <span className="text-[10px] text-amber-800 font-bold block">সুপার: ৳{item.sonaliSuper}/কেজি</span>
+                      <span className="text-[10px] text-amber-800 font-bold block">সুপার: {money(item.sonaliSuper)}/কেজি</span>
                     </div>
 
                     <div className="bg-yellow-50/60 p-2.5 rounded-2xl border border-yellow-200/60">
                       <span className="text-[10px] font-bold text-yellow-900 block">🥚 ডিম (প্রতি পিস)</span>
                       <div className="font-black text-slate-900 text-sm mt-0.5">
-                        লাল ৳{item.eggBrown}
+                        লাল {money(item.eggBrown)}
                       </div>
-                      <span className="text-[10px] text-slate-500 block">সাদা ডিম ৳{item.eggWhite}</span>
+                      <span className="text-[10px] text-slate-500 block">সাদা ডিম {money(item.eggWhite)}</span>
                     </div>
 
                     <div className="bg-slate-50 p-2.5 rounded-2xl border border-slate-200/80">
                       <span className="text-[10px] font-bold text-slate-700 block">🎨 কালার ও পিএস</span>
                       <div className="font-black text-slate-900 text-xs mt-0.5">
-                        কালার: ৳{item.colorBird}
+                        কালার: {money(item.colorBird)}
                       </div>
-                      <span className="text-[10px] text-slate-600 block">পিএস কাল: ৳{item.psCull}</span>
+                      <span className="text-[10px] text-slate-600 block">পিএস কাল: {money(item.psCull)}</span>
                     </div>
                   </div>
                 </div>

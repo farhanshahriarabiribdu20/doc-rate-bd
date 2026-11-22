@@ -360,11 +360,17 @@ function AdminModalContent({
   };
 
   // Ready broiler/color Excel: the 21 mokam rates (auto-published afterwards).
-  const handleApplyReadyExcel = ({ sheet, plan }) => {
+  const handleApplyReadyExcel = ({ sheet, plan, archive }) => {
     forceSnapshotRef.current = true; // the state before the import stays in history, so it can be undone
     setReadyRates((prev) => applyReadyPlan(prev, plan.rows));
     if (sheet.dateISO) setSettings((prev) => ({ ...prev, readyDateISO: sheet.dateISO }));
     showToast(`✅ ${plan.rows.length}টি মোকামের রেডি রেট (${sheet.name}) বসানো হয়েছে। কিছুক্ষণের মধ্যে অটো-প্রকাশ হবে।`);
+    if (archive?.length) {
+      saveRateDays(adminKey, archive, 'ready').then((r) => {
+        if (r.ok) showToast(`📅 ${r.saved}টি আগের তারিখের মোকাম রেট সংরক্ষিত হয়েছে।`);
+        else showToast('আগের তারিখগুলো সংরক্ষণ করা যায়নি। আবার আপলোড করে দেখুন।', 'error');
+      });
+    }
   };
 
   // Undo: load an earlier version back into the editor; auto-publish then publishes it.

@@ -1,6 +1,6 @@
 import React, { useMemo, useRef, useState } from 'react';
 import { FileSpreadsheet, Upload, Check, AlertTriangle, Loader2 } from 'lucide-react';
-import { parseReadyWorkbook, planReadyImport, READY_FIELDS } from '../utils/readyExcel';
+import { parseReadyWorkbook, planReadyImport, buildReadyArchiveDays, READY_FIELDS } from '../utils/readyExcel';
 import { formatBn } from '../utils/date';
 
 /**
@@ -15,6 +15,7 @@ export default function ReadyExcelPanel({ readyRates, onApply }) {
   const [sheets, setSheets] = useState([]);
   const [sheetIdx, setSheetIdx] = useState(-1);
   const [skip, setSkip] = useState(() => new Set());
+  const [saveAll, setSaveAll] = useState(true); // also keep every other date of the file for the date-wise view
 
   const handleFile = async (e) => {
     const file = e.target.files?.[0];
@@ -132,8 +133,19 @@ export default function ReadyExcelPanel({ readyRates, onApply }) {
             </div>
           )}
 
+          {sheets.length > 1 && (
+            <label className="flex items-start gap-2 text-xs text-slate-700 cursor-pointer">
+              <input type="checkbox" checked={saveAll} onChange={(e) => setSaveAll(e.target.checked)} className="mt-0.5 cursor-pointer" />
+              <span>ফাইলের অন্য {sheets.length - 1}টি তারিখের রেটও সংরক্ষণ করুন (সাইটে "তারিখ অনুযায়ী রেট দেখুন" বাটনে দেখা যাবে)</span>
+            </label>
+          )}
+
           <button
-            onClick={() => onApply({ sheet, plan: { ...plan, rows: chosen } })}
+            onClick={() => onApply({
+              sheet,
+              plan: { ...plan, rows: chosen },
+              archive: saveAll ? buildReadyArchiveDays(sheets, sheet.dateISO, readyRates) : []
+            })}
             disabled={!chosen.length}
             className="flex items-center gap-1.5 px-4 py-2.5 bg-amber-600 hover:bg-amber-700 disabled:opacity-50 text-white rounded-xl text-sm font-black cursor-pointer"
           >

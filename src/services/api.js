@@ -103,29 +103,29 @@ export async function clearAllFeedbacks(key) {
 }
 
 /** Dates that have archived rates, newest first ([] on failure). */
-export async function fetchRateDates() {
+export async function fetchRateDates(kind = 'doc') {
   try {
-    const res = await fetch('/api/rate-days');
+    const res = await fetch(`/api/rate-days${kind === 'ready' ? '?kind=ready' : ''}`);
     const body = await json(res);
     return res.ok && body?.success && Array.isArray(body.dates) ? body.dates : [];
   } catch { return []; }
 }
 
 /** Rates of `date` or of the latest earlier day that has rates: { date, requested, exact, rates } or null. */
-export async function fetchRateDay(date) {
+export async function fetchRateDay(date, kind = 'doc') {
   try {
-    const res = await fetch(`/api/rate-days?date=${encodeURIComponent(date)}`);
+    const res = await fetch(`/api/rate-days?date=${encodeURIComponent(date)}${kind === 'ready' ? '&kind=ready' : ''}`);
     const body = await json(res);
     return res.ok && body?.success ? body : null;
   } catch { return null; }
 }
 
 /** Admin: save the archive of several days ([{ date, rates }]) in small batches. Returns { ok, saved }. */
-export async function saveRateDays(key, days) {
+export async function saveRateDays(key, days, kind = 'doc') {
   let saved = 0;
   try {
     for (let i = 0; i < days.length; i += 8) {
-      const res = await fetch('/api/rate-days', { method: 'PUT', headers: adminHeaders(key), body: JSON.stringify({ days: days.slice(i, i + 8) }) });
+      const res = await fetch('/api/rate-days', { method: 'PUT', headers: adminHeaders(key), body: JSON.stringify({ kind, days: days.slice(i, i + 8) }) });
       const body = await json(res);
       if (!res.ok || !body?.success) return { ok: false, saved };
       saved += body.saved || 0;

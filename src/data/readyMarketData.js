@@ -363,27 +363,23 @@ export const INITIAL_READY_RATES = [
 
 export const getReadyMarketStats = (rates = INITIAL_READY_RATES) => {
   if (!rates || !rates.length) return null;
-  const count = rates.length;
-
-  const avgGrill = Math.round(rates.reduce((s, r) => s + r.broilerGrill, 0) / count);
-  const avgMedium = Math.round(rates.reduce((s, r) => s + r.broilerMedium, 0) / count);
-  const avgBig = Math.round(rates.reduce((s, r) => s + r.broilerBig, 0) / count);
-  const avgColor = Math.round(rates.reduce((s, r) => s + r.colorBird, 0) / count);
-  const avgSonali = Math.round(rates.reduce((s, r) => s + r.sonali, 0) / count);
-  const avgSonaliSuper = Math.round(rates.reduce((s, r) => s + r.sonaliSuper, 0) / count);
-  const avgEggBrown = (rates.reduce((s, r) => s + r.eggBrown, 0) / count).toFixed(2);
-  const avgEggWhite = (rates.reduce((s, r) => s + r.eggWhite, 0) / count).toFixed(2);
-  const avgPsCull = Math.round(rates.reduce((s, r) => s + r.psCull, 0) / count);
+  // average only the mokams that have a rate for the item (a missing rate is 0)
+  const avg = (key, digits = 0) => {
+    const vals = rates.map((r) => Number(r[key])).filter((v) => v > 0);
+    if (!vals.length) return digits ? '0.00' : 0;
+    const m = vals.reduce((s, v) => s + v, 0) / vals.length;
+    return digits ? m.toFixed(digits) : Math.round(m);
+  };
 
   return {
-    avgGrill,
-    avgMedium,
-    avgBig,
-    avgColor,
-    avgSonali,
-    avgSonaliSuper,
-    avgEggBrown,
-    avgEggWhite,
-    avgPsCull
+    avgGrill: avg('broilerGrill'),
+    avgMedium: avg('broilerMedium'),
+    avgBig: avg('broilerBig'),
+    avgColor: avg('colorBird'),
+    avgSonali: avg('sonali'),
+    avgSonaliSuper: avg('sonaliSuper'),
+    avgEggBrown: avg('eggBrown', 2),
+    avgEggWhite: avg('eggWhite', 2),
+    avgPsCull: avg('psCull')
   };
 };
