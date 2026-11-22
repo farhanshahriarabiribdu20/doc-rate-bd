@@ -247,6 +247,11 @@ export default function ReadyMarketSection({ readyRates = [], lang = 'bn', setti
                           <span className="font-extrabold text-slate-900 text-sm">{regionDisplay}</span>
                         </div>
                         <span className="text-[10px] font-semibold text-slate-500 block ml-5">{item.regionEn}</span>
+                        {dateLabel && (
+                          <span className={`inline-block text-[10px] font-extrabold px-2 py-0.5 rounded-full border mt-1 ml-5 ${dateIsToday ? 'bg-emerald-50 text-emerald-800 border-emerald-200' : 'bg-amber-50 text-amber-800 border-amber-300'}`}>
+                            📅 {dateLabel}
+                          </span>
+                        )}
                       </td>
 
                       {/* Broiler */}
@@ -322,9 +327,15 @@ export default function ReadyMarketSection({ readyRates = [], lang = 'bn', setti
                       <h3 className="font-black text-slate-900 text-base">{regionDisplay}</h3>
                       <span className="text-xs text-slate-500">({item.regionEn})</span>
                     </div>
-                    <span className="text-[10px] font-extrabold px-2 py-0.5 rounded-full bg-emerald-50 text-emerald-800 border border-emerald-200">
-                      লাইভ মোকাম
-                    </span>
+                    {dateLabel ? (
+                      <span className={`text-[10px] font-extrabold px-2 py-0.5 rounded-full border whitespace-nowrap ${dateIsToday ? 'bg-emerald-50 text-emerald-800 border-emerald-200' : 'bg-amber-50 text-amber-800 border-amber-300'}`}>
+                        📅 {dateLabel}
+                      </span>
+                    ) : (
+                      <span className="text-[10px] font-extrabold px-2 py-0.5 rounded-full bg-emerald-50 text-emerald-800 border border-emerald-200">
+                        লাইভ মোকাম
+                      </span>
+                    )}
                   </div>
 
                   {/* Rates Grid */}
