@@ -2,9 +2,12 @@ import React from 'react';
 import { AlertTriangle, MapPin } from 'lucide-react';
 import PriceChange from './PriceChange';
 import { rateForRegion, zoneRegionName } from '../data/zones';
+import { formatBn, formatEn, todayISO } from '../utils/date';
 
-export default function RateCard({ item, selectedDivision, isStale = false, lang }) {
+export default function RateCard({ item, selectedDivision, isStale = false, rateDateISO, lang }) {
   const currentRate = rateForRegion(item, selectedDivision);
+  const rateDateLabel = rateDateISO ? (lang === 'bn' ? formatBn(rateDateISO) : formatEn(rateDateISO)).split('(')[0].trim() : '';
+  const isToday = rateDateISO === todayISO();
 
 
   const divisionRegionNames = {
@@ -87,12 +90,19 @@ export default function RateCard({ item, selectedDivision, isStale = false, lang
         <div className="flex items-end justify-between gap-2">
           <div>
             <span className="text-[11px] font-bold text-slate-400 uppercase tracking-wider block">
-              {lang === 'bn' ? 'আজকের নির্ধারিত বাজারদর' : "Today's Official Rate"}
+              {isToday
+                ? (lang === 'bn' ? 'আজকের নির্ধারিত বাজারদর' : "Today's Official Rate")
+                : (lang === 'bn' ? 'নির্ধারিত বাজারদর' : 'Official Rate')}
             </span>
             <div className="flex items-baseline gap-1 mt-0.5">
               <span className="text-3xl sm:text-4xl font-black text-slate-900 tracking-tight">৳{currentRate}</span>
               <span className="text-xs font-bold text-slate-500">/{lang === 'bn' ? 'পিস' : 'pc'}</span>
             </div>
+            {rateDateLabel && (
+              <span className={`inline-block mt-1 px-2 py-0.5 rounded-md text-[10px] font-bold border ${isToday ? 'bg-emerald-50 text-emerald-700 border-emerald-200' : 'bg-amber-50 text-amber-800 border-amber-200'}`}>
+                📅 {rateDateLabel}
+              </span>
+            )}
           </div>
 
           <div className="text-right space-y-1">

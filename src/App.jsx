@@ -160,6 +160,7 @@ export default function App() {
   const liveRates = rates.filter((r) => !r.rateDate || r.rateDate === settings.reportDateISO);
   const shownRates = archive ? archive.rates : liveRates;
   const shownStale = archive ? false : isStale;
+  const shownDateISO = archive ? archive.date : settings.reportDateISO;
   const shownDateBn = archive ? formatBn(archive.date) : settings.reportDateBn;
   const shownDateEn = archive ? formatEn(archive.date) : settings.reportDateEn;
 
@@ -407,6 +408,7 @@ export default function App() {
                     settings={settings}
                     onOpenBooking={(it) => setBookingItem(it)}
                     isStale={shownStale}
+                    rateDateISO={shownDateISO}
                     lang={lang}
                   />
                 ))}
@@ -418,6 +420,7 @@ export default function App() {
                 settings={settings}
                 onOpenBooking={(it) => setBookingItem(it)}
                 isStale={shownStale}
+                rateDateISO={shownDateISO}
                 lang={lang}
               />
             )}
