@@ -143,6 +143,8 @@ export function sanitizeSettings(input) {
     hotline: str(s.hotline, 20),
     whatsapp: str(s.whatsapp, 20),
     fbPage: /^https?:\/\//i.test(str(s.fbPage, 200)) ? str(s.fbPage, 200) : '',
+    youtubeUrl: /^https:\/\//i.test(str(s.youtubeUrl, 200)) ? str(s.youtubeUrl, 200) : '', // YouTube channel link (picture-download follow step)
+    followFbUrl: /^https:\/\//i.test(str(s.followFbUrl, 200)) ? str(s.followFbUrl, 200) : '', // Facebook page link (picture-download follow step)
     reportDateBn: str(s.reportDateBn, 80),
     reportDateEn: str(s.reportDateEn, 80)
   };

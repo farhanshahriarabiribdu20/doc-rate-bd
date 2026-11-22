@@ -1,4 +1,5 @@
 import React from 'react';
+import { YOUTUBE_URL, FB_PAGE_URL } from '../data/links';
 import { Calendar, PhoneCall, ShieldCheck, Calculator as CalcIcon, Moon, Sun } from 'lucide-react';
 
 export default function Navbar({ 
@@ -152,7 +153,7 @@ export default function Navbar({
         <div className="flex items-center gap-2 sm:gap-2.5">
           {/* Facebook Page Button */}
           <a
-            href="https://www.facebook.com/profile.php?id=61582752186760"
+            href={settings?.followFbUrl || FB_PAGE_URL}
             target="_blank"
             rel="noopener noreferrer"
             title={lang === 'bn' ? 'আমাদের অফিসিয়াল ফেসবুক পেজ ভিজিট করুন' : 'Official Facebook Page'}
@@ -162,6 +163,20 @@ export default function Navbar({
               <path d="M24 12.073c0-6.627-5.373-12-12-12s-12 5.373-12 12c0 5.99 4.388 10.954 10.125 11.854v-8.385H7.078v-3.47h3.047V9.43c0-3.007 1.792-4.669 4.533-4.669 1.312 0 2.686.235 2.686.235v2.953H15.83c-1.491 0-1.956.925-1.956 1.874v2.25h3.328l-.532 3.47h-2.796v8.385C19.612 23.027 24 18.062 24 12.073z"/>
             </svg>
             <span className="hidden sm:inline">{lang === 'bn' ? 'ফেসবুক পেজ' : 'Page'}</span>
+          </a>
+
+          {/* YouTube Channel Button */}
+          <a
+            href={settings?.youtubeUrl || YOUTUBE_URL}
+            target="_blank"
+            rel="noopener noreferrer"
+            title={lang === 'bn' ? 'আমাদের ইউটিউব চ্যানেল' : 'Our YouTube Channel'}
+            className="flex items-center gap-1.5 px-3 py-2 rounded-xl bg-red-50/90 hover:bg-red-100 text-[#CC0000] border border-red-200/90 transition shadow-2xs font-bold text-xs cursor-pointer active:scale-95"
+          >
+            <svg className="w-4 h-4 fill-[#FF0000] shrink-0" viewBox="0 0 24 24">
+              <path d="M23.5 6.2a3 3 0 0 0-2.1-2.1C19.5 3.6 12 3.6 12 3.6s-7.5 0-9.4.5A3 3 0 0 0 .5 6.2C0 8.1 0 12 0 12s0 3.9.5 5.8a3 3 0 0 0 2.1 2.1c1.9.5 9.4.5 9.4.5s7.5 0 9.4-.5a3 3 0 0 0 2.1-2.1c.5-1.9.5-5.8.5-5.8s0-3.9-.5-5.8zM9.6 15.6V8.4l6.2 3.6-6.2 3.6z"/>
+            </svg>
+            <span className="hidden sm:inline">{lang === 'bn' ? 'ইউটিউব' : 'YouTube'}</span>
           </a>
 
           {/* WhatsApp Group Button */}
