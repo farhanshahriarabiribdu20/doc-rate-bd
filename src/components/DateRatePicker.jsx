@@ -13,7 +13,7 @@ export default function DateRatePicker({ lang, liveDate, dates, viewing, notice,
   const recent = dates.filter((d) => d !== liveDate).slice(0, 7);
 
   return (
-    <div className="mb-5">
+    <div className="h-full">
       <div className="flex flex-wrap items-center gap-2">
         <button
           type="button"

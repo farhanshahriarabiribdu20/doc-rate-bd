@@ -33,6 +33,33 @@ import MarketSection from './components/MarketSection';
 import SellerModal from './components/SellerModal';
 import { useLiveVisitors } from './utils/useLiveVisitors';
 
+const CHIP_TONES = {
+  plain: 'bg-slate-100 text-slate-700 border-slate-200',
+  ok: 'bg-emerald-50 text-emerald-800 border-emerald-200',
+  warn: 'bg-amber-50 text-amber-900 border-amber-300'
+};
+
+// Section heading shown at the top of every tab.
+function PageHead({ title, sub, chips = [] }) {
+  return (
+    <div className="pagehead flex flex-col sm:flex-row sm:items-end sm:justify-between gap-3 pb-4 border-b border-slate-200">
+      <div className="min-w-0">
+        <h1 className="text-xl sm:text-3xl font-black text-slate-900 tracking-tight leading-tight">{title}</h1>
+        <p className="text-xs sm:text-sm text-slate-600 mt-1.5 max-w-2xl">{sub}</p>
+      </div>
+      {chips.length > 0 && (
+        <div className="flex flex-wrap gap-2 shrink-0">
+          {chips.map((c, i) => (
+            <span key={i} className={`inline-flex items-center px-3 py-1.5 rounded-full text-[11px] sm:text-xs font-bold border ${CHIP_TONES[c.tone] || CHIP_TONES.plain}`}>
+              {c.text}
+            </span>
+          ))}
+        </div>
+      )}
+    </div>
+  );
+}
+
 // Last data published by the admin (kept for instant load / offline use).
 const CACHE_KEY = 'fosholnexa_published_v1';
 // Rates older than this many days are clearly marked as outdated.
@@ -301,7 +328,7 @@ export default function App() {
       </div>
 
       {/* Main Container */}
-      <main className="flex-1 max-w-7xl w-full mx-auto px-4 py-6">
+      <main className="flex-1 max-w-7xl w-full mx-auto px-4 sm:px-6 lg:px-8 py-6 sm:py-8">
         {/* Outdated-rate warning */}
         {shownStale && (
           <div role="alert" className="mb-5 flex items-start gap-3 rounded-2xl border border-amber-300 bg-amber-50 p-4 text-amber-950">
@@ -314,57 +341,19 @@ export default function App() {
           </div>
         )}
 
-        {/* Primary Market Section Switcher Tabs */}
-        <div className="flex items-center justify-center mb-6">
-          <div className="grid grid-cols-3 w-full sm:w-auto sm:inline-flex p-1.5 rounded-2xl bg-white border border-slate-200/90 shadow-xs gap-1.5">
-            <button
-              onClick={() => setActiveTab('doc')}
-              className={`flex flex-col sm:flex-row items-center justify-center text-center gap-0.5 sm:gap-2 px-1 sm:px-6 py-2 sm:py-2.5 rounded-xl font-black text-[11px] sm:text-sm leading-tight transition-all cursor-pointer ${
-                activeTab === 'doc'
-                  ? 'bg-emerald-600 text-white shadow-md shadow-emerald-950/20'
-                  : 'text-slate-600 hover:text-slate-900 hover:bg-slate-50'
-              }`}
-            >
-              <span>🐣</span>
-              <span>{lang === 'bn' ? <>বাচ্চার দর<span className="hidden sm:inline"> (DOC)</span></> : 'Day-Old Chicks (DOC)'}</span>
-              <span className="hidden sm:inline text-[10px] px-2 py-0.5 rounded-full bg-white/20 text-white font-bold">
-                {shownRates.length}
-              </span>
-            </button>
-
-            <button
-              onClick={() => setActiveTab('ready')}
-              className={`flex flex-col sm:flex-row items-center justify-center text-center gap-0.5 sm:gap-2 px-1 sm:px-6 py-2 sm:py-2.5 rounded-xl font-black text-[11px] sm:text-sm leading-tight transition-all cursor-pointer ${
-                activeTab === 'ready'
-                  ? 'bg-emerald-600 text-white shadow-md shadow-emerald-950/20'
-                  : 'text-slate-600 hover:text-slate-900 hover:bg-slate-50'
-              }`}
-            >
-              <span>🍗</span>
-              <span>{lang === 'bn' ? <>রেডি মুরগি<span className="hidden sm:inline"> ও ডিমের দর</span></> : 'Ready Birds & Eggs'}</span>
-              <span className="hidden sm:inline text-[10px] px-2 py-0.5 rounded-full bg-amber-400 text-slate-950 font-black animate-pulse">
-                {readyRates.length} মোকাম
-              </span>
-            </button>
-
-            <button
-              onClick={() => setActiveTab('market')}
-              className={`flex flex-col sm:flex-row items-center justify-center text-center gap-0.5 sm:gap-2 px-1 sm:px-6 py-2 sm:py-2.5 rounded-xl font-black text-[11px] sm:text-sm leading-tight transition-all cursor-pointer ${
-                activeTab === 'market'
-                  ? 'bg-emerald-600 text-white shadow-md shadow-emerald-950/20'
-                  : 'text-slate-600 hover:text-slate-900 hover:bg-slate-50'
-              }`}
-            >
-              <span>🛒</span>
-              <span>{lang === 'bn' ? 'বিক্রির বাজার' : 'Marketplace'}</span>
-            </button>
-          </div>
-        </div>
-
         {/* Tab 1: DOC Rates */}
         {activeTab === 'doc' && (
-          <>
-            {/* Live Averages & Stats Overview */}
+          <div className="flex flex-col gap-5 sm:gap-6">
+            <PageHead
+              title={lang === 'bn' ? 'আজকের বাচ্চার বাজার দর' : 'Day-Old Chick (DOC) Rates'}
+              sub={lang === 'bn' ? 'সকল কোম্পানির ব্রয়লার, কালার, সোনালী ও লেয়ার বাচ্চার নির্ভরযোগ্য পাইকারি বাজারদর' : 'Reliable wholesale rates of Broiler, Color, Sonali and Layer chicks'}
+              chips={[
+                { text: `${shownRates.length}${lang === 'bn' ? 'টি জাত/কোম্পানি' : ' companies/breeds'}`, tone: 'plain' },
+                { text: `${shownStale ? '⚠️ ' : archive ? '📅 ' : '✅ '}${lang === 'bn' ? (archive ? `রেটের তারিখ: ${formatBn(archive.date)}` : `সর্বশেষ আপডেট: ${settings.reportDateBn}`) : (archive ? `Rates of: ${formatEn(archive.date)}` : `Updated: ${settings.reportDateEn}`)}`, tone: shownStale ? 'warn' : 'ok' }
+              ]}
+            />
+
+            <div className="grid lg:grid-cols-2 gap-4 items-stretch">
             <DateRatePicker
               lang={lang}
               liveDate={settings.reportDateISO}
@@ -377,9 +366,11 @@ export default function App() {
             />
 
             <RateCta lang={lang} onClick={() => setSubmitKind('doc')} />
-            <GallerySection images={gallery} kind="doc" lang={lang} settings={settings} />
+            </div>
 
             <StatsOverview rates={shownRates} lang={lang} isStale={shownStale} />
+
+            <GallerySection images={gallery} kind="doc" lang={lang} settings={settings} />
 
             {/* Real Top Hatcheries Live Price Comparison Chart */}
             <PriceChart rates={shownRates} lang={lang} />
@@ -439,7 +430,7 @@ export default function App() {
             )}
 
             {/* Quick Explore Ready Market Banner */}
-            <div className="mt-8 bg-white text-slate-900 p-5 sm:p-6 rounded-3xl border border-emerald-200 shadow-md border-l-4 border-l-emerald-600 flex flex-col sm:flex-row items-center justify-between gap-4">
+            <div className="bg-white text-slate-900 p-5 sm:p-6 rounded-3xl border border-emerald-200 shadow-md border-l-4 border-l-emerald-600 flex flex-col sm:flex-row items-center justify-between gap-4">
               <div className="flex items-center gap-3.5 text-center sm:text-left">
                 <div className="w-12 h-12 rounded-2xl bg-amber-100 border border-amber-300 flex items-center justify-center text-2xl shrink-0">
                   🍗
@@ -464,15 +455,20 @@ export default function App() {
                 <span>➔</span>
               </button>
             </div>
-          </>
+          </div>
         )}
 
         {/* Tab 2: Ready Broiler, Color, Sonali & Egg Market Section */}
         {activeTab === 'ready' && (
-          <>
+          <div className="flex flex-col gap-5 sm:gap-6">
+            <PageHead
+              title={lang === 'bn' ? 'রেডি মুরগি ও ডিমের মোকাম রেট' : 'Ready Poultry & Egg Market Rates'}
+              sub={lang === 'bn' ? 'দেশের আঞ্চলিক মোকাম অনুযায়ী ব্রয়লার, কালার, সোনালী ও ডিমের পাইকারি দর' : 'Wholesale rates of broiler, color, sonali and eggs across regional hubs'}
+              chips={settings.readyDateISO ? [{ text: `📅 ${lang === 'bn' ? formatBn(readyArchive?.date || settings.readyDateISO) : formatEn(readyArchive?.date || settings.readyDateISO)}`, tone: 'ok' }] : []}
+            />
+            <div className="grid lg:grid-cols-2 gap-4 items-stretch">
             {settings.readyDateISO && (
-              <div className="mt-6">
-                <DateRatePicker
+              <DateRatePicker
                   lang={lang}
                   liveDate={settings.readyDateISO}
                   dates={readyDates}
@@ -482,10 +478,10 @@ export default function App() {
                   onPick={handlePickReadyDate}
                   onBackToLive={backToLatestReady}
                 />
-              </div>
             )}
 
             <RateCta lang={lang} onClick={() => setSubmitKind('ready')} />
+            </div>
             <GallerySection images={gallery} kind="ready" lang={lang} settings={settings} />
 
             <ReadyMarketSection
@@ -495,7 +491,7 @@ export default function App() {
             />
 
             {/* Quick Return to DOC Banner */}
-            <div className="mt-8 bg-gradient-to-r from-emerald-950 via-teal-950 to-slate-950 text-white p-5 sm:p-6 rounded-3xl border border-emerald-700/50 shadow-xl flex flex-col sm:flex-row items-center justify-between gap-4">
+            <div className="bg-gradient-to-r from-emerald-950 via-teal-950 to-slate-950 text-white p-5 sm:p-6 rounded-3xl border border-emerald-700/50 shadow-xl flex flex-col sm:flex-row items-center justify-between gap-4">
               <div className="flex items-center gap-3.5 text-center sm:text-left">
                 <div className="w-12 h-12 rounded-2xl bg-emerald-400/20 border border-emerald-400/30 flex items-center justify-center text-2xl shrink-0">
                   🐣
@@ -520,11 +516,11 @@ export default function App() {
                 <span>➔</span>
               </button>
             </div>
-          </>
+          </div>
         )}
 
         {/* Community Facebook Group Banner */}
-        <div className="mt-8 bg-gradient-to-r from-blue-900 via-indigo-950 to-slate-900 text-white p-5 sm:p-6 rounded-3xl border border-blue-800/40 shadow-xl flex flex-col sm:flex-row items-center justify-between gap-4">
+        <div className="mt-6 sm:mt-8 bg-gradient-to-r from-blue-900 via-indigo-950 to-slate-900 text-white p-5 sm:p-6 rounded-3xl border border-blue-800/40 shadow-xl flex flex-col sm:flex-row items-center justify-between gap-4">
           <div className="flex items-center gap-3.5 text-center sm:text-left">
             <div className="w-12 h-12 rounded-2xl bg-blue-600/30 border border-blue-400/30 flex items-center justify-center shrink-0">
               <svg className="w-6 h-6 fill-[#1877F2]" viewBox="0 0 24 24">

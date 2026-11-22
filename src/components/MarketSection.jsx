@@ -43,7 +43,7 @@ export default function MarketSection({ lang, onOpenSeller, refreshKey }) {
   }, [items, filter, query]);
 
   return (
-    <section className="mt-6 space-y-5">
+    <section className="space-y-5">
       <div className="bg-gradient-to-r from-emerald-900 to-emerald-700 text-white rounded-3xl p-5 sm:p-6 shadow-lg flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div className="flex items-center gap-3.5">
           <div className="w-12 h-12 rounded-2xl bg-white/15 flex items-center justify-center shrink-0"><Store className="w-6 h-6" /></div>

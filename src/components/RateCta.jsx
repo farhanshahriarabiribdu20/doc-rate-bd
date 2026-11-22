@@ -4,7 +4,7 @@ import React from 'react';
 export default function RateCta({ lang, onClick }) {
   const bn = lang === 'bn';
   return (
-    <div className="mt-4 flex flex-wrap items-center justify-between gap-3 p-4 rounded-2xl bg-amber-50 border border-amber-200">
+    <div className="flex flex-wrap items-center justify-between gap-3 p-4 rounded-2xl bg-amber-50 border border-amber-200">
       <div className="flex items-start gap-3 min-w-0 flex-1">
         <div className="w-10 h-10 rounded-xl bg-amber-100 flex items-center justify-center text-xl shrink-0">🤝</div>
         <div className="min-w-0">

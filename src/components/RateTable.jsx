@@ -22,7 +22,7 @@ export default function RateTable({ rates, selectedDivision, isStale = false, ra
   };
 
   return (
-    <div className="bg-white rounded-3xl border border-slate-200/90 shadow-xs overflow-hidden mb-6">
+    <div className="bg-white rounded-3xl border border-slate-200/90 shadow-xs overflow-hidden">
       {/* Header Bar */}
       <div className="p-4 sm:p-5 border-b border-slate-200 flex flex-wrap items-center justify-between gap-3 bg-gradient-to-r from-slate-50 to-white">
         <div>
