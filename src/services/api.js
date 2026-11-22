@@ -180,3 +180,24 @@ export async function pingLiveVisitors(sid) {
     return { enabled: false, count: 0 };
   }
 }
+
+// ---------- rate pictures (gallery) ----------
+/** Public: the uploaded rate pictures, newest first, or null on failure. */
+export async function fetchGallery() {
+  try {
+    const res = await fetch('/api/gallery', { cache: 'no-cache' });
+    const body = await json(res);
+    return res.ok && body?.success && Array.isArray(body.images) ? body.images : null;
+  } catch { return null; }
+}
+
+/** Admin: add / update / delete a picture. Returns { ok, images, error }. */
+export async function galleryAdmin(key, payload) {
+  try {
+    const res = await fetch('/api/gallery', { method: 'POST', headers: adminHeaders(key), body: JSON.stringify(payload) });
+    const body = await json(res);
+    return { ok: res.ok && body?.success === true, images: body?.images || null, error: body?.error || '' };
+  } catch {
+    return { ok: false, images: null, error: 'ইন্টারনেট সংযোগ চেক করুন' };
+  }
+}

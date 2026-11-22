@@ -14,7 +14,7 @@ import AdminModal from './components/AdminModal';
 import FeedbackWidget from './components/FeedbackWidget';
 import ReadyMarketSection from './components/ReadyMarketSection';
 import Footer from './components/Footer';
-import { fetchSiteData, fetchRateDates, fetchRateDay } from './services/api';
+import { fetchSiteData, fetchRateDates, fetchRateDay, fetchGallery } from './services/api';
 import { ageInDays, formatBn, formatEn, toBnDigits } from './utils/date';
 import {
   INITIAL_RATES,
@@ -27,6 +27,8 @@ import { Bird, AlertTriangle } from 'lucide-react';
 import { rateForRegion } from './data/zones';
 import DateRatePicker from './components/DateRatePicker';
 import RateSubmitModal from './components/RateSubmitModal';
+import RateCta from './components/RateCta';
+import GallerySection from './components/GallerySection';
 import { useLiveVisitors } from './utils/useLiveVisitors';
 
 // Last data published by the admin (kept for instant load / offline use).
@@ -126,6 +128,10 @@ export default function App() {
   const [readyNotice, setReadyNotice] = useState('');
   const [readyBusy, setReadyBusy] = useState(false);
   useEffect(() => { fetchRateDates('ready').then(setReadyDates); }, []);
+
+  // rate pictures uploaded by the admin
+  const [gallery, setGallery] = useState([]);
+  useEffect(() => { fetchGallery().then((g) => { if (g) setGallery(g); }); }, []);
   const backToLatestReady = () => { setReadyArchive(null); setReadyNotice(''); };
   const handlePickReadyDate = async (date) => {
     const live = settings.readyDateISO;
@@ -404,14 +410,8 @@ export default function App() {
               onBackToLive={backToLatest}
             />
 
-            <div className="mt-4 flex flex-wrap items-center justify-between gap-3 p-3.5 rounded-2xl bg-amber-50 border border-amber-200">
-              <p className="text-xs sm:text-sm font-bold text-amber-900">
-                {lang === 'bn' ? 'আপনার কাছে কোনো বাচ্চার রেট আছে? জানান — যাচাই করে প্রকাশ করা হবে।' : 'Know a chick rate? Tell us and we publish it after checking.'}
-              </p>
-              <button onClick={() => setSubmitKind('doc')} className="px-4 py-2 rounded-xl bg-amber-400 hover:bg-amber-300 text-slate-950 font-black text-xs sm:text-sm shadow-sm cursor-pointer">
-                ✍️ {lang === 'bn' ? 'রেট জানান' : 'Share a rate'}
-              </button>
-            </div>
+            <RateCta lang={lang} onClick={() => setSubmitKind('doc')} />
+            <GallerySection images={gallery} kind="doc" lang={lang} />
 
             <StatsOverview rates={shownRates} lang={lang} isStale={shownStale} />
 
@@ -519,14 +519,8 @@ export default function App() {
               </div>
             )}
 
-            <div className="mt-4 flex flex-wrap items-center justify-between gap-3 p-3.5 rounded-2xl bg-amber-50 border border-amber-200">
-              <p className="text-xs sm:text-sm font-bold text-amber-900">
-                {lang === 'bn' ? 'আপনার মোকামের রেট জানান — অ্যাডমিন যাচাই করে সাইটে প্রকাশ করবেন।' : 'Share your mokam rate. It is published after the admin checks it.'}
-              </p>
-              <button onClick={() => setSubmitKind('ready')} className="px-4 py-2 rounded-xl bg-amber-400 hover:bg-amber-300 text-slate-950 font-black text-xs sm:text-sm shadow-sm cursor-pointer">
-                ✍️ {lang === 'bn' ? 'রেট জানান' : 'Share a rate'}
-              </button>
-            </div>
+            <RateCta lang={lang} onClick={() => setSubmitKind('ready')} />
+            <GallerySection images={gallery} kind="ready" lang={lang} />
 
             <ReadyMarketSection
               readyRates={readyArchive ? readyArchive.rates : readyRates}
