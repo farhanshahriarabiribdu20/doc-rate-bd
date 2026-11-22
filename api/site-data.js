@@ -97,7 +97,7 @@ export default async function handler(req, res) {
 
       // Remember what the site showed on this date, for the visitors' "date-wise rate" view. Never blocks publishing.
       try {
-        if (isDate(payload.settings?.reportDateISO) && rates.length) await saveRateDay(payload.settings.reportDateISO, rates);
+        if (isDate(payload.settings?.reportDateISO) && rates.some((r) => !r.rateDate || r.rateDate === payload.settings.reportDateISO)) await saveRateDay(payload.settings.reportDateISO, rates.filter((r) => !r.rateDate || r.rateDate === payload.settings.reportDateISO));
       } catch (err) {
         console.error('rate day archive failed:', err);
       }

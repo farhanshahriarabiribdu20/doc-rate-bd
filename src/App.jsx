@@ -157,7 +157,8 @@ export default function App() {
   const reportAge = ageInDays(settings.reportDateISO);
   const isStale = reportAge !== null && reportAge >= STALE_AFTER_DAYS;
   // What the public sections show: an archived day while one is picked, otherwise the latest rates.
-  const shownRates = archive ? archive.rates : rates;
+  const liveRates = rates.filter((r) => !r.rateDate || r.rateDate === settings.reportDateISO);
+  const shownRates = archive ? archive.rates : liveRates;
   const shownStale = archive ? false : isStale;
   const shownDateBn = archive ? formatBn(archive.date) : settings.reportDateBn;
   const shownDateEn = archive ? formatEn(archive.date) : settings.reportDateEn;
@@ -328,7 +329,7 @@ export default function App() {
               <span>🐣</span>
               <span>{lang === 'bn' ? 'বাচ্চার বাজার দর (DOC)' : 'Day-Old Chicks (DOC)'}</span>
               <span className="text-[10px] px-2 py-0.5 rounded-full bg-white/20 text-white font-bold">
-                {rates.length}
+                {shownRates.length}
               </span>
             </button>
 
@@ -521,7 +522,7 @@ export default function App() {
       <BannerGeneratorModal
         isOpen={isBannerOpen}
         onClose={() => setIsBannerOpen(false)}
-        rates={rates}
+        rates={liveRates}
         readyRates={readyRates}
         feeds={feeds}
         settings={settings}
@@ -532,14 +533,14 @@ export default function App() {
       <Calculator
         isOpen={isCalculatorOpen}
         onClose={() => setIsCalculatorOpen(false)}
-        rates={rates}
+        rates={liveRates}
         lang={lang}
       />
 
       <ShareModal
         isOpen={isShareOpen}
         onClose={() => setIsShareOpen(false)}
-        rates={rates}
+        rates={liveRates}
         notice={notice}
         settings={settings}
         lang={lang}
