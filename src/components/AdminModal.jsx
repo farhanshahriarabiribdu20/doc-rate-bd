@@ -497,7 +497,7 @@ function AdminModalContent({
               <Lock className="w-7 h-7" />
             </div>
             <h4 className="text-lg font-bold text-slate-800">এডমিন পাসওয়ার্ড দিয়ে আনলক করুন</h4>
-            <p className="text-xs text-slate-400">শুধুমাত্র অনুমোদিত ব্যবহারকারীর জন্য</p>
+            <p className="text-xs text-slate-500">শুধুমাত্র অনুমোদিত ব্যবহারকারীর জন্য</p>
 
             {checking ? (
               <p className="text-xs text-slate-500">যাচাই করা হচ্ছে...</p>
@@ -703,15 +703,15 @@ function AdminModalContent({
                         </div>
                         <div className="flex items-center gap-3">
                           <div>
-                            <span className="text-[10px] text-slate-400 block">আজকের (৳)</span>
+                            <span className="text-[10px] text-slate-500 block">আজকের (৳)</span>
                             <input type="number" value={item.todayRate} onChange={(e) => handleDocChange(item.id, 'todayRate', Number(e.target.value))} className="w-16 px-2 py-1 bg-emerald-50 border border-emerald-300 rounded-lg text-xs font-bold text-emerald-900 text-center" />
                           </div>
                           <div>
-                            <span className="text-[10px] text-slate-400 block">গতকালের (৳)</span>
+                            <span className="text-[10px] text-slate-500 block">গতকালের (৳)</span>
                             <input type="number" value={item.yesterdayRate} onChange={(e) => handleDocChange(item.id, 'yesterdayRate', Number(e.target.value))} className="w-16 px-2 py-1 bg-slate-50 border border-slate-200 rounded-lg text-xs font-medium text-slate-600 text-center" />
                           </div>
                           <div>
-                            <span className="text-[10px] text-slate-400 block">স্ট্যাটাস</span>
+                            <span className="text-[10px] text-slate-500 block">স্ট্যাটাস</span>
                             <select value={item.status} onChange={(e) => handleDocChange(item.id, 'status', e.target.value)} className="px-2 py-1 bg-slate-50 border border-slate-200 rounded-lg text-xs font-semibold">
                               <option value="available">প্রস্তুত</option>
                               <option value="booking_open">বুকিং চালু</option>
@@ -887,7 +887,7 @@ function AdminModalContent({
                             <span className="font-extrabold text-slate-900 text-xs sm:text-sm">{fb.name}</span>
                             {fb.phone && <span className="text-xs font-semibold text-slate-500">📞 {fb.phone}</span>}
                           </div>
-                          <div className="flex items-center gap-2 text-xs text-slate-400">
+                          <div className="flex items-center gap-2 text-xs text-slate-500">
                             <span>🕒 {fb.date}</span>
                             <button
                               onClick={async () => {

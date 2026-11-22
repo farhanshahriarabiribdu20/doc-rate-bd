@@ -56,7 +56,7 @@ export default function StatsOverview({ rates, lang, isStale = false }) {
         </div>
         <div className="flex items-baseline gap-1 mt-1">
           <span className="text-2xl sm:text-3xl font-black text-slate-900 tracking-tight">৳{broilerAvg}</span>
-          <span className="text-xs text-slate-400 font-semibold">/{lang === 'bn' ? 'পিস' : 'pc'}</span>
+          <span className="text-xs text-slate-500 font-semibold">/{lang === 'bn' ? 'পিস' : 'pc'}</span>
         </div>
         <div className="text-[11px] text-slate-500 mt-2 pt-2 border-t border-slate-100 flex items-center justify-between font-medium">
           <span>{lang === 'bn' ? `${broilerRates.length}টি কোম্পানি` : `${broilerRates.length} brands`}</span>
@@ -82,7 +82,7 @@ export default function StatsOverview({ rates, lang, isStale = false }) {
         </div>
         <div className="flex items-baseline gap-1 mt-1">
           <span className="text-2xl sm:text-3xl font-black text-slate-900 tracking-tight">৳{sonaliAvg}</span>
-          <span className="text-xs text-slate-400 font-semibold">/{lang === 'bn' ? 'পিস' : 'pc'}</span>
+          <span className="text-xs text-slate-500 font-semibold">/{lang === 'bn' ? 'পিস' : 'pc'}</span>
         </div>
         <div className="text-[11px] text-slate-500 mt-2 pt-2 border-t border-slate-100 flex items-center justify-between font-medium">
           <span>{lang === 'bn' ? `${sonaliRates.length}টি কোম্পানি` : `${sonaliRates.length} brands`}</span>
@@ -108,7 +108,7 @@ export default function StatsOverview({ rates, lang, isStale = false }) {
         </div>
         <div className="flex items-baseline gap-1 mt-1">
           <span className="text-2xl sm:text-3xl font-black text-slate-900 tracking-tight">৳{layerAvg}</span>
-          <span className="text-xs text-slate-400 font-semibold">/{lang === 'bn' ? 'পিস' : 'pc'}</span>
+          <span className="text-xs text-slate-500 font-semibold">/{lang === 'bn' ? 'পিস' : 'pc'}</span>
         </div>
         <div className="text-[11px] text-slate-500 mt-2 pt-2 border-t border-slate-100 flex items-center justify-between font-medium">
           <span>{lang === 'bn' ? `${layerRates.length}টি কোম্পানি` : `${layerRates.length} brands`}</span>
@@ -120,7 +120,7 @@ export default function StatsOverview({ rates, lang, isStale = false }) {
 
       {/* Total Verified Hatcheries Card */}
       <div className="bg-white rounded-2xl p-4 sm:p-5 border border-slate-200 shadow-xs hover:shadow-md transition-all duration-300 relative overflow-hidden group">
-        <div className="absolute top-0 left-0 right-0 h-1 bg-gradient-to-r from-emerald-500 to-teal-500"></div>
+        <div className="absolute top-0 left-0 right-0 h-1 bg-emerald-500"></div>
         <div className="flex items-center justify-between mb-2">
           <div className="flex items-center gap-2">
             <div className="w-7 h-7 sm:w-8 sm:h-8 rounded-xl bg-emerald-50 text-emerald-600 border border-emerald-200/80 flex items-center justify-center font-bold">
@@ -136,7 +136,7 @@ export default function StatsOverview({ rates, lang, isStale = false }) {
         </div>
         <div className="flex items-baseline gap-1 mt-1">
           <span className="text-2xl sm:text-3xl font-black text-emerald-700 tracking-tight">{rates.length}টি</span>
-          <span className="text-xs text-slate-400 font-semibold">/প্রতিষ্ঠান</span>
+          <span className="text-xs text-slate-500 font-semibold">/প্রতিষ্ঠান</span>
         </div>
         <div className="text-[11px] text-slate-500 mt-2 pt-2 border-t border-slate-100 flex items-center justify-between font-medium">
           <span>{lang === 'bn' ? 'সরাসরি রেট শিট' : 'Direct Sheets'}</span>

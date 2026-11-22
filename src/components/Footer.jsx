@@ -40,7 +40,7 @@ export default function Footer({ lang, isStale = false }) {
           <p className="text-xs leading-relaxed text-slate-300 font-medium">
             সঠিক তথ্য, সচেতন খামারি, সমৃদ্ধ কৃষি।
           </p>
-          <p className="text-xs leading-relaxed text-slate-400">
+          <p className="text-xs leading-relaxed text-slate-500">
             {lang === 'bn' 
               ? 'বাংলাদেশের পোল্ট্রি খামারীদের জন্য এক বিশ্বস্ত ডিজিটাল মার্কেট প্ল্যাটফর্ম। সঠিক তথ্য ও সাশ্রয়ী মূল্যে বাচ্চা বুকিংয়ের নিশ্চয়তা।' 
               : 'Empowering poultry farmers across Bangladesh with accurate live daily chick prices and verified booking.'}

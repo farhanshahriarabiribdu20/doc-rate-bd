@@ -101,7 +101,7 @@ function BookingModalContent({ onClose, selectedItem, settings, lang }) {
                 onChange={(e) => setQuantity(Number(e.target.value))}
                 className="w-full px-3 py-2 border border-slate-200 rounded-xl text-sm font-semibold focus:ring-2 focus:ring-emerald-500 outline-none"
               />
-              <span className="text-[11px] text-slate-400 mt-1 block">
+              <span className="text-[11px] text-slate-500 mt-1 block">
                 {lang === 'bn' ? `ন্যূনতম বুকিং: ${selectedItem.minBooking || 500} পিস` : `Minimum: ${selectedItem.minBooking || 500} pcs`}
               </span>
             </div>

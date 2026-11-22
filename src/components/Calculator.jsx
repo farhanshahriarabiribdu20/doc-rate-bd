@@ -241,9 +241,9 @@ function CalculatorContent({ onClose, rates, lang }) {
 
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <div className="bg-slate-800/80 p-3.5 rounded-xl border border-slate-700">
-                <span className="text-xs text-slate-400 block">{lang === 'bn' ? 'মোট বিনিয়োগ' : 'Total Investment'}</span>
+                <span className="text-xs text-slate-500 block">{lang === 'bn' ? 'মোট বিনিয়োগ' : 'Total Investment'}</span>
                 <span className="text-xl sm:text-2xl font-black text-amber-400">৳{Math.round(totalInvestment).toLocaleString()}</span>
-                <span className="text-[11px] text-slate-400 block mt-0.5">উৎপাদন খরচ: ৳{costPerKgLive}/কেজি</span>
+                <span className="text-[11px] text-slate-500 block mt-0.5">উৎপাদন খরচ: ৳{costPerKgLive}/কেজি</span>
               </div>
 
               <div className={`p-3.5 rounded-xl border ${

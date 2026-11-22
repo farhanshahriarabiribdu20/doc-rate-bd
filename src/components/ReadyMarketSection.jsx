@@ -61,7 +61,7 @@ export default function ReadyMarketSection({ readyRates = [], lang = 'bn', setti
                 : 'Ready Broiler, Color, Sonali Birds & Wholesale Egg Rates'}
             </h2>
 
-            <p className="text-xs sm:text-sm text-emerald-100/90 mt-2 font-medium max-w-3xl leading-relaxed">
+            <p className="text-xs sm:text-sm text-emerald-50 mt-2 font-medium max-w-3xl leading-relaxed">
               {lang === 'bn'
                 ? 'দেশের শীর্ষ ২১টি আঞ্চলিক মোকাম/পোল্ট্রি হাবের লাইভ পাইকারি বাজার দর।'
                 : 'Verified live wholesale rates from 21 regional poultry trading hubs across Bangladesh.'}
@@ -86,37 +86,37 @@ export default function ReadyMarketSection({ readyRates = [], lang = 'bn', setti
         <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3 mb-6">
           <div className="bg-white p-3.5 rounded-2xl border border-slate-200/90 shadow-2xs hover:border-emerald-300 transition">
             <span className="text-[10px] font-bold text-slate-500 uppercase tracking-wider block">🍗 ব্রয়লার (গ্রিল)</span>
-            <span className="text-lg font-black text-slate-900 mt-1 block">৳{stats.avgGrill}<span className="text-xs font-semibold text-slate-400">/কেজি</span></span>
+            <span className="text-lg font-black text-slate-900 mt-1 block">৳{stats.avgGrill}<span className="text-xs font-semibold text-slate-500">/কেজি</span></span>
             <span className="text-[10px] text-emerald-600 font-semibold mt-0.5 block">মিডিয়াম ৳{stats.avgMedium} | বড় ৳{stats.avgBig}</span>
           </div>
 
           <div className="bg-white p-3.5 rounded-2xl border border-slate-200/90 shadow-2xs hover:border-emerald-300 transition">
             <span className="text-[10px] font-bold text-slate-500 uppercase tracking-wider block">🐓 সোনালী মুরগি</span>
-            <span className="text-lg font-black text-slate-900 mt-1 block">৳{stats.avgSonali}<span className="text-xs font-semibold text-slate-400">/কেজি</span></span>
+            <span className="text-lg font-black text-slate-900 mt-1 block">৳{stats.avgSonali}<span className="text-xs font-semibold text-slate-500">/কেজি</span></span>
             <span className="text-[10px] text-emerald-600 font-semibold mt-0.5 block">সুপার সাইজ: ৳{stats.avgSonaliSuper}/কেজি</span>
           </div>
 
           <div className="bg-white p-3.5 rounded-2xl border border-slate-200/90 shadow-2xs hover:border-emerald-300 transition">
             <span className="text-[10px] font-bold text-slate-500 uppercase tracking-wider block">🎨 কালার বার্ড</span>
-            <span className="text-lg font-black text-slate-900 mt-1 block">৳{stats.avgColor}<span className="text-xs font-semibold text-slate-400">/কেজি</span></span>
+            <span className="text-lg font-black text-slate-900 mt-1 block">৳{stats.avgColor}<span className="text-xs font-semibold text-slate-500">/কেজি</span></span>
             <span className="text-[10px] text-slate-500 font-semibold mt-0.5 block">রঙিন ব্রয়লার জাত</span>
           </div>
 
           <div className="bg-white p-3.5 rounded-2xl border border-slate-200/90 shadow-2xs hover:border-emerald-300 transition">
             <span className="text-[10px] font-bold text-slate-500 uppercase tracking-wider block">🥚 লাল/বাদামী ডিম</span>
-            <span className="text-lg font-black text-amber-700 mt-1 block">৳{stats.avgEggBrown}<span className="text-xs font-semibold text-slate-400">/টি</span></span>
+            <span className="text-lg font-black text-amber-700 mt-1 block">৳{stats.avgEggBrown}<span className="text-xs font-semibold text-slate-500">/টি</span></span>
             <span className="text-[10px] text-slate-500 font-semibold mt-0.5 block">১০০টি: ৳{(stats.avgEggBrown * 100).toFixed(0)}</span>
           </div>
 
           <div className="bg-white p-3.5 rounded-2xl border border-slate-200/90 shadow-2xs hover:border-emerald-300 transition">
             <span className="text-[10px] font-bold text-slate-500 uppercase tracking-wider block">🥚 সাদা ডিম</span>
-            <span className="text-lg font-black text-slate-700 mt-1 block">৳{stats.avgEggWhite}<span className="text-xs font-semibold text-slate-400">/টি</span></span>
+            <span className="text-lg font-black text-slate-700 mt-1 block">৳{stats.avgEggWhite}<span className="text-xs font-semibold text-slate-500">/টি</span></span>
             <span className="text-[10px] text-slate-500 font-semibold mt-0.5 block">১০০টি: ৳{(stats.avgEggWhite * 100).toFixed(0)}</span>
           </div>
 
           <div className="bg-white p-3.5 rounded-2xl border border-slate-200/90 shadow-2xs hover:border-emerald-300 transition">
             <span className="text-[10px] font-bold text-slate-500 uppercase tracking-wider block">🐔 পিএস কাল (Cull)</span>
-            <span className="text-lg font-black text-slate-900 mt-1 block">৳{stats.avgPsCull}<span className="text-xs font-semibold text-slate-400">/কেজি</span></span>
+            <span className="text-lg font-black text-slate-900 mt-1 block">৳{stats.avgPsCull}<span className="text-xs font-semibold text-slate-500">/কেজি</span></span>
             <span className="text-[10px] text-slate-500 font-semibold mt-0.5 block">প্যারেন্ট স্টক কাল</span>
           </div>
         </div>
@@ -150,7 +150,7 @@ export default function ReadyMarketSection({ readyRates = [], lang = 'bn', setti
               value={search}
               onChange={(e) => setSearch(e.target.value)}
               placeholder={lang === 'bn' ? 'মোকাম বা জেলা খুঁজুন...' : 'Search hub or district...'}
-              className="w-full pl-9 pr-3 py-2 rounded-xl border border-slate-200 text-xs text-slate-900 placeholder:text-slate-400 focus:outline-hidden focus:ring-2 focus:ring-emerald-500 bg-slate-50"
+              className="w-full pl-9 pr-3 py-2 rounded-xl border border-slate-200 text-xs text-slate-900 placeholder:text-slate-500 focus:outline-hidden focus:ring-2 focus:ring-emerald-500 bg-slate-50"
             />
           </div>
 
@@ -246,7 +246,7 @@ export default function ReadyMarketSection({ readyRates = [], lang = 'bn', setti
                           <MapPin className="w-3.5 h-3.5 text-emerald-600 shrink-0" />
                           <span className="font-extrabold text-slate-900 text-sm">{regionDisplay}</span>
                         </div>
-                        <span className="text-[10px] font-semibold text-slate-400 block ml-5">{item.regionEn}</span>
+                        <span className="text-[10px] font-semibold text-slate-500 block ml-5">{item.regionEn}</span>
                       </td>
 
                       {/* Broiler */}
@@ -257,7 +257,7 @@ export default function ReadyMarketSection({ readyRates = [], lang = 'bn', setti
                             <span className="text-slate-800"> ৳{item.broilerMedium}</span> / 
                             <span className="text-slate-600"> ৳{item.broilerBig}</span>
                           </div>
-                          <span className="text-[10px] text-slate-400 font-medium block">গ্রিল / মিডিয়াম / বড়</span>
+                          <span className="text-[10px] text-slate-500 font-medium block">গ্রিল / মিডিয়াম / বড়</span>
                         </td>
                       )}
 
@@ -268,7 +268,7 @@ export default function ReadyMarketSection({ readyRates = [], lang = 'bn', setti
                             <span className="text-amber-700">৳{item.sonali}</span> / 
                             <span className="text-amber-900 font-extrabold"> ৳{item.sonaliSuper}</span>
                           </div>
-                          <span className="text-[10px] text-slate-400 font-medium block">রেগুলার / সুপার</span>
+                          <span className="text-[10px] text-slate-500 font-medium block">রেগুলার / সুপার</span>
                         </td>
                       )}
 
@@ -286,7 +286,7 @@ export default function ReadyMarketSection({ readyRates = [], lang = 'bn', setti
                             <span className="text-amber-700">৳{item.eggBrown}</span> | 
                             <span className="text-slate-600"> ৳{item.eggWhite}</span>
                           </div>
-                          <span className="text-[10px] text-slate-400 font-medium block">লাল | সাদা</span>
+                          <span className="text-[10px] text-slate-500 font-medium block">লাল | সাদা</span>
                         </td>
                       )}
 
@@ -320,7 +320,7 @@ export default function ReadyMarketSection({ readyRates = [], lang = 'bn', setti
                     <div className="flex items-center gap-1.5">
                       <MapPin className="w-4 h-4 text-emerald-600" />
                       <h3 className="font-black text-slate-900 text-base">{regionDisplay}</h3>
-                      <span className="text-xs text-slate-400">({item.regionEn})</span>
+                      <span className="text-xs text-slate-500">({item.regionEn})</span>
                     </div>
                     <span className="text-[10px] font-extrabold px-2 py-0.5 rounded-full bg-emerald-50 text-emerald-800 border border-emerald-200">
                       লাইভ মোকাম

@@ -57,9 +57,9 @@ function BannerGeneratorModalContent({ onClose, rates: allRates, readyRates, fee
     // Background themes
     if (bannerTheme === 'emerald') {
       const grad = ctx.createLinearGradient(0, 0, width, height);
-      grad.addColorStop(0, '#064e3b');
-      grad.addColorStop(0.5, '#042f2e');
-      grad.addColorStop(1, '#022c22');
+      grad.addColorStop(0, '#193b28');
+      grad.addColorStop(0.5, '#102a1b');
+      grad.addColorStop(1, '#0c2116');
       ctx.fillStyle = grad;
       ctx.fillRect(0, 0, width, height);
     } else if (bannerTheme === 'midnight') {
@@ -163,11 +163,11 @@ function BannerGeneratorModalContent({ onClose, rates: allRates, readyRates, fee
     ctx.fillText('📞 বাচ্চার অগ্রিম বুকিং ও বিস্তারিত তথ্যে:', 70, 985);
 
     ctx.font = '900 36px "Hind Siliguri", "Segoe UI", sans-serif';
-    ctx.fillStyle = '#022c22';
+    ctx.fillStyle = '#0c2116';
     ctx.fillText(settings.hotline || '01619-500178', 600, 985);
 
     ctx.font = '600 20px "Hind Siliguri", "Segoe UI", sans-serif';
-    ctx.fillStyle = '#064e3b';
+    ctx.fillStyle = '#193b28';
     ctx.fillText('(WhatsApp ও কল সুবিধা চালু আছে)', 840, 985);
 
   }, [bannerTheme, rates, readyRates, feeds, settings, notice, fontsReady]);
@@ -339,7 +339,7 @@ function BannerGeneratorModalContent({ onClose, rates: allRates, readyRates, fee
               <h3 className="font-extrabold text-white text-base sm:text-lg">
                 {lang === 'bn' ? 'ফেসবুক রেট ব্যানার ডাউনলোড (FosholNexa)' : 'Facebook Banner Card Generator'}
               </h3>
-              <p className="text-xs text-slate-400">
+              <p className="text-xs text-slate-500">
                 {lang === 'bn' ? 'এইচডি কোয়ালিটি স্কয়ার ইমেজ (১০৮০x১০৮০) তৈরি ও এক ক্লিকে ফেসবুক পেজে পোস্ট' : '1080x1080 HD Card ready for Facebook post'}
               </p>
             </div>
