@@ -44,12 +44,13 @@ export default function GallerySection({ images, kind, lang, settings }) {
         <span className="text-[10px] px-2 py-0.5 rounded-full bg-emerald-100 text-emerald-800 font-black">{shown.length}</span>
       </div>
 
-      <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-3">
+      <div className="grid gap-3 sm:gap-4 max-sm:[&>*:last-child:nth-child(odd)]:col-span-2 grid-cols-[repeat(auto-fit,minmax(8.5rem,1fr))] sm:grid-cols-[repeat(auto-fit,minmax(15rem,1fr))]">
         {shown.map((img, idx) => (
           <div key={img.id} className="group bg-white border border-slate-200 rounded-2xl overflow-hidden shadow-xs hover:shadow-md hover:border-emerald-300 transition flex flex-col">
           <button onClick={() => setOpen(idx)} className="text-left cursor-pointer flex-1">
-            <div className="aspect-[4/3] bg-slate-100 overflow-hidden">
-              <img src={img.url} alt={titleOf(img)} loading="lazy" className="w-full h-full object-contain group-hover:scale-[1.02] transition duration-300" />
+            <div className="relative aspect-[4/3] bg-slate-100 overflow-hidden">
+              <img src={img.url} alt="" aria-hidden="true" loading="lazy" className="absolute inset-0 w-full h-full object-cover blur-xl scale-125 opacity-60" />
+              <img src={img.url} alt={titleOf(img)} loading="lazy" className="relative w-full h-full object-contain p-1.5 drop-shadow-md group-hover:scale-[1.03] transition duration-300" />
             </div>
             <div className="px-3 py-2.5 border-t border-slate-100">
               <p className="text-xs sm:text-sm font-black text-slate-800 leading-snug line-clamp-2">{titleOf(img)}</p>
