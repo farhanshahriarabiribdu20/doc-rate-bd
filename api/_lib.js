@@ -66,6 +66,7 @@ const num = (v) => {
 
 const RATE_CATEGORIES = ['broiler', 'sonali', 'layer_brown', 'layer_white', 'cockerel'];
 const RATE_STATUSES = ['available', 'booking_open', 'limited'];
+const ZONE_IDS = ['narayanganj', 'gazipur', 'narsingdi', 'tangail', 'kishoreganj', 'mymensingh', 'cumilla', 'noakhali', 'chattogram', 'sylhet', 'faridpur', 'gopalgonj', 'jhenaidah', 'khulna', 'barishal', 'bogura', 'rajshahi', 'sirajgonj', 'rangpur', 'dinajpur'];
 const DIVISION_IDS = ['dhaka', 'chittagong', 'rajshahi', 'rangpur', 'khulna', 'sylhet', 'mymensingh', 'barisal'];
 
 const genId = (prefix) => `${prefix}-${Date.now()}-${Math.random().toString(36).slice(2, 7)}`;
@@ -78,6 +79,12 @@ export function sanitizeRates(input) {
     if (item.divisionRates && typeof item.divisionRates === 'object') {
       for (const d of DIVISION_IDS) {
         if (item.divisionRates[d] !== undefined) divisionRates[d] = num(item.divisionRates[d]);
+      }
+    }
+    const zoneRates = {};
+    if (item.zoneRates && typeof item.zoneRates === 'object') {
+      for (const z of ZONE_IDS) {
+        if (item.zoneRates[z] !== undefined) zoneRates[z] = num(item.zoneRates[z]);
       }
     }
     return {
@@ -93,6 +100,7 @@ export function sanitizeRates(input) {
       bookingPhone: str(item.bookingPhone, 20),
       notes: str(item.notes, 200),
       divisionRates,
+      zoneRates,
       regionBn: str(item.regionBn, 120),
       regionEn: str(item.regionEn, 120),
       verified: item.verified !== false

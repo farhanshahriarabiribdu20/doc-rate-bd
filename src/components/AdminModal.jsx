@@ -7,6 +7,7 @@ import WhatsAppPastePanel from './WhatsAppPastePanel';
 import VersionHistoryPanel from './VersionHistoryPanel';
 import ExcelImportPanel from './ExcelImportPanel';
 import { applyExcelPlan } from '../utils/excelRates';
+import { clearZoneRates } from '../data/zones';
 import {
   adminLogin, publishSiteData, fetchFeedbacks, deleteFeedback, clearAllFeedbacks
 } from '../services/api';
@@ -246,14 +247,14 @@ function AdminModalContent({
 
   const handleDivisionChange = (id, division, value) => {
     setRates((prev) => prev.map((item) => (
-      item.id === id ? { ...item, divisionRates: { ...(item.divisionRates || {}), [division]: value } } : item
+      item.id === id ? { ...clearZoneRates(item, division), divisionRates: { ...(item.divisionRates || {}), [division]: value } } : item
     )));
   };
 
   const handleSyncDivisions = (item) => {
     const base = Number(item.todayRate) || 0;
     const zones = Object.fromEntries(DIVISIONS.filter((d) => d.id !== 'all').map((d) => [d.id, base]));
-    setRates((prev) => prev.map((r) => (r.id === item.id ? { ...r, divisionRates: zones } : r)));
+    setRates((prev) => prev.map((r) => (r.id === item.id ? { ...clearZoneRates(r, 'all'), divisionRates: zones } : r)));
     showToast('সব জোনের রেট আজকের রেটের সমান করা হয়েছে (প্রয়োজনে আলাদা করে বদলান)');
   };
 
@@ -324,6 +325,9 @@ function AdminModalContent({
         main = Math.round(divisionIds.reduce((sum, id) => sum + Number(division[id]), 0) / divisionIds.length);
       }
       next = { ...next, todayRate: main };
+      // zone rates under a division that was just overwritten would be stale; the division rate applies instead
+      if (list.some((u) => u.region === 'all')) next = clearZoneRates(next, 'all');
+      else list.filter((u) => u.region !== 'national').forEach((u) => { next = clearZoneRates(next, u.region); });
       if (next.divisionRates || divisionTouched || list.some((u) => u.region === 'all')) next.divisionRates = division;
       return next;
     }));

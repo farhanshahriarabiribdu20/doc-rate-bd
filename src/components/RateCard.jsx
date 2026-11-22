@@ -1,11 +1,10 @@
 import React from 'react';
 import { AlertTriangle, MapPin } from 'lucide-react';
 import PriceChange from './PriceChange';
+import { rateForRegion, zoneRegionName } from '../data/zones';
 
 export default function RateCard({ item, selectedDivision, isStale = false, lang }) {
-  const currentRate = (selectedDivision !== 'all' && item.divisionRates && item.divisionRates[selectedDivision]) 
-    ? item.divisionRates[selectedDivision] 
-    : item.todayRate;
+  const currentRate = rateForRegion(item, selectedDivision);
 
 
   const divisionRegionNames = {
@@ -19,9 +18,9 @@ export default function RateCard({ item, selectedDivision, isStale = false, lang
     barisal: { bn: 'সাউথ জোন (বরিশাল বিভাগ)', en: 'South Zone (Barisal)' }
   };
 
-  const currentRegion = (selectedDivision !== 'all' && divisionRegionNames[selectedDivision])
+  const currentRegion = zoneRegionName(selectedDivision, lang) || ((selectedDivision !== 'all' && divisionRegionNames[selectedDivision])
     ? (lang === 'bn' ? divisionRegionNames[selectedDivision].bn : divisionRegionNames[selectedDivision].en)
-    : (lang === 'bn' ? (item.regionBn || 'সেন্ট্রাল ও ইস্ট জোন') : (item.regionEn || 'Central & East Zone'));
+    : (lang === 'bn' ? (item.regionBn || 'সেন্ট্রাল ও ইস্ট জোন') : (item.regionEn || 'Central & East Zone')));
 
   const getCategoryTheme = (cat) => {
     switch(cat) {

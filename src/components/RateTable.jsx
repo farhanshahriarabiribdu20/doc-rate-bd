@@ -1,6 +1,7 @@
 import React from 'react';
 import { Printer, MapPin, ShieldCheck, AlertTriangle } from 'lucide-react';
 import PriceChange from './PriceChange';
+import { rateForRegion, zoneRegionName } from '../data/zones';
 
 export default function RateTable({ rates, selectedDivision, isStale = false, lang }) {
   const handlePrint = () => {
@@ -33,7 +34,7 @@ export default function RateTable({ rates, selectedDivision, isStale = false, la
             </span>
           </div>
           <p className="text-xs text-slate-500 font-medium mt-0.5">
-            {lang === 'bn' ? 'প্রতিটি কোম্পানির অফিশিয়াল দর, জোন ও বুকিং সরাসরি সম্পন্ন করুন' : 'Official rates and zone-wise prices across all brands'}
+            {lang === 'bn' ? 'প্রতিটি কোম্পানির অফিসিয়াল দর ও জোনভিত্তিক রেট' : 'Official rates and zone-wise prices across all brands'}
           </p>
         </div>
 
@@ -60,12 +61,10 @@ export default function RateTable({ rates, selectedDivision, isStale = false, la
           </thead>
           <tbody className="divide-y divide-slate-100">
             {rates.map((item) => {
-              const currentRate = (selectedDivision !== 'all' && item.divisionRates && item.divisionRates[selectedDivision]) 
-                ? item.divisionRates[selectedDivision] 
-                : item.todayRate;
-              const currentRegion = (selectedDivision !== 'all' && divisionRegionNames[selectedDivision])
+              const currentRate = rateForRegion(item, selectedDivision);
+              const currentRegion = zoneRegionName(selectedDivision, lang) || ((selectedDivision !== 'all' && divisionRegionNames[selectedDivision])
                 ? (lang === 'bn' ? divisionRegionNames[selectedDivision].bn : divisionRegionNames[selectedDivision].en)
-                : (lang === 'bn' ? (item.regionBn || 'সেন্ট্রাল ও ইস্ট জোন') : (item.regionEn || 'Central & East Zone'));
+                : (lang === 'bn' ? (item.regionBn || 'সেন্ট্রাল ও ইস্ট জোন') : (item.regionEn || 'Central & East Zone')));
 
               return (
                 <tr key={item.id} className="hover:bg-emerald-50/40 transition-colors">
