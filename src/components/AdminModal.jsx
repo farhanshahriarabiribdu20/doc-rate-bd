@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useCallback, useRef } from 'react';
 import {
   X, Lock, ShieldCheck, Plus, Trash2, Download, Upload, RotateCcw, Check, Settings,
-  Bird, Phone, MessageSquareText, CloudUpload, LogOut, ChevronDown, ChevronUp, CalendarClock, Egg, AlertTriangle, ClipboardPaste, Undo2, History
+  Bird, Phone, MessageSquareText, CloudUpload, LogOut, ChevronDown, ChevronUp, CalendarClock, Egg, AlertTriangle, ClipboardPaste, Undo2, History, Megaphone
 } from 'lucide-react';
 import WhatsAppPastePanel from './WhatsAppPastePanel';
 import VersionHistoryPanel from './VersionHistoryPanel';
@@ -60,7 +60,8 @@ function AdminModalContent({
   dirty,
   updatedAt,
   onPublished,
-  onResetDefaults
+  onResetDefaults,
+  onOpenPostKit
 }) {
   const [adminKey, setAdminKey] = useState('');
   const [checking, setChecking] = useState(() => Boolean(getSavedKey()));
@@ -385,6 +386,15 @@ function AdminModalContent({
           </div>
 
           <div className="flex items-center gap-2">
+            {adminKey && onOpenPostKit && (
+              <button
+                onClick={onOpenPostKit}
+                className="flex items-center gap-1.5 px-3 py-2 rounded-xl text-xs font-black bg-amber-100 hover:bg-amber-200 text-amber-900 border border-amber-300 transition cursor-pointer"
+                title="ফেসবুক/হোয়াটসঅ্যাপে পোস্টের টেক্সট ও ছবি"
+              >
+                <Megaphone className="w-4 h-4" /> <span className="hidden sm:inline">পোস্ট কিট</span>
+              </button>
+            )}
             {adminKey && (
               <button
                 onClick={() => setActiveTab('history')}

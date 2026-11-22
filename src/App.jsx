@@ -523,6 +523,7 @@ export default function App() {
         updatedAt={updatedAt}
         onPublished={handlePublished}
         onResetDefaults={handleResetDefaults}
+        onOpenPostKit={() => { setIsAdminOpen(false); setIsBannerOpen(true); }}
         lang={lang}
       />
 

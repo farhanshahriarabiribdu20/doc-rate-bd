@@ -1,5 +1,6 @@
 import React, { useRef, useEffect, useState } from 'react';
-import { X, Download, Share2, Image as ImageIcon, Check } from 'lucide-react';
+import { X, Download, Share2, Image as ImageIcon, Check, Send } from 'lucide-react';
+import { buildShareText, copyToClipboard } from '../utils/shareText';
 import { getReadyMarketStats } from '../data/readyMarketData';
 
 export default function BannerGeneratorModal(props) {
@@ -10,6 +11,7 @@ export default function BannerGeneratorModal(props) {
 function BannerGeneratorModalContent({ onClose, rates, readyRates, feeds, settings, notice, lang }) {
   const canvasRef = useRef(null);
   const [downloading, setDownloading] = useState(false);
+  const [kitStatus, setKitStatus] = useState('');
   const [bannerTheme, setBannerTheme] = useState('emerald'); // emerald, midnight, orange
   const [fontsReady, setFontsReady] = useState(false);
 
@@ -283,6 +285,43 @@ function BannerGeneratorModalContent({ onClose, rates, readyRates, feeds, settin
     setTimeout(() => setDownloading(false), 1500);
   };
 
+  const downloadPng = (blob, name) => {
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    link.download = name;
+    link.href = url;
+    link.click();
+    setTimeout(() => URL.revokeObjectURL(url), 4000);
+  };
+
+  // One tap: copy the post text, then share the banner image (phones) or download it (computers).
+  const handlePostKit = async () => {
+    const canvas = canvasRef.current;
+    if (!canvas) return;
+    const text = buildShareText({ rates, notice, settings });
+    const copied = await copyToClipboard(text);
+    const blob = await new Promise((resolve) => canvas.toBlob(resolve, 'image/png'));
+    if (!blob) { setKitStatus('ছবি তৈরি করা যায়নি, আবার চেষ্টা করুন।'); return; }
+    const name = `fosholnexa-doc-rate-${new Date().toISOString().slice(0, 10)}.png`;
+    const file = new File([blob], name, { type: 'image/png' });
+    const copiedNote = copied ? 'পোস্টের টেক্সট কপি হয়েছে।' : 'টেক্সট কপি করা যায়নি, শেয়ার বাটন থেকে কপি করুন।';
+    try {
+      if (navigator.canShare && navigator.canShare({ files: [file] })) {
+        await navigator.share({ files: [file], text });
+        setKitStatus(`${copiedNote} ফেসবুকে টেক্সট না এলে পেস্ট করুন।`);
+        return;
+      }
+    } catch (err) {
+      if (err && err.name === 'AbortError') { setKitStatus(copiedNote); return; }
+    }
+    downloadPng(blob, name);
+    setKitStatus(`${copiedNote} ছবি ডাউনলোড হয়েছে। ফেসবুক গ্রুপে ছবি দিন, টেক্সট পেস্ট করুন।`);
+  };
+
+  const handlePostKitWhatsApp = () => {
+    window.open(`https://api.whatsapp.com/send?text=${encodeURIComponent(buildShareText({ rates, notice, settings }))}`, '_blank');
+  };
+
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/75 backdrop-blur-xs animate-in fade-in duration-200">
       <div className="bg-slate-900 text-white rounded-3xl max-w-4xl w-full max-h-[92vh] overflow-y-auto shadow-2xl border border-slate-800">
@@ -350,6 +389,27 @@ function BannerGeneratorModalContent({ onClose, rates, readyRates, feeds, settin
               ref={canvasRef}
               className="w-full max-w-[500px] h-auto rounded-xl shadow-2xl border border-slate-800/80 aspect-square"
             />
+          </div>
+
+          {/* Post kit: text + image in one tap */}
+          <div className="rounded-2xl border border-emerald-700/60 bg-emerald-950/40 p-4 space-y-3">
+            <p className="text-sm font-extrabold text-emerald-300">📣 পোস্ট কিট — এক ক্লিকে টেক্সট + ছবি</p>
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+              <button
+                onClick={handlePostKit}
+                className="py-3 px-5 rounded-2xl bg-amber-400 hover:bg-amber-300 text-slate-950 font-extrabold text-sm transition flex items-center justify-center gap-2 cursor-pointer"
+              >
+                <Send className="w-5 h-5" />
+                <span>টেক্সট কপি + ছবি শেয়ার/ডাউনলোড</span>
+              </button>
+              <button
+                onClick={handlePostKitWhatsApp}
+                className="py-3 px-5 rounded-2xl bg-emerald-600 hover:bg-emerald-500 text-white font-bold text-sm transition flex items-center justify-center gap-2 cursor-pointer"
+              >
+                <span>হোয়াটসঅ্যাপে টেক্সট পাঠান</span>
+              </button>
+            </div>
+            {kitStatus && <p className="text-xs text-emerald-200 font-semibold" role="status">{kitStatus}</p>}
           </div>
 
           {/* Action Download Buttons */}
