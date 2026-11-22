@@ -1,6 +1,7 @@
 import { put, get } from '@vercel/blob';
 import { createHmac, randomBytes, scrypt, timingSafeEqual } from 'node:crypto';
 import { noStore, parseBody, requireAdmin } from './_lib.js';
+import { readFresh, writeFresh } from './_fresh.js';
 
 // Seller marketplace: anyone can open a free seller account (user id + password), log in and post
 // ready-bird / egg listings. Everybody can browse the live listings.
@@ -82,10 +83,11 @@ const writeJson = (path, data) =>
 const emptyStore = () => ({ settings: { requireApproval: true }, banned: [], items: [] });
 
 async function readStore() {
-  const data = await readJson(LISTINGS_PATH);
+  const data = await readFresh(LISTINGS_PATH);
   const base = emptyStore();
   if (!data || typeof data !== 'object') return base;
   return {
+    v: Number(data.v) || 0,
     settings: { requireApproval: data.settings?.requireApproval !== false },
     banned: Array.isArray(data.banned) ? data.banned.filter((x) => typeof x === 'string').slice(0, 500) : [],
     items: Array.isArray(data.items) ? data.items : []
@@ -101,7 +103,8 @@ async function mutateStore(change, verify) {
     const store = await readStore();
     const outcome = change(store);
     if (outcome && outcome.error) return outcome;
-    await writeJson(LISTINGS_PATH, store);
+    const { v: prevV, ...data } = store;
+    await writeFresh(LISTINGS_PATH, data, prevV);
     const check = await readStore();
     if (verify(check)) return { ...(outcome || {}), store: check };
     await wait(150 + Math.random() * 250);

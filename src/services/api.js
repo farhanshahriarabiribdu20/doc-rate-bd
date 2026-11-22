@@ -182,6 +182,15 @@ export async function pingLiveVisitors(sid) {
 }
 
 // ---------- rate pictures (gallery) ----------
+/** Admin: the list with its version number ({ images, v }) or null. */
+export async function fetchGalleryFull() {
+  try {
+    const res = await fetch(`/api/gallery?t=${Date.now()}`, { cache: 'no-store' });
+    const body = await json(res);
+    return res.ok && body?.success && Array.isArray(body.images) ? { images: body.images, v: Number(body.v) || 0 } : null;
+  } catch { return null; }
+}
+
 /** Public: the uploaded rate pictures, newest first, or null on failure. */
 export async function fetchGallery() {
   try {
@@ -196,7 +205,7 @@ export async function galleryAdmin(key, payload) {
   try {
     const res = await fetch('/api/gallery', { method: 'POST', headers: adminHeaders(key), body: JSON.stringify(payload) });
     const body = await json(res);
-    return { ok: res.ok && body?.success === true, images: body?.images || null, error: body?.error || '' };
+    return { ok: res.ok && body?.success === true, images: body?.images || null, v: Number(body?.v) || 0, error: body?.error || '' };
   } catch {
     return { ok: false, images: null, error: 'ইন্টারনেট সংযোগ চেক করুন' };
   }

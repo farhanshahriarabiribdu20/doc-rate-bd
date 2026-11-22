@@ -1,4 +1,5 @@
-import { put, get, del } from '@vercel/blob';
+import { put, del } from '@vercel/blob';
+import { readFresh, writeFresh } from './_fresh.js';
 import { randomBytes } from 'node:crypto';
 import { noStore, parseBody, requireAdmin } from './_lib.js';
 
@@ -18,18 +19,27 @@ const TYPES = { 'image/jpeg': 'jpg', 'image/png': 'png', 'image/webp': 'webp' };
 const str = (v, max) => (typeof v === 'string' ? v.replace(/\s+/g, ' ').trim().slice(0, max) : '');
 
 async function readIndex() {
-  try {
-    const r = await get(INDEX_PATH, { access: 'public', useCache: false });
-    if (!r || r.statusCode !== 200) return [];
-    const data = JSON.parse(await new Response(r.stream).text());
-    return Array.isArray(data.images) ? data.images : [];
-  } catch { return []; }
+  const data = await readFresh(INDEX_PATH);
+  return { images: Array.isArray(data?.images) ? data.images : [], v: Number(data?.v) || 0 };
 }
 
-const writeIndex = (images) =>
-  put(INDEX_PATH, JSON.stringify({ images }), {
-    access: 'public', addRandomSuffix: false, allowOverwrite: true, contentType: 'application/json', cacheControlMaxAge: 60
-  });
+const writeIndex = (images, ...prev) => writeFresh(INDEX_PATH, { images }, Math.max(0, ...prev.map((x) => Number(x) || 0)));
+
+const IMG_URL_RE = /^https?:\/\/[^\s"'<>]+\/gallery\/img[^\s"'<>]*$/;
+
+/** The list the admin's browser already has, if it is at least as new as the server's copy. */
+function clientCopy(body, server) {
+  if (!Array.isArray(body.known) || !(Number(body.knownV) >= server.v)) return null;
+  const out = [];
+  for (const it of body.known.slice(0, MAX_IMAGES)) {
+    if (!it || typeof it !== 'object' || !IMG_URL_RE.test(String(it.url || ''))) return null;
+    out.push({
+      id: str(it.id, 40), url: String(it.url).slice(0, 500), caption: str(it.caption, 120),
+      target: TARGETS.includes(it.target) ? it.target : 'all', createdAt: Number(it.createdAt) || Date.now()
+    });
+  }
+  return out;
+}
 
 const matchesMagic = (buf, type) => {
   if (type === 'image/jpeg') return buf[0] === 0xff && buf[1] === 0xd8;
@@ -42,16 +52,21 @@ export default async function handler(req, res) {
   noStore(res);
   try {
     if (req.method === 'GET') {
-      const images = await readIndex();
+      const { images, v } = await readIndex();
       res.setHeader('Cache-Control', 'public, s-maxage=60, stale-while-revalidate=300');
-      return res.status(200).json({ success: true, images });
+      return res.status(200).json({ success: true, images, v });
     }
     if (req.method !== 'POST') return res.status(405).json({ success: false, error: 'Method not allowed' });
     if (!(await requireAdmin(req, res))) return;
 
     const body = parseBody(req);
     if (!body || typeof body !== 'object') return res.status(400).json({ success: false, error: 'Invalid JSON body' });
-    const images = await readIndex();
+    const server = await readIndex();
+    const images = clientCopy(body, server) || server.images;
+    const save = async (next) => {
+      const v = await writeIndex(next, server.v, body.knownV);
+      return res.status(200).json({ success: true, images: next, v });
+    };
 
     if (body.action === 'add') {
       const m = /^data:(image\/(?:jpeg|png|webp));base64,([A-Za-z0-9+/=]+)$/.exec(typeof body.image === 'string' ? body.image : '');
@@ -71,9 +86,7 @@ export default async function handler(req, res) {
         target: TARGETS.includes(body.target) ? body.target : 'all',
         createdAt: Date.now()
       };
-      const next = [item, ...images];
-      await writeIndex(next);
-      return res.status(200).json({ success: true, images: next });
+      return save([item, ...images]);
     }
 
     if (body.action === 'update') {
@@ -81,8 +94,7 @@ export default async function handler(req, res) {
       const next = images.map((it) => (it.id === id
         ? { ...it, caption: str(body.caption, 120), target: TARGETS.includes(body.target) ? body.target : it.target }
         : it));
-      await writeIndex(next);
-      return res.status(200).json({ success: true, images: next });
+      return save(next);
     }
 
     if (body.action === 'delete') {
@@ -90,9 +102,9 @@ export default async function handler(req, res) {
       const target = images.find((it) => it.id === id);
       if (!target) return res.status(404).json({ success: false, error: 'ছবিটি পাওয়া যায়নি' });
       const next = images.filter((it) => it.id !== id);
-      await writeIndex(next);
+      const out = await save(next);
       try { await del(target.url); } catch { /* the list no longer points to it; a leftover blob is harmless */ }
-      return res.status(200).json({ success: true, images: next });
+      return out;
     }
 
     return res.status(400).json({ success: false, error: 'unknown action' });

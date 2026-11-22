@@ -1,4 +1,4 @@
-import React, { useRef, useState } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import { ImagePlus, Trash2, Loader2, Save } from 'lucide-react';
 import { galleryAdmin } from '../services/api';
 import { compressImage } from '../utils/compressImage';
@@ -7,7 +7,18 @@ const TARGETS = [['all', 'দুই ট্যাবেই'], ['doc', 'বাচ�
 const input = 'w-full px-3 py-2 border border-slate-300 rounded-xl text-sm bg-white focus:outline-none focus:ring-2 focus:ring-emerald-500';
 
 /** Admin: upload rate pictures (they are shrunk in the browser first), caption them, choose the tab, delete. */
-export default function GalleryAdminPanel({ adminKey, images, onChange, showToast }) {
+export default function GalleryAdminPanel({ adminKey, gallery, onChange, showToast }) {
+  const images = gallery.images;
+  const latest = useRef(gallery); // newest list + version, sent with every change so nothing older overwrites it
+  useEffect(() => { if ((gallery.v || 0) >= (latest.current.v || 0)) latest.current = gallery; }, [gallery]);
+  const send = async (payload) => {
+    const r = await galleryAdmin(adminKey, { ...payload, known: latest.current.images, knownV: latest.current.v });
+    if (r.ok && r.images) {
+      latest.current = { images: r.images, v: r.v };
+      onChange(latest.current);
+    }
+    return r;
+  };
   const fileRef = useRef(null);
   const [caption, setCaption] = useState('');
   const [target, setTarget] = useState('all');
@@ -20,35 +31,64 @@ export default function GalleryAdminPanel({ adminKey, images, onChange, showToas
     if (!files.length) return;
     if (!caption.trim()) { showToast('আগে ক্যাপশন লিখুন — ছবির নিচে সবাই এটা দেখবে (যেমন: আজকের রেডি ব্রয়লারের রেট)', 'error'); return; }
     setBusy(true);
-    let list = images;
     let done = 0;
     for (const file of files) {
       try {
         const dataUrl = await compressImage(file);
-        const r = await galleryAdmin(adminKey, { action: 'add', image: dataUrl, caption, target });
+        const r = await send({ action: 'add', image: dataUrl, caption, target });
         if (!r.ok) { showToast(r.error || 'ছবি আপলোড হয়নি', 'error'); break; }
-        list = r.images; done += 1;
+        done += 1;
       } catch { showToast(`"${file.name}" ছবিটি পড়া যায়নি`, 'error'); }
     }
     setBusy(false);
-    if (done) { onChange(list); setCaption(''); showToast(`✅ ${done}টি ছবি প্রকাশ হয়েছে।`); }
+    // the caption stays in the box (handy when several pictures share it); change it for the next one
+    if (done) showToast(`✅ ${done}টি ছবি প্রকাশ হয়েছে।`);
   };
 
-  const save = async (img) => {
-    const ed = edits[img.id] || {};
-    setBusy(true);
-    const r = await galleryAdmin(adminKey, { action: 'update', id: img.id, caption: ed.caption ?? img.caption, target: ed.target ?? img.target });
-    setBusy(false);
-    if (r.ok) { onChange(r.images); setEdits((p) => { const n = { ...p }; delete n[img.id]; return n; }); showToast('✅ সংরক্ষিত।'); }
-    else showToast(r.error || 'সংরক্ষণ হয়নি', 'error');
+  const editsRef = useRef(edits);
+  editsRef.current = edits;
+  const timers = useRef({});
+
+  const save = async (img, quiet = false) => {
+    clearTimeout(timers.current[img.id]);
+    const ed = editsRef.current[img.id];
+    if (!ed) return;
+    const sent = { caption: ed.caption ?? img.caption, target: ed.target ?? img.target };
+    const r = await send({ action: 'update', id: img.id, ...sent });
+    if (r.ok) {
+      // keep anything typed while the request was on its way
+      setEdits((p) => {
+        const cur = p[img.id];
+        if (!cur || ((cur.caption ?? img.caption) === sent.caption && (cur.target ?? img.target) === sent.target)) {
+          const n = { ...p }; delete n[img.id]; return n;
+        }
+        return p;
+      });
+      if (!quiet) showToast('✅ সংরক্ষিত।');
+    } else showToast(r.error || 'ক্যাপশন সংরক্ষণ হয়নি, আবার চেষ্টা করুন', 'error');
   };
+
+  // captions save by themselves 1.5 s after you stop typing (and when the box loses focus)
+  const edit = (img, patch) => {
+    setEdits((p) => ({ ...p, [img.id]: { ...p[img.id], ...patch } }));
+    clearTimeout(timers.current[img.id]);
+    timers.current[img.id] = setTimeout(() => save(img, true), 1500);
+  };
+  // leaving the tab: save whatever is still unsaved
+  useEffect(() => () => {
+    Object.values(timers.current).forEach(clearTimeout);
+    Object.keys(editsRef.current).forEach((id) => {
+      const img = latest.current.images.find((x) => x.id === id);
+      if (img) save(img, true);
+    });
+  }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
   const remove = async (img) => {
     if (!window.confirm('ছবিটি মুছে ফেলবেন?')) return;
     setBusy(true);
-    const r = await galleryAdmin(adminKey, { action: 'delete', id: img.id });
+    const r = await send({ action: 'delete', id: img.id });
     setBusy(false);
-    if (r.ok) { onChange(r.images); showToast('ছবিটি মুছে ফেলা হয়েছে।'); }
+    if (r.ok) showToast('ছবিটি মুছে ফেলা হয়েছে।');
     else showToast(r.error || 'মোছা যায়নি', 'error');
   };
 
@@ -89,11 +129,12 @@ export default function GalleryAdminPanel({ adminKey, images, onChange, showToas
               <div key={img.id} className="border border-slate-200 rounded-2xl p-3 flex gap-3">
                 <img src={img.url} alt="" className="w-24 h-28 object-cover rounded-xl bg-slate-100 shrink-0" />
                 <div className="flex-1 min-w-0 space-y-2">
-                  <input className={input} value={cap} maxLength={120} placeholder="ক্যাপশন" onChange={(e) => setEdits((p) => ({ ...p, [img.id]: { ...p[img.id], caption: e.target.value } }))} />
-                  <select className={input} value={tgt} onChange={(e) => setEdits((p) => ({ ...p, [img.id]: { ...p[img.id], target: e.target.value } }))}>
+                  <input className={input} value={cap} maxLength={120} placeholder="ক্যাপশন" onChange={(e) => edit(img, { caption: e.target.value })} onBlur={() => save(img, true)} />
+                  <select className={input} value={tgt} onChange={(e) => edit(img, { target: e.target.value })}>
                     {TARGETS.map(([k, t]) => <option key={k} value={k}>{t}</option>)}
                   </select>
                   <div className="flex gap-2">
+                    {dirty && <span className="self-center text-[11px] font-bold text-amber-700">সংরক্ষণ হচ্ছে…</span>}
                     {dirty && <button disabled={busy} onClick={() => save(img)} className="flex items-center gap-1 px-2.5 py-1.5 rounded-lg bg-emerald-600 hover:bg-emerald-700 text-white font-black text-xs cursor-pointer"><Save className="w-3.5 h-3.5" /> সেভ</button>}
                     <button disabled={busy} onClick={() => remove(img)} className="flex items-center gap-1 px-2.5 py-1.5 rounded-lg bg-red-50 hover:bg-red-100 text-red-700 font-black text-xs cursor-pointer"><Trash2 className="w-3.5 h-3.5" /> মুছুন</button>
                   </div>

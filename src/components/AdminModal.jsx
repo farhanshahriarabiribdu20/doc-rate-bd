@@ -16,7 +16,7 @@ import { applyExcelPlan } from '../utils/excelRates';
 import { clearZoneRates } from '../data/zones';
 import {
   adminLogin, publishSiteData, fetchFeedbacks, deleteFeedback, clearAllFeedbacks, saveRateDays,
-  fetchRateSubmissions, fetchGallery, deleteRateSubmissions
+  fetchRateSubmissions, fetchGalleryFull, deleteRateSubmissions
 } from '../services/api';
 import { todayISO } from '../utils/date';
 import { DIVISIONS } from '../data/initialData';
@@ -197,10 +197,21 @@ function AdminModalContent({
   };
 
   // ---- rate pictures (gallery) ----
-  const [gallery, setGallery] = useState([]);
+  // { images, v }: the newest copy wins (the server's, or the one this browser saved after its last change)
+  const [gallery, setGalleryState] = useState({ images: [], v: 0 });
+  const setGallery = useCallback((next) => {
+    setGalleryState(next);
+    try { localStorage.setItem('fn_gallery_admin', JSON.stringify(next)); } catch { /* ignore */ }
+  }, []);
   const onGalleryTab = activeTab === 'gallery';
   useEffect(() => {
-    if (adminKey && onGalleryTab) fetchGallery().then((g) => { if (g) setGallery(g); });
+    if (!adminKey || !onGalleryTab) return;
+    let local = null;
+    try { local = JSON.parse(localStorage.getItem('fn_gallery_admin') || 'null'); } catch { /* ignore */ }
+    fetchGalleryFull().then((srv) => {
+      const best = [srv, local].filter((x) => x && Array.isArray(x.images)).sort((a, b) => (b.v || 0) - (a.v || 0))[0];
+      if (best) setGalleryState(best);
+    });
   }, [adminKey, onGalleryTab]);
 
   // ---- seller marketplace moderation ----
@@ -933,7 +944,7 @@ function AdminModalContent({
             )}
 
             {activeTab === 'gallery' && (
-              <GalleryAdminPanel adminKey={adminKey} images={gallery} onChange={setGallery} showToast={showToast} />
+              <GalleryAdminPanel adminKey={adminKey} gallery={gallery} onChange={setGallery} showToast={showToast} />
             )}
 
             {activeTab === 'market' && (
