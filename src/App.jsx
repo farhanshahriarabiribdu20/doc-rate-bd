@@ -181,6 +181,8 @@ export default function App() {
     const checkHash = () => {
       if (window.location.hash === '#admin') {
         setIsAdminOpen(true);
+        // Drop the hash so a page refresh does not open the admin panel again.
+        try { window.history.replaceState(null, '', window.location.pathname + window.location.search); } catch { /* ignore */ }
       }
     };
     checkHash();
