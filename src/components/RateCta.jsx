@@ -4,7 +4,7 @@ import React from 'react';
 export default function RateCta({ lang, onClick }) {
   const bn = lang === 'bn';
   return (
-    <div className="flex flex-wrap items-center justify-between gap-3 p-4 rounded-2xl bg-amber-50 border border-amber-200">
+    <div className="h-full flex flex-col gap-3 p-4 sm:p-5 rounded-2xl bg-amber-50 border border-amber-200">
       <div className="flex items-start gap-3 min-w-0 flex-1">
         <div className="w-10 h-10 rounded-xl bg-amber-100 flex items-center justify-center text-xl shrink-0">🤝</div>
         <div className="min-w-0">
@@ -18,7 +18,7 @@ export default function RateCta({ lang, onClick }) {
           </p>
         </div>
       </div>
-      <button onClick={onClick} className="px-4 py-2.5 rounded-xl bg-amber-400 hover:bg-amber-300 text-slate-950 font-black text-xs sm:text-sm shadow-sm cursor-pointer shrink-0">
+      <button onClick={onClick} className="mt-auto w-full px-4 py-2.5 rounded-xl bg-amber-400 hover:bg-amber-300 text-slate-950 font-black text-xs sm:text-sm shadow-sm cursor-pointer">
         ✍️ {bn ? 'রেট জানান' : 'Share a rate'}
       </button>
     </div>
