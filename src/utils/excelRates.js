@@ -143,7 +143,10 @@ export function planExcelImport(sheet, earlierSheets, items) {
   for (const col of sheet.columns) {
     if (!col.count) continue;
     const mapped = ITEM_MAP[col.key];
-    const existing = mapped && byId.has(mapped) && !used.has(mapped) ? byId.get(mapped) : null;
+    const generatedId = `xl-${slug(col.companyKey)}-${slug(col.breed)}`;
+    // a column added by an earlier upload is found again by its generated id (so uploading twice never duplicates it)
+    const targetId = mapped && byId.has(mapped) ? mapped : byId.has(generatedId) ? generatedId : null;
+    const existing = targetId && !used.has(targetId) ? byId.get(targetId) : null;
     const { divisionRates, todayRate } = deriveFromZones(col.zones);
     const prev = prevByKey.get(col.key);
     const prevRate = prev ? deriveFromZones(prev.zones).todayRate : null;
@@ -152,7 +155,7 @@ export function planExcelImport(sheet, earlierSheets, items) {
     rows.push({
       key: col.key,
       label,
-      itemId: existing ? existing.id : `xl-${slug(col.companyKey)}-${slug(col.breed)}`,
+      itemId: existing ? existing.id : generatedId,
       isNew: !existing,
       current: existing ? existing.todayRate : null,
       count: col.count,
@@ -202,7 +205,8 @@ export function applyExcelPlan(items, rows, { dateISO, previousDateISO, bookingP
       verified: true
     };
   });
-  return [...updated, ...added];
+  const seen = new Set();
+  return [...updated, ...added].filter((it) => (seen.has(it.id) ? false : (seen.add(it.id), true))); // one item per id
 }
 
 /**
