@@ -2,6 +2,9 @@ import React, { useMemo, useState } from 'react';
 import { ClipboardPaste, Check, X, AlertTriangle, Wand2 } from 'lucide-react';
 import { parseWhatsAppRates } from '../utils/whatsappParser';
 import { todayISO } from '../utils/date';
+import { DIVISIONS } from '../data/initialData';
+
+const divName = (id) => (DIVISIONS.find((d) => d.id === id)?.nameBn || id).split('(')[0].trim();
 
 const shortName = (it) => `${String(it.company || '').split('(')[0].trim()} — ${it.breed || it.category}`;
 
@@ -20,17 +23,18 @@ export default function WhatsAppPastePanel({ rates, reportDateISO, onApply, onCl
   const handleParse = () => {
     const result = parseWhatsAppRates(text, rates);
     setParsed(result);
-    setRows(result.rows.map((r) => ({ ...r, include: Boolean(r.itemId) })));
+    setRows(result.rows.map((r) => ({ ...r, region: r.division || 'national', include: Boolean(r.itemId) })));
   };
 
   const update = (i, patch) => setRows((prev) => prev.map((r, idx) => (idx === i ? { ...r, ...patch } : r)));
 
   const ready = rows.filter((r) => r.include && r.itemId && Number.isFinite(Number(r.rate)) && Number(r.rate) > 0);
   const needsChoice = rows.filter((r) => !r.itemId).length;
+  const noRegion = rows.filter((r) => r.include && r.itemId && r.region === 'national').length;
 
   const handleApply = () => {
-    const updates = {};
-    ready.forEach((r) => { updates[r.itemId] = Number(r.rate); }); // later lines win
+    // [{ id, region, rate }] — region: a division id, 'all' (every region) or 'national' (main rate only)
+    const updates = ready.map((r) => ({ id: r.itemId, region: r.region, rate: Number(r.rate) }));
     onApply(updates, newDay);
   };
 
@@ -71,10 +75,12 @@ export default function WhatsAppPastePanel({ rates, reportDateISO, onApply, onCl
               <p className="text-[11px] text-slate-600">
                 {rows.length}টি লাইন বোঝা গেছে। ভুল থাকলে ঠিক করুন, তারপর "প্রয়োগ করুন" চাপুন।
                 {needsChoice > 0 && <b className="text-amber-700"> {needsChoice}টিতে কোম্পানি বেছে দিতে হবে।</b>}
+                {noRegion > 0 && <b className="text-amber-700"> {noRegion}টিতে অঞ্চল পাওয়া যায়নি, শুধু জাতীয় গড় রেট বদলাবে। অঞ্চল বেছে দিন।</b>}
               </p>
               <div className="space-y-2">
                 {rows.map((r, i) => {
-                  const old = r.itemId ? byId.get(r.itemId)?.todayRate : null;
+                  const it = r.itemId ? byId.get(r.itemId) : null;
+                  const old = it ? ((r.region !== 'national' && r.region !== 'all' && it.divisionRates?.[r.region]) || it.todayRate) : null;
                   const big = old && Number(r.rate) && Math.abs(Number(r.rate) - old) / old > 0.4;
                   return (
                     <div key={i} className={`bg-white border rounded-xl p-2.5 flex flex-wrap items-center gap-2 ${r.itemId ? 'border-slate-200' : 'border-amber-400'}`}>
@@ -102,6 +108,18 @@ export default function WhatsAppPastePanel({ rates, reportDateISO, onApply, onCl
                           {rates.map((it) => <option key={it.id} value={it.id}>{shortName(it)}</option>)}
                         </optgroup>
                       </select>
+                      <select
+                        value={r.region}
+                        onChange={(e) => update(i, { region: e.target.value })}
+                        className={`px-2 py-1 border rounded-lg text-xs font-semibold max-w-[170px] ${r.region === 'national' ? 'border-amber-400 bg-amber-50' : 'border-slate-300'}`}
+                        title="কোন অঞ্চলের রেট"
+                      >
+                        <option value="national">অঞ্চল নেই (শুধু জাতীয় গড়)</option>
+                        <option value="all">সব অঞ্চলে একই রেট</option>
+                        {DIVISIONS.filter((d) => d.id !== 'all').map((d) => <option key={d.id} value={d.id}>{divName(d.id)}</option>)}
+                      </select>
+                      {r.via && <span className="text-[10px] text-slate-500">({r.via} → {divName(r.division)})</span>}
+                      {r.assumed && <span className="text-[10px] font-bold text-amber-700">ব্রয়লার ধরা হয়েছে</span>}
                       <span className="text-[11px] text-slate-400">{old != null ? `${old} →` : ''}</span>
                       <input
                         type="number"

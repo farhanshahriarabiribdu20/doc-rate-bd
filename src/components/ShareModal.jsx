@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { X, Copy, Check, Share2, MessageCircle } from 'lucide-react';
 import { buildShareText, copyToClipboard } from '../utils/shareText';
+import RegionSelect from './RegionSelect';
 
 export default function ShareModal(props) {
   if (!props.isOpen) return null;
@@ -9,8 +10,9 @@ export default function ShareModal(props) {
 
 function ShareModalContent({ onClose, rates, notice, settings, lang }) {
   const [copied, setCopied] = useState(false);
+  const [division, setDivision] = useState('all');
 
-  const shareText = buildShareText({ rates, notice, settings });
+  const shareText = buildShareText({ rates, notice, settings, division });
 
   const handleCopy = async () => {
     await copyToClipboard(shareText);
@@ -47,6 +49,8 @@ function ShareModalContent({ onClose, rates, notice, settings, lang }) {
               ? 'নিচের রেট টেক্সটটি এক ক্লিকে কপি করে আপনার ফেসবুক পেজ, গ্রুপ বা হোয়াটসঅ্যাপে পোস্ট করতে পারেন:' 
               : 'Copy formatted rates to post directly on Facebook or WhatsApp groups:'}
           </p>
+
+          <RegionSelect value={division} onChange={setDivision} withMatrix />
 
           <textarea
             readOnly
