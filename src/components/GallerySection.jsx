@@ -7,6 +7,9 @@ import { X, ChevronLeft, ChevronRight } from 'lucide-react';
  */
 export default function GallerySection({ images, kind, lang }) {
   const bn = lang === 'bn';
+  const fmt = (ms) => { try { return new Intl.DateTimeFormat('bn-BD', { dateStyle: 'long', timeZone: 'Asia/Dhaka' }).format(new Date(ms)); } catch { return ''; } };
+  // every picture always carries a title, so people know what it is even when no caption was typed
+  const titleOf = (img) => img.caption || (bn ? 'রেট চার্ট' : 'Rate chart');
   const [open, setOpen] = useState(-1);
   const shown = (images || []).filter((i) => i.target === 'all' || i.target === kind);
 
@@ -40,9 +43,12 @@ export default function GallerySection({ images, kind, lang }) {
             className="group text-left bg-white border border-slate-200 rounded-2xl overflow-hidden shadow-xs hover:shadow-md hover:border-emerald-300 transition cursor-pointer"
           >
             <div className="aspect-[4/5] bg-slate-100 overflow-hidden">
-              <img src={img.url} alt={img.caption || 'rate'} loading="lazy" className="w-full h-full object-contain group-hover:scale-[1.02] transition duration-300" />
+              <img src={img.url} alt={titleOf(img)} loading="lazy" className="w-full h-full object-contain group-hover:scale-[1.02] transition duration-300" />
             </div>
-            {img.caption && <p className="px-3 py-2 text-xs font-bold text-slate-700 line-clamp-2">{img.caption}</p>}
+            <div className="px-3 py-2.5 border-t border-slate-100">
+              <p className="text-xs sm:text-sm font-black text-slate-800 leading-snug line-clamp-2">{titleOf(img)}</p>
+              <p className="text-[11px] text-slate-500 mt-0.5">📅 {fmt(img.createdAt)}</p>
+            </div>
           </button>
         ))}
       </div>
@@ -57,8 +63,11 @@ export default function GallerySection({ images, kind, lang }) {
             </>
           )}
           <figure className="max-w-4xl max-h-full flex flex-col items-center gap-2" onClick={(e) => e.stopPropagation()}>
-            <img src={cur.url} alt={cur.caption || 'rate'} className="max-h-[82vh] max-w-full rounded-xl shadow-2xl object-contain" />
-            {cur.caption && <figcaption className="text-white text-sm font-bold text-center">{cur.caption}</figcaption>}
+            <img src={cur.url} alt={titleOf(cur)} className="max-h-[82vh] max-w-full rounded-xl shadow-2xl object-contain" />
+            <figcaption className="text-white text-center">
+              <span className="block text-sm sm:text-base font-black">{titleOf(cur)}</span>
+              <span className="block text-xs text-white/70">📅 {fmt(cur.createdAt)}</span>
+            </figcaption>
           </figure>
         </div>
       )}
