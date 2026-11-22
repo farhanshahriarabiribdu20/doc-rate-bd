@@ -12,6 +12,7 @@ import {
   ExternalLink 
 } from 'lucide-react';
 import { getReadyMarketStats } from '../data/readyMarketData';
+import { formatBn, formatEn, todayISO } from '../utils/date';
 
 export default function ReadyMarketSection({ readyRates = [], lang = 'bn', settings = {} }) {
   const [search, setSearch] = useState('');
@@ -19,6 +20,9 @@ export default function ReadyMarketSection({ readyRates = [], lang = 'bn', setti
   const [viewMode, setViewMode] = useState('table'); // 'table' | 'cards'
 
   const stats = getReadyMarketStats(readyRates);
+  const dateISO = settings.readyDateISO;
+  const dateLabel = dateISO ? (lang === 'bn' ? formatBn(dateISO) : formatEn(dateISO)).split('(')[0].trim() : '';
+  const dateIsToday = dateISO === todayISO();
 
   const productTabs = [
     { id: 'all', labelBn: 'সকল আইটেম', labelEn: 'All Items' },
@@ -64,7 +68,12 @@ export default function ReadyMarketSection({ readyRates = [], lang = 'bn', setti
             </p>
           </div>
 
-          <div className="flex items-center gap-2">
+          <div className="flex flex-wrap items-center gap-2">
+            {dateLabel && (
+              <span className={`px-3.5 py-1.5 rounded-2xl text-xs font-black border ${dateIsToday ? 'bg-emerald-400/25 text-emerald-100 border-emerald-300/40' : 'bg-amber-400/25 text-amber-100 border-amber-300/50'}`}>
+                📅 {lang === 'bn' ? 'রেটের তারিখ' : 'Rate date'}: {dateLabel}
+              </span>
+            )}
             <span className="px-3.5 py-1.5 rounded-2xl bg-white/10 text-emerald-200 text-xs font-bold border border-white/15">
               📍 {readyRates.length} {lang === 'bn' ? 'টি আঞ্চলিক মোকাম' : 'Hubs'}
             </span>
