@@ -35,9 +35,9 @@ export default function ReadyMarketSection({ readyRates = [], lang = 'bn', setti
   });
 
   return (
-    <section id="ready-market" className="mt-8 mb-10">
+    <section id="ready-market" className="space-y-5 sm:space-y-6">
       {/* Section Header */}
-      <div className="bg-gradient-to-br from-emerald-950 via-teal-950 to-slate-950 text-white p-6 sm:p-8 rounded-3xl shadow-xl border border-emerald-800/40 relative overflow-hidden mb-6">
+      <div className="bg-gradient-to-br from-emerald-950 via-teal-950 to-slate-950 text-white p-6 sm:p-8 rounded-3xl shadow-xl border border-emerald-800/40 relative overflow-hidden">
         <div className="absolute top-0 right-1/4 w-72 h-72 bg-emerald-500/10 rounded-full blur-3xl pointer-events-none"></div>
 
         <div className="relative z-10 flex flex-col md:flex-row md:items-center justify-between gap-4">

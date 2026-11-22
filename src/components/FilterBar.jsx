@@ -17,7 +17,7 @@ export default function FilterBar({
   lang
 }) {
   return (
-    <div className="bg-white rounded-3xl p-4 sm:p-5 border border-slate-200/90 shadow-xs mb-6 space-y-4">
+    <div className="bg-white rounded-3xl p-4 sm:p-5 border border-slate-200/90 shadow-xs space-y-4">
       {/* Category Pills */}
       <div className="flex items-center gap-2 overflow-x-auto pb-1 scrollbar-none">
         {CATEGORIES.map((cat) => {

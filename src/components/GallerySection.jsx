@@ -37,18 +37,18 @@ export default function GallerySection({ images, kind, lang, settings }) {
   const cur = open >= 0 ? shown[open] : null;
 
   return (
-    <section className="mt-6">
+    <section className="bg-white border border-slate-200 rounded-3xl p-4 sm:p-5 shadow-xs">
       <div className="flex items-center gap-2 mb-3">
         <span className="text-xl">📸</span>
         <h3 className="font-black text-slate-900 text-base sm:text-lg">{bn ? 'রেট চার্ট ও ছবি' : 'Rate charts & pictures'}</h3>
         <span className="text-[10px] px-2 py-0.5 rounded-full bg-emerald-100 text-emerald-800 font-black">{shown.length}</span>
       </div>
 
-      <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-3">
+      <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-3">
         {shown.map((img, idx) => (
           <div key={img.id} className="group bg-white border border-slate-200 rounded-2xl overflow-hidden shadow-xs hover:shadow-md hover:border-emerald-300 transition flex flex-col">
           <button onClick={() => setOpen(idx)} className="text-left cursor-pointer flex-1">
-            <div className="aspect-[4/5] bg-slate-100 overflow-hidden">
+            <div className="aspect-[4/3] bg-slate-100 overflow-hidden">
               <img src={img.url} alt={titleOf(img)} loading="lazy" className="w-full h-full object-contain group-hover:scale-[1.02] transition duration-300" />
             </div>
             <div className="px-3 py-2.5 border-t border-slate-100">
