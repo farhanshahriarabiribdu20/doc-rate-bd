@@ -242,12 +242,14 @@ function AdminModalContent({
 
   // ---- DOC rate actions ----
   const handleDocChange = (id, field, value) => {
-    setRates((prev) => prev.map((item) => (item.id === id ? { ...item, [field]: value } : item)));
+    // Typing a new rate by hand makes it today's rate again.
+    const rateField = field === 'todayRate';
+    setRates((prev) => prev.map((item) => (item.id === id ? { ...item, [field]: value, ...(rateField ? { rateDate: '' } : {}) } : item)));
   };
 
   const handleDivisionChange = (id, division, value) => {
     setRates((prev) => prev.map((item) => (
-      item.id === id ? { ...clearZoneRates(item, division), divisionRates: { ...(item.divisionRates || {}), [division]: value } } : item
+      item.id === id ? { ...clearZoneRates(item, division), rateDate: '', divisionRates: { ...(item.divisionRates || {}), [division]: value } } : item
     )));
   };
 
@@ -324,7 +326,7 @@ function AdminModalContent({
       if (divisionTouched && !mainSet && divisionIds.every((id) => Number.isFinite(Number(division[id])))) {
         main = Math.round(divisionIds.reduce((sum, id) => sum + Number(division[id]), 0) / divisionIds.length);
       }
-      next = { ...next, todayRate: main };
+      next = { ...next, todayRate: main, rateDate: '' };
       // zone rates under a division that was just overwritten would be stale; the division rate applies instead
       if (list.some((u) => u.region === 'all')) next = clearZoneRates(next, 'all');
       else list.filter((u) => u.region !== 'national').forEach((u) => { next = clearZoneRates(next, u.region); });
@@ -684,6 +686,9 @@ function AdminModalContent({
                         <div className="min-w-[180px]">
                           <span className="font-bold text-xs sm:text-sm text-slate-900 block">{item.company}</span>
                           <span className="text-[11px] text-slate-500 font-medium">{item.breed} ({item.category})</span>
+                          {item.rateDate && item.rateDate !== settings.reportDateISO && (
+                            <span className="block text-[10px] font-black text-amber-700">⚠️ এই তারিখের রেট নেই — সাইটে দেখানো হচ্ছে না (রেট বসালে দেখাবে)</span>
+                          )}
                         </div>
                         <div className="flex items-center gap-3">
                           <div>

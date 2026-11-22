@@ -101,6 +101,7 @@ export function sanitizeRates(input) {
       notes: str(item.notes, 200),
       divisionRates,
       zoneRates,
+      rateDate: /^\d{4}-\d{2}-\d{2}$/.test(String(item.rateDate || '')) ? String(item.rateDate) : '',
       regionBn: str(item.regionBn, 120),
       regionEn: str(item.regionEn, 120),
       verified: item.verified !== false

@@ -176,9 +176,12 @@ export function applyExcelPlan(items, rows, { dateISO, previousDateISO, bookingP
   const dayChanged = Boolean(previousDateISO) && previousDateISO !== dateISO;
   const updated = items.map((item) => {
     const row = byId.get(item.id);
-    if (!row || row.isNew) return item;
+    // Items with no rate in this sheet are not part of this date: stamp them with the date their rate is really from.
+    if (!row) return { ...item, rateDate: item.rateDate || (previousDateISO && previousDateISO < dateISO ? previousDateISO : '1970-01-01') };
+    if (row.isNew) return item;
     return {
       ...item,
+      rateDate: dateISO,
       todayRate: row.todayRate,
       yesterdayRate: row.prevRate ?? (archive ? row.todayRate : dayChanged ? item.todayRate : item.yesterdayRate),
       divisionRates: row.divisionRates,
@@ -202,6 +205,7 @@ export function applyExcelPlan(items, rows, { dateISO, previousDateISO, bookingP
       notes: '',
       divisionRates: row.divisionRates,
       zoneRates: row.column.zones,
+      rateDate: dateISO,
       verified: true
     };
   });
