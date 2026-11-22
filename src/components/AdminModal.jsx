@@ -1,10 +1,12 @@
 import React, { useState, useEffect, useCallback, useRef } from 'react';
 import {
   X, Lock, ShieldCheck, Plus, Trash2, Download, Upload, RotateCcw, Check, Settings,
-  Bird, Phone, MessageSquareText, CloudUpload, LogOut, ChevronDown, ChevronUp, CalendarClock, Egg, AlertTriangle, ClipboardPaste, Undo2, History, Megaphone
+  Bird, Phone, MessageSquareText, CloudUpload, LogOut, ChevronDown, ChevronUp, CalendarClock, Egg, AlertTriangle, ClipboardPaste, Undo2, History, Megaphone, FileSpreadsheet
 } from 'lucide-react';
 import WhatsAppPastePanel from './WhatsAppPastePanel';
 import VersionHistoryPanel from './VersionHistoryPanel';
+import ExcelImportPanel from './ExcelImportPanel';
+import { applyExcelPlan } from '../utils/excelRates';
 import {
   adminLogin, publishSiteData, fetchFeedbacks, deleteFeedback, clearAllFeedbacks
 } from '../services/api';
@@ -330,6 +332,19 @@ function AdminModalContent({
     showToast(`✅ ${updates.length}টি রেট বসানো হয়েছে। কিছুক্ষণের মধ্যে অটো-প্রকাশ হবে।`);
   };
 
+  // Excel upload: today's rates from the chosen date sheet (auto-published afterwards).
+  const handleApplyExcel = ({ sheet, plan }) => {
+    forceSnapshotRef.current = true; // the state before the import stays in history, so it can be undone
+    setRates((prev) => applyExcelPlan(prev, plan.rows, {
+      dateISO: sheet.dateISO,
+      previousDateISO: settings.reportDateISO,
+      bookingPhone: settings.whatsapp || settings.hotline || ''
+    }));
+    setSettings((prev) => ({ ...prev, reportDateISO: sheet.dateISO }));
+    setActiveTab('doc');
+    showToast(`✅ ${plan.rows.length}টি রেট এক্সেল থেকে বসানো হয়েছে। কিছুক্ষণের মধ্যে অটো-প্রকাশ হবে।`);
+  };
+
   // Undo: load an earlier version back into the editor; auto-publish then publishes it.
   const handleRestoreVersion = (data) => {
     if (!Array.isArray(data.rates) || !Array.isArray(data.readyRates)) {
@@ -519,6 +534,9 @@ function AdminModalContent({
                 {feedbacks.length > 0 && (
                   <span className="ml-1 px-1.5 py-0.5 rounded-full text-[10px] bg-amber-400 text-slate-950 font-black">{feedbacks.length}</span>
                 )}
+              </button>
+              <button onClick={() => setActiveTab('excel')} className={tabClass('excel')}>
+                <FileSpreadsheet className="w-4 h-4" /> এক্সেল আপলোড
               </button>
               <button onClick={() => setActiveTab('history')} className={tabClass('history')}>
                 <History className="w-4 h-4" /> ইতিহাস ও আনডু
@@ -876,6 +894,11 @@ function AdminModalContent({
                   </div>
                 )}
               </div>
+            )}
+
+            {/* TAB: EXCEL UPLOAD */}
+            {activeTab === 'excel' && (
+              <ExcelImportPanel rates={rates} reportDateISO={settings.reportDateISO} onApply={handleApplyExcel} />
             )}
 
             {/* TAB: HISTORY / UNDO */}

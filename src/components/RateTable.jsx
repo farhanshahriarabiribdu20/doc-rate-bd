@@ -1,13 +1,12 @@
 import React from 'react';
-import { Phone, Printer, MapPin, ShieldCheck, AlertTriangle } from 'lucide-react';
+import { Printer, MapPin, ShieldCheck, AlertTriangle } from 'lucide-react';
 import PriceChange from './PriceChange';
 
-export default function RateTable({ rates, selectedDivision, settings, onOpenBooking, isStale = false, lang }) {
+export default function RateTable({ rates, selectedDivision, isStale = false, lang }) {
   const handlePrint = () => {
     window.print();
   };
 
-  const hotline = settings?.hotline || '01619-500178';
 
   const divisionRegionNames = {
     dhaka: { bn: 'সেন্ট্রাল জোন (ঢাকা)', en: 'Central Zone (Dhaka)' },
@@ -57,7 +56,6 @@ export default function RateTable({ rates, selectedDivision, settings, onOpenBoo
               <th className="py-3.5 px-4 text-right">{lang === 'bn' ? 'আজকের রেট' : "Today's Rate"}</th>
               <th className="py-3.5 px-4">{lang === 'bn' ? 'অফিসিয়াল কোম্পানি নোট' : 'Company Note'}</th>
               <th className="py-3.5 px-4 text-center">{lang === 'bn' ? 'ভেরিফিকেশন' : 'Verification'}</th>
-              <th className="py-3.5 px-4 text-center print:hidden">{lang === 'bn' ? 'সরাসরি বুকিং' : 'Direct Booking'}</th>
             </tr>
           </thead>
           <tbody className="divide-y divide-slate-100">
@@ -112,27 +110,6 @@ export default function RateTable({ rates, selectedDivision, settings, onOpenBoo
                         <span>যাচাইকৃত</span>
                       </span>
                     )}
-                  </td>
-                  <td className="py-3.5 px-4 text-center print:hidden">
-                    <div className="flex items-center justify-center gap-1.5">
-                      <button
-                        type="button"
-                        onClick={() => onOpenBooking({ ...item, todayRate: currentRate })}
-                        title="বুকিং করুন"
-                        className="p-2 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white transition shadow-2xs active:scale-95 cursor-pointer"
-                      >
-                        <svg className="w-3.5 h-3.5 fill-white" viewBox="0 0 24 24">
-                          <path d="M12.031 6.172c-3.181 0-5.767 2.586-5.768 5.766-.001 1.298.38 2.27 1.019 3.287l-.711 2.598 2.669-.699c.969.587 1.745.882 2.791.882 3.181 0 5.768-2.587 5.768-5.766.001-3.181-2.585-5.768-5.768-5.768zm0-2.172c4.386 0 7.94 3.554 7.94 7.938 0 4.385-3.554 7.939-7.94 7.939-1.258 0-2.457-.308-3.528-.863l-4.503 1.18 1.203-4.397c-.636-1.121-.972-2.386-.972-3.859 0-4.384 3.554-7.938 7.94-7.938z"/>
-                        </svg>
-                      </button>
-                      <a
-                        href={`tel:${hotline.replace(/[^0-9+]/g, '')}`}
-                        title="Call Hotline"
-                        className="p-2 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-700 transition border border-slate-200 active:scale-95"
-                      >
-                        <Phone className="w-3.5 h-3.5 text-emerald-600" />
-                      </a>
-                    </div>
                   </td>
                 </tr>
               );
