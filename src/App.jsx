@@ -202,8 +202,6 @@ export default function App() {
   const shownRates = archive ? archive.rates : liveRates;
   const shownStale = archive ? false : isStale;
   const shownDateISO = archive ? archive.date : settings.reportDateISO;
-  const shownDateBn = archive ? formatBn(archive.date) : settings.reportDateBn;
-  const shownDateEn = archive ? formatEn(archive.date) : settings.reportDateEn;
 
   // Filters & Views
   const [selectedCategory, setSelectedCategory] = useState('all');
@@ -315,54 +313,6 @@ export default function App() {
             </p>
           </div>
         )}
-
-        {/* Hero Section */}
-        <div className="mb-6 flex flex-col md:flex-row md:items-center justify-between gap-6 bg-gradient-to-br from-emerald-950 via-teal-950 to-slate-950 text-white p-6 sm:p-8 rounded-3xl shadow-xl shadow-emerald-950/20 relative overflow-hidden border border-emerald-800/40">
-          {/* Subtle Ambient Glow */}
-          <div className="absolute top-0 right-1/4 w-72 h-72 bg-emerald-500/10 rounded-full blur-3xl pointer-events-none"></div>
-          <div className="absolute bottom-0 right-0 w-80 h-80 bg-teal-500/10 rounded-full blur-3xl pointer-events-none"></div>
-
-          <div className="relative z-10 max-w-2xl">
-            <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-emerald-500/20 text-emerald-300 font-bold text-xs uppercase tracking-wider mb-2.5 border border-emerald-400/30">
-              <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse"></span>
-              <span>{lang === 'bn' ? '🇧🇩 ফসলনেক্সা (FosholNexa) অফিসিয়াল পোর্টাল' : 'FosholNexa Official Portal'}</span>
-            </div>
-            <h2 className="text-2xl sm:text-4xl font-black tracking-tight leading-tight">
-              {lang === 'bn' ? 'আজকের বাচ্চার বাজার দর' : 'Live Day-Old-Chicks (DOC) Market Rates'}
-            </h2>
-            <p className="text-xs sm:text-sm text-emerald-50 mt-2.5 font-medium leading-relaxed">
-              {lang === 'bn' 
-                ? 'সকল কোম্পানির ব্রয়লার, কালার, সোনালী এবং লেয়ার বাচ্চার নির্ভরযোগ্য পাইকারি বাজারদর এবং নিরাপদ সরবরাহ।' 
-                : 'Reliable wholesale market rates and safe supply of Broiler, Color, Sonali and Layer chicks from all companies.'}
-            </p>
-            <div className="flex flex-wrap items-center gap-2 mt-3.5">
-              <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-white/10 text-emerald-200 text-xs font-semibold border border-white/10">
-                <span>📈 {shownRates.length}টি জাত/কোম্পানির {archive ? 'দর' : 'লাইভ দর'}</span>
-              </span>
-              <span className={`inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-extrabold border ${
-                shownStale
-                  ? 'bg-amber-400/20 text-amber-200 border-amber-400/40'
-                  : 'bg-emerald-400/20 text-emerald-200 border-emerald-400/30'
-              }`}>
-                <span>{shownStale ? '⚠️' : archive ? '📅' : '🛡️'}</span>
-                <span>{lang === 'bn' ? (archive ? `রেটের তারিখ: ${shownDateBn}` : `সর্বশেষ আপডেট: ${shownDateBn}`) : (archive ? `Rates of: ${shownDateEn}` : `Updated: ${shownDateEn}`)}</span>
-              </span>
-            </div>
-          </div>
-
-          <div className="relative z-10 flex flex-wrap gap-2.5">
-            <button
-              onClick={() => setIsCalculatorOpen(true)}
-              className="px-5 py-3 bg-amber-400 hover:bg-amber-300 text-slate-950 font-black rounded-2xl text-xs sm:text-sm transition-all shadow-lg shadow-amber-950/20 cursor-pointer flex items-center gap-2 active:scale-95"
-            >
-              <span>📊 {lang === 'bn' ? 'ব্যাচ খরচ হিসাব' : 'Batch Calculator'}</span>
-            </button>
-          </div>
-
-          <div className="absolute right-0 bottom-0 translate-x-8 translate-y-8 text-9xl opacity-10 select-none pointer-events-none">
-            🌾
-          </div>
-        </div>
 
         {/* Primary Market Section Switcher Tabs */}
         <div className="flex items-center justify-center mb-6">
