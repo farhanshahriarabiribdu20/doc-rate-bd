@@ -1,5 +1,5 @@
 import React from 'react';
-import { Calendar, PhoneCall, ShieldCheck, Calculator as CalcIcon } from 'lucide-react';
+import { Calendar, PhoneCall, ShieldCheck, Calculator as CalcIcon, Moon, Sun } from 'lucide-react';
 
 export default function Navbar({ 
   lang, 
@@ -10,6 +10,9 @@ export default function Navbar({
   onOpenShare, 
   onOpenCalculator,
   onOpenBanner,
+  liveVisitors,
+  isDark,
+  toggleTheme,
   settings 
 }) {
   const today = new Intl.DateTimeFormat(lang === 'bn' ? 'bn-BD' : 'en-US', {
@@ -35,6 +38,22 @@ export default function Navbar({
               <Calendar className="w-3.5 h-3.5 text-emerald-400" />
               {today}
             </span>
+            {liveVisitors?.enabled && (
+              <span
+                className="flex items-center gap-1.5 px-2 py-0.5 rounded-full bg-amber-400/15 text-amber-200 font-bold text-[11px] border border-amber-300/30"
+                title={lang === 'bn' ? 'এই মুহূর্তে সাইটে থাকা মানুষ' : 'People on the site right now'}
+              >
+                <span className="relative flex h-1.5 w-1.5">
+                  <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-amber-300 opacity-75"></span>
+                  <span className="relative inline-flex rounded-full h-1.5 w-1.5 bg-amber-300"></span>
+                </span>
+                <span>
+                  {lang === 'bn'
+                    ? `এখন অনলাইনে ${liveVisitors.count.toLocaleString('bn-BD')} জন`
+                    : `${liveVisitors.count} online now`}
+                </span>
+              </span>
+            )}
           </div>
 
           {/* Right hotline & language */}
@@ -46,6 +65,14 @@ export default function Navbar({
               <PhoneCall className="w-3 h-3 text-emerald-400" />
               <span>{lang === 'bn' ? 'হটলাইন:' : 'Hotline:'} {settings.hotline || '01619-500178'}</span>
             </a>
+            <button
+              onClick={toggleTheme}
+              aria-label={isDark ? 'Light mode' : 'Dark mode'}
+              title={isDark ? 'লাইট মোড' : 'ডার্ক মোড'}
+              className="flex items-center justify-center w-7 h-6 rounded-full bg-emerald-900/80 hover:bg-emerald-800 text-amber-300 border border-emerald-700/60 transition cursor-pointer"
+            >
+              {isDark ? <Sun className="w-3.5 h-3.5" /> : <Moon className="w-3.5 h-3.5" />}
+            </button>
             <button 
               onClick={() => setLang(lang === 'bn' ? 'en' : 'bn')}
               className="font-bold tracking-wider text-[11px] px-2.5 py-0.5 rounded-full bg-emerald-900/80 hover:bg-emerald-800 text-emerald-100 border border-emerald-700/60 transition cursor-pointer"

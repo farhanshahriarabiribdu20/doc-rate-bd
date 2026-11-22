@@ -27,6 +27,7 @@ import { Bird, AlertTriangle } from 'lucide-react';
 import { rateForRegion } from './data/zones';
 import DateRatePicker from './components/DateRatePicker';
 import RateSubmitModal from './components/RateSubmitModal';
+import { useLiveVisitors } from './utils/useLiveVisitors';
 
 // Last data published by the admin (kept for instant load / offline use).
 const CACHE_KEY = 'fosholnexa_published_v1';
@@ -66,6 +67,13 @@ const buildSettings = (published) => {
 export default function App() {
   const [cached] = useState(readCache);
   const [lang, setLang] = useState('bn');
+  const [isDark, setIsDark] = useState(() => {
+    try { return localStorage.getItem('fn_theme') === 'dark'; } catch { return false; }
+  });
+  useEffect(() => {
+    document.documentElement.classList.toggle('dark', isDark);
+    try { localStorage.setItem('fn_theme', isDark ? 'dark' : 'light'); } catch { /* ignore */ }
+  }, [isDark]);
   const [activeTab, setActiveTab] = useState('doc'); // 'doc' | 'ready'
 
   // Site data: published (server) data wins over bundled defaults.
@@ -200,6 +208,7 @@ export default function App() {
   const [isCalculatorOpen, setIsCalculatorOpen] = useState(false);
   const [isShareOpen, setIsShareOpen] = useState(false);
   const [isBannerOpen, setIsBannerOpen] = useState(false);
+  const live = useLiveVisitors(settings.showLiveVisitors !== false);
   const [submitKind, setSubmitKind] = useState(null); // visitor rate form: null | 'ready' | 'doc'
   const [isAdminOpen, setIsAdminOpen] = useState(false);
   const [bookingItem, setBookingItem] = useState(null);
@@ -275,7 +284,10 @@ export default function App() {
           onOpenShare={() => setIsShareOpen(true)}
           onOpenCalculator={() => setIsCalculatorOpen(true)}
           onOpenBanner={() => setIsBannerOpen(true)}
+          isDark={isDark}
+          toggleTheme={() => setIsDark((d) => !d)}
           settings={settings}
+          liveVisitors={live}
         />
         <Ticker notice={notice} lang={lang} />
       </div>
@@ -331,7 +343,7 @@ export default function App() {
           <div className="relative z-10 flex flex-wrap gap-2.5">
             <button
               onClick={() => setIsCalculatorOpen(true)}
-              className="px-5 py-3 bg-gradient-to-r from-amber-400 to-yellow-400 hover:from-amber-300 hover:to-yellow-300 text-slate-950 font-black rounded-2xl text-xs sm:text-sm transition-all shadow-lg shadow-amber-950/20 cursor-pointer flex items-center gap-2 active:scale-95"
+              className="px-5 py-3 bg-amber-400 hover:bg-amber-300 text-slate-950 font-black rounded-2xl text-xs sm:text-sm transition-all shadow-lg shadow-amber-950/20 cursor-pointer flex items-center gap-2 active:scale-95"
             >
               <span>📊 {lang === 'bn' ? 'ব্যাচ খরচ হিসাব' : 'Batch Calculator'}</span>
             </button>
@@ -542,7 +554,7 @@ export default function App() {
                   setActiveTab('doc');
                   window.scrollTo({ top: 380, behavior: 'smooth' });
                 }}
-                className="px-5 py-3 rounded-2xl bg-emerald-400 hover:bg-emerald-700 text-slate-950 font-black text-xs sm:text-sm transition shadow-lg shrink-0 flex items-center gap-2 cursor-pointer active:scale-95"
+                className="px-5 py-3 rounded-2xl bg-emerald-400 hover:bg-emerald-300 text-slate-950 font-black text-xs sm:text-sm transition shadow-lg shrink-0 flex items-center gap-2 cursor-pointer active:scale-95"
               >
                 <span>{lang === 'bn' ? 'বাচ্চার রেট দেখুন' : 'View DOC Rates'}</span>
                 <span>➔</span>

@@ -165,3 +165,18 @@ export async function deleteRateSubmissions(key, ids) {
     return res.ok;
   } catch { return false; }
 }
+
+/** Heartbeat for the "online now" counter. Returns { enabled, count } (enabled=false when the server has no store for it). */
+export async function pingLiveVisitors(sid) {
+  try {
+    const res = await fetch('/api/live-visitors', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ sid })
+    });
+    const body = await json(res);
+    return res.ok && body?.success ? { enabled: !!body.enabled, count: Number(body.count) || 0 } : { enabled: false, count: 0 };
+  } catch {
+    return { enabled: false, count: 0 };
+  }
+}
