@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { X, Copy, Check, Share2, MessageCircle } from 'lucide-react';
+import { buildShareText, copyToClipboard } from '../utils/shareText';
 
 export default function ShareModal(props) {
   if (!props.isOpen) return null;
@@ -9,65 +10,10 @@ export default function ShareModal(props) {
 function ShareModalContent({ onClose, rates, notice, settings, lang }) {
   const [copied, setCopied] = useState(false);
 
-  const fallbackDate = new Intl.DateTimeFormat('bn-BD', {
-    weekday: 'long',
-    year: 'numeric',
-    month: 'long',
-    day: 'numeric'
-  }).format(new Date());
-
-  const effectiveDate = settings?.reportDateBn || fallbackDate;
-
-  // Build the text
-  const broilerList = rates.filter(r => r.category === 'broiler').slice(0, 8);
-  const sonaliList = rates.filter(r => r.category === 'sonali').slice(0, 6);
-  const layerList = rates.filter(r => (r.category || '').startsWith('layer')).slice(0, 4);
-
-  const change = (r) => {
-    const diff = Number(r.todayRate) - Number(r.yesterdayRate);
-    if (!Number(r.yesterdayRate) || !diff) return '';
-    return diff > 0 ? ` (▲৳${diff})` : ` (▼৳${Math.abs(diff)})`;
-  };
-
-  let shareText = `🌾 *মুরগির বাচ্চার বাজার দর (FosholNexa BD)* 🌾\n`;
-  shareText += `📅 কার্যকর তারিখ: ${effectiveDate}\n`;
-  shareText += `--------------------------------------\n\n`;
-
-  shareText += `🔥 *ব্রয়লার বাচ্চার দর:* \n`;
-  broilerList.forEach(r => {
-    shareText += `▫️ ${r.companyEn || r.company}: ৳${r.todayRate}${change(r)}\n`;
-  });
-
-  shareText += `\n✨ *সোনালী বাচ্চার দর:* \n`;
-  sonaliList.forEach(r => {
-    shareText += `▫️ ${r.companyEn || r.company}: ৳${r.todayRate}${change(r)}\n`;
-  });
-
-  if (layerList.length > 0) {
-    shareText += `\n🥚 *লেয়ার বাচ্চার দর:* \n`;
-    layerList.forEach(r => {
-      shareText += `▫️ ${r.companyEn || r.company}: ৳${r.todayRate}${change(r)}\n`;
-    });
-  }
-
-  shareText += `\n📢 *মার্কেট নোট:* ${notice}\n`;
-  shareText += `📞 বুকিং ও তথ্যের জন্য: ${settings?.hotline || '01619-500178'}\n`;
-  shareText += `🌐 সকল রেট দেখুন: ${window.location.origin}\n`;
+  const shareText = buildShareText({ rates, notice, settings });
 
   const handleCopy = async () => {
-    try {
-      await navigator.clipboard.writeText(shareText);
-    } catch {
-      // Fallback for browsers/contexts where the Clipboard API is unavailable
-      const ta = document.createElement('textarea');
-      ta.value = shareText;
-      ta.style.position = 'fixed';
-      ta.style.opacity = '0';
-      document.body.appendChild(ta);
-      ta.select();
-      document.execCommand('copy');
-      ta.remove();
-    }
+    await copyToClipboard(shareText);
     setCopied(true);
     setTimeout(() => setCopied(false), 2500);
   };
