@@ -282,7 +282,7 @@ export default function App() {
             <h2 className="text-2xl sm:text-4xl font-black tracking-tight leading-tight">
               {lang === 'bn' ? 'আজকের বাচ্চার বাজার দর' : 'Live Day-Old-Chicks (DOC) Market Rates'}
             </h2>
-            <p className="text-xs sm:text-sm text-emerald-100/90 mt-2.5 font-medium leading-relaxed">
+            <p className="text-xs sm:text-sm text-emerald-50 mt-2.5 font-medium leading-relaxed">
               {lang === 'bn' 
                 ? 'সকল কোম্পানির ব্রয়লার, কালার, সোনালী এবং লেয়ার বাচ্চার নির্ভরযোগ্য পাইকারি বাজারদর এবং নিরাপদ সরবরাহ।' 
                 : 'Reliable wholesale market rates and safe supply of Broiler, Color, Sonali and Layer chicks from all companies.'}
@@ -323,7 +323,7 @@ export default function App() {
               onClick={() => setActiveTab('doc')}
               className={`flex items-center gap-2 px-4 sm:px-6 py-2.5 rounded-xl font-black text-xs sm:text-sm transition-all cursor-pointer ${
                 activeTab === 'doc'
-                  ? 'bg-gradient-to-r from-emerald-600 to-teal-600 text-white shadow-md shadow-emerald-950/20'
+                  ? 'bg-emerald-600 text-white shadow-md shadow-emerald-950/20'
                   : 'text-slate-600 hover:text-slate-900 hover:bg-slate-50'
               }`}
             >
@@ -338,7 +338,7 @@ export default function App() {
               onClick={() => setActiveTab('ready')}
               className={`flex items-center gap-2 px-4 sm:px-6 py-2.5 rounded-xl font-black text-xs sm:text-sm transition-all cursor-pointer ${
                 activeTab === 'ready'
-                  ? 'bg-gradient-to-r from-emerald-600 to-teal-600 text-white shadow-md shadow-emerald-950/20'
+                  ? 'bg-emerald-600 text-white shadow-md shadow-emerald-950/20'
                   : 'text-slate-600 hover:text-slate-900 hover:bg-slate-50'
               }`}
             >
@@ -426,16 +426,16 @@ export default function App() {
             )}
 
             {/* Quick Explore Ready Market Banner */}
-            <div className="mt-8 bg-gradient-to-r from-emerald-950 via-teal-950 to-slate-950 text-white p-5 sm:p-6 rounded-3xl border border-emerald-700/50 shadow-xl flex flex-col sm:flex-row items-center justify-between gap-4">
+            <div className="mt-8 bg-white text-slate-900 p-5 sm:p-6 rounded-3xl border border-emerald-200 shadow-md border-l-4 border-l-emerald-600 flex flex-col sm:flex-row items-center justify-between gap-4">
               <div className="flex items-center gap-3.5 text-center sm:text-left">
-                <div className="w-12 h-12 rounded-2xl bg-amber-400/20 border border-amber-400/30 flex items-center justify-center text-2xl shrink-0">
+                <div className="w-12 h-12 rounded-2xl bg-amber-100 border border-amber-300 flex items-center justify-center text-2xl shrink-0">
                   🍗
                 </div>
                 <div>
-                  <h3 className="font-black text-base sm:text-lg text-white">
+                  <h3 className="font-black text-base sm:text-lg text-slate-900">
                     {lang === 'bn' ? 'রেডি ব্রয়লার, কালার, সোনালী ও ডিমের আঞ্চলিক মোকাম রেট' : 'Ready Broiler, Sonali & Wholesale Egg Rates'}
                   </h3>
-                  <p className="text-xs text-emerald-200 mt-0.5">
+                  <p className="text-xs text-slate-600 mt-0.5">
                     {lang === 'bn' ? 'দেশের শীর্ষ ২১টি আঞ্চলিক মোকামের লাইভ রেট ও কর্মকর্তার যোগাযোগ দেখতে ক্লিক করুন।' : 'View live wholesale rates from 21 regional poultry trading hubs.'}
                   </p>
                 </div>
@@ -445,7 +445,7 @@ export default function App() {
                   setActiveTab('ready');
                   window.scrollTo({ top: 380, behavior: 'smooth' });
                 }}
-                className="px-5 py-3 rounded-2xl bg-gradient-to-r from-amber-400 to-yellow-400 hover:from-amber-300 hover:to-yellow-300 text-slate-950 font-black text-xs sm:text-sm transition shadow-lg shrink-0 flex items-center gap-2 cursor-pointer active:scale-95"
+                className="px-5 py-3 rounded-2xl bg-amber-400 hover:bg-amber-300 text-slate-950 font-black text-xs sm:text-sm transition shadow-md shrink-0 flex items-center gap-2 cursor-pointer active:scale-95"
               >
                 <span>{lang === 'bn' ? 'রেডি মুরগি ও ডিমের রেট দেখুন' : 'View Ready Rates'}</span>
                 <span>➔</span>
@@ -483,7 +483,7 @@ export default function App() {
                   setActiveTab('doc');
                   window.scrollTo({ top: 380, behavior: 'smooth' });
                 }}
-                className="px-5 py-3 rounded-2xl bg-gradient-to-r from-emerald-400 to-teal-400 hover:from-emerald-300 hover:to-teal-300 text-slate-950 font-black text-xs sm:text-sm transition shadow-lg shrink-0 flex items-center gap-2 cursor-pointer active:scale-95"
+                className="px-5 py-3 rounded-2xl bg-emerald-400 hover:bg-emerald-700 text-slate-950 font-black text-xs sm:text-sm transition shadow-lg shrink-0 flex items-center gap-2 cursor-pointer active:scale-95"
               >
                 <span>{lang === 'bn' ? 'বাচ্চার রেট দেখুন' : 'View DOC Rates'}</span>
                 <span>➔</span>

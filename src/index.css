@@ -1,5 +1,58 @@
 @import "tailwindcss";
 
+@theme {
+  /* Brand: deep forest green (replaces the neon emerald/teal pair; teal now matches so gradients stay one hue) */
+  --color-emerald-50: #f1f8f3;
+  --color-emerald-100: #ddeee2;
+  --color-emerald-200: #bcdcc6;
+  --color-emerald-300: #90c2a1;
+  --color-emerald-400: #5fa377;
+  --color-emerald-500: #3f8858;
+  --color-emerald-600: #2f6f47;
+  --color-emerald-700: #265a3a;
+  --color-emerald-800: #1f4830;
+  --color-emerald-900: #193b28;
+  --color-emerald-950: #0c2116;
+  --color-teal-50: #f1f8f3;
+  --color-teal-100: #ddeee2;
+  --color-teal-200: #bcdcc6;
+  --color-teal-300: #90c2a1;
+  --color-teal-400: #5fa377;
+  --color-teal-500: #3f8858;
+  --color-teal-600: #2f6f47;
+  --color-teal-700: #265a3a;
+  --color-teal-800: #1f4830;
+  --color-teal-900: #193b28;
+  --color-teal-950: #102a1b;
+
+  /* Accent: saffron gold, used for highlights/CTAs */
+  --color-amber-50: #fff8e6;
+  --color-amber-100: #ffefc2;
+  --color-amber-200: #ffe08a;
+  --color-amber-300: #fccd55;
+  --color-amber-400: #f5b82e;
+  --color-amber-500: #e8a317;
+  --color-amber-600: #c98410;
+  --color-amber-700: #a1650f;
+  --color-amber-800: #834f13;
+  --color-amber-900: #6c4114;
+  --color-amber-950: #3d2108;
+
+  /* Neutral: slightly green-tinted warm grey (the old blue-grey slate clashed with the green) */
+  --color-slate-50: #f7f8f5;
+  --color-slate-100: #eef0eb;
+  --color-slate-200: #e0e4dc;
+  --color-slate-300: #c8cdc2;
+  --color-slate-400: #8c9385;
+  --color-slate-500: #646c5f;
+  --color-slate-600: #4f574b;
+  --color-slate-700: #3d4339;
+  --color-slate-800: #2a2f27;
+  --color-slate-900: #1a1e19;
+  --color-slate-950: #0e110d;
+}
+
+
 @layer base {
   * {
     box-sizing: border-box;
@@ -7,8 +60,8 @@
   body {
     margin: 0;
     font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Noto Sans Bengali', Hind Siliguri, sans-serif;
-    background-color: #f8fafc;
-    color: #0f172a;
+    background-color: #f7f8f5;
+    color: #1a1e19;
   }
 }
 
@@ -18,14 +71,14 @@
   height: 6px;
 }
 ::-webkit-scrollbar-track {
-  background: #f1f5f9;
+  background: #eef0eb;
 }
 ::-webkit-scrollbar-thumb {
-  background: #cbd5e1;
+  background: #c8cdc2;
   border-radius: 4px;
 }
 ::-webkit-scrollbar-thumb:hover {
-  background: #94a3b8;
+  background: #8c9385;
 }
 
 /* Smooth Marquee Animation */

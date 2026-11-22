@@ -84,9 +84,9 @@ export default function RateTable({ rates, selectedDivision, isStale = false, ra
                   </td>
                   <td className="py-3.5 px-4 text-right">
                     <span className="text-base sm:text-lg font-black text-slate-900">৳{currentRate}</span>
-                    <span className="text-xs text-slate-400 font-semibold"> /পিস</span>
+                    <span className="text-xs text-slate-500 font-semibold"> /পিস</span>
                     {rateDateISO && (
-                      <div className="text-[10px] font-bold text-slate-400">📅 {(lang === 'bn' ? formatBn(rateDateISO) : formatEn(rateDateISO)).split('(')[0].trim()}</div>
+                      <div className="text-[10px] font-bold text-slate-500">📅 {(lang === 'bn' ? formatBn(rateDateISO) : formatEn(rateDateISO)).split('(')[0].trim()}</div>
                     )}
                     {selectedDivision === 'all' && (
                       <div className="mt-0.5"><PriceChange today={item.todayRate} yesterday={item.yesterdayRate} lang={lang} compact /></div>

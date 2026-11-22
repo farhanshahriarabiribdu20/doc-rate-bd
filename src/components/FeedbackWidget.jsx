@@ -64,7 +64,7 @@ ${feedback.trim()}
       <aside aria-label="Website Feedback" className="fixed bottom-5 right-5 z-40 flex items-center gap-2 group">
         <button
           onClick={() => setIsOpen(true)}
-          className="flex items-center gap-2.5 px-4 py-3 bg-gradient-to-r from-emerald-600 via-teal-600 to-emerald-700 hover:from-emerald-500 hover:to-teal-500 text-white font-extrabold text-xs sm:text-sm rounded-full shadow-2xl shadow-emerald-950/40 border border-emerald-300/40 hover:scale-105 active:scale-95 transition-all duration-300 cursor-pointer"
+          className="flex items-center gap-2.5 px-4 py-3 bg-gradient-to-r from-emerald-600 via-teal-600 to-emerald-700 hover:bg-emerald-700 text-white font-extrabold text-xs sm:text-sm rounded-full shadow-2xl shadow-emerald-950/40 border border-emerald-300/40 hover:scale-105 active:scale-95 transition-all duration-300 cursor-pointer"
           title={lang === 'bn' ? 'ওয়েবসাইট নিয়ে মতামত দিন' : 'Send Website Feedback'}
         >
           <span className="relative flex h-3 w-3">
@@ -166,7 +166,7 @@ ${feedback.trim()}
                         ? 'ওয়েবসাইটে কোন জিনিসটি আপনার ভালো লেগেছে বা আর কী কী নতুন সুবিধা যোগ করলে ভালো হয় লিখুন...'
                         : 'Write what you liked or what improvements/features you would like to see...'
                     }
-                    className="w-full p-3 rounded-2xl border border-slate-300 text-xs sm:text-sm text-slate-900 placeholder:text-slate-400 focus:outline-hidden focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 transition resize-none"
+                    className="w-full p-3 rounded-2xl border border-slate-300 text-xs sm:text-sm text-slate-900 placeholder:text-slate-500 focus:outline-hidden focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 transition resize-none"
                   ></textarea>
                 </div>
 
@@ -181,7 +181,7 @@ ${feedback.trim()}
                       value={name}
                       onChange={(e) => setName(e.target.value)}
                       placeholder={lang === 'bn' ? 'নাম লিখুন' : 'Enter name'}
-                      className="w-full px-3 py-2 rounded-xl border border-slate-300 text-xs text-slate-900 placeholder:text-slate-400 focus:outline-hidden focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500"
+                      className="w-full px-3 py-2 rounded-xl border border-slate-300 text-xs text-slate-900 placeholder:text-slate-500 focus:outline-hidden focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500"
                     />
                   </div>
                   <div>
@@ -193,7 +193,7 @@ ${feedback.trim()}
                       value={phone}
                       onChange={(e) => setPhone(e.target.value)}
                       placeholder="01XXXXXXXXX"
-                      className="w-full px-3 py-2 rounded-xl border border-slate-300 text-xs text-slate-900 placeholder:text-slate-400 focus:outline-hidden focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500"
+                      className="w-full px-3 py-2 rounded-xl border border-slate-300 text-xs text-slate-900 placeholder:text-slate-500 focus:outline-hidden focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500"
                     />
                   </div>
                 </div>
@@ -219,7 +219,7 @@ ${feedback.trim()}
                 <button
                   type="submit"
                   disabled={status === 'sending'}
-                  className="w-full py-3.5 px-4 disabled:opacity-60 bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-500 hover:to-teal-500 text-white font-black rounded-2xl text-xs sm:text-sm flex items-center justify-center gap-2 transition-all shadow-lg shadow-emerald-950/20 active:scale-98 cursor-pointer"
+                  className="w-full py-3.5 px-4 disabled:opacity-60 bg-emerald-600 hover:bg-emerald-700 text-white font-black rounded-2xl text-xs sm:text-sm flex items-center justify-center gap-2 transition-all shadow-lg shadow-emerald-950/20 active:scale-98 cursor-pointer"
                 >
                   <Send className="w-4 h-4" />
                   <span>

@@ -29,7 +29,7 @@ export default function MedicineSection({ medicines, settings, lang }) {
                 <span className="text-[11px] font-bold px-2 py-0.5 rounded-md bg-teal-50 text-teal-700 border border-teal-200">
                   {item.type}
                 </span>
-                <span className="text-xs font-semibold text-slate-400">
+                <span className="text-xs font-semibold text-slate-500">
                   {item.packSize}
                 </span>
               </div>
@@ -45,7 +45,7 @@ export default function MedicineSection({ medicines, settings, lang }) {
 
             <div className="pt-3 border-t border-slate-100 flex items-baseline justify-between">
               <div>
-                <span className="text-[11px] font-semibold text-slate-400 block">বর্তমান বাজারদর</span>
+                <span className="text-[11px] font-semibold text-slate-500 block">বর্তমান বাজারদর</span>
                 <span className="text-2xl font-black text-emerald-700">৳{item.todayRate}</span>
               </div>
 

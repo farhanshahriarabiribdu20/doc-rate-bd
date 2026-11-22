@@ -42,15 +42,15 @@ export default function FeedSection({ feeds, settings, lang }) {
 
               <div className="pt-3 border-t border-slate-100 flex items-baseline justify-between">
                 <div>
-                  <span className="text-[11px] font-semibold text-slate-400 block">বর্তমান রেট</span>
+                  <span className="text-[11px] font-semibold text-slate-500 block">বর্তমান রেট</span>
                   <div className="flex items-baseline gap-1">
                     <span className="text-2xl font-black text-slate-900">৳{item.todayRate}</span>
-                    <span className="text-xs text-slate-400">/বস্তা</span>
+                    <span className="text-xs text-slate-500">/বস্তা</span>
                   </div>
                 </div>
 
                 <div className="text-right">
-                  <span className="text-[11px] text-slate-400 block">পূর্ববর্তী: ৳{item.yesterdayRate}</span>
+                  <span className="text-[11px] text-slate-500 block">পূর্ববর্তী: ৳{item.yesterdayRate}</span>
                   {diff > 0 ? (
                     <span className="inline-flex items-center text-xs font-bold text-red-600">
                       <TrendingUp className="w-3 h-3 mr-0.5" /> +৳{diff}
@@ -60,7 +60,7 @@ export default function FeedSection({ feeds, settings, lang }) {
                       <TrendingDown className="w-3 h-3 mr-0.5" /> -৳{Math.abs(diff)}
                     </span>
                   ) : (
-                    <span className="inline-flex items-center text-xs font-medium text-slate-400">
+                    <span className="inline-flex items-center text-xs font-medium text-slate-500">
                       <Minus className="w-3 h-3 mr-0.5" /> অপরিবর্তিত
                     </span>
                   )}

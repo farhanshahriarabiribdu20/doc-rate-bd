@@ -120,7 +120,7 @@ export default function WhatsAppPastePanel({ rates, reportDateISO, onApply, onCl
                       </select>
                       {r.via && <span className="text-[10px] text-slate-500">({r.via} → {divName(r.division)})</span>}
                       {r.assumed && <span className="text-[10px] font-bold text-amber-700">ব্রয়লার ধরা হয়েছে</span>}
-                      <span className="text-[11px] text-slate-400">{old != null ? `${old} →` : ''}</span>
+                      <span className="text-[11px] text-slate-500">{old != null ? `${old} →` : ''}</span>
                       <input
                         type="number"
                         value={r.rate}

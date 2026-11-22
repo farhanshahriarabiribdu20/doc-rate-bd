@@ -89,7 +89,7 @@ export default function RateCard({ item, selectedDivision, isStale = false, rate
       <div className="p-5 bg-gradient-to-b from-slate-50/60 to-white flex-1 flex flex-col justify-between">
         <div className="flex items-end justify-between gap-2">
           <div>
-            <span className="text-[11px] font-bold text-slate-400 uppercase tracking-wider block">
+            <span className="text-[11px] font-bold text-slate-500 uppercase tracking-wider block">
               {isToday
                 ? (lang === 'bn' ? 'আজকের নির্ধারিত বাজারদর' : "Today's Official Rate")
                 : (lang === 'bn' ? 'নির্ধারিত বাজারদর' : 'Official Rate')}
@@ -109,7 +109,7 @@ export default function RateCard({ item, selectedDivision, isStale = false, rate
             {selectedDivision === 'all' && (
               <PriceChange today={item.todayRate} yesterday={item.yesterdayRate} lang={lang} />
             )}
-            <span className="block text-[10px] text-slate-400 font-semibold">
+            <span className="block text-[10px] text-slate-500 font-semibold">
               {lang === 'bn' ? 'অফিসিয়াল রেট শিট' : 'Official rate sheet'}
             </span>
           </div>
