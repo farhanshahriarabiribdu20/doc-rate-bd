@@ -1,4 +1,5 @@
 import React from 'react';
+import { YOUTUBE_URL, FB_PAGE_URL } from '../data/links';
 import { Phone, MessageCircle, MapPin, ShieldAlert, ShieldCheck, Heart } from 'lucide-react';
 
 export default function Footer({ lang, isStale = false }) {
@@ -117,9 +118,14 @@ export default function Footer({ lang, isStale = false }) {
               <span>আমাদের ফেসবুক গ্রুপের সাথে যুক্ত হোন</span>
             </a>
 
-            <a href="https://www.facebook.com/profile.php?id=61582752186760" target="_blank" rel="noreferrer" className="flex items-center gap-2 text-blue-400 hover:text-blue-300 font-semibold transition">
+            <a href={FB_PAGE_URL} target="_blank" rel="noreferrer" className="flex items-center gap-2 text-blue-400 hover:text-blue-300 font-semibold transition">
               <span className="w-4 h-4 rounded-full bg-[#1877F2] text-white flex items-center justify-center text-[10px] font-black shrink-0">f</span>
               <span>অফিসিয়াল ফেসবুক পেজ</span>
+            </a>
+
+            <a href={YOUTUBE_URL} target="_blank" rel="noreferrer" className="flex items-center gap-2 text-red-400 hover:text-red-300 font-semibold transition">
+              <span className="w-4 h-4 rounded bg-[#FF0000] text-white flex items-center justify-center text-[8px] font-black shrink-0">▶</span>
+              <span>আমাদের ইউটিউব চ্যানেল</span>
             </a>
 
             <div className="flex items-center gap-2 text-slate-400 pt-1">

@@ -1088,6 +1088,20 @@ function AdminModalContent({
                     <label className="block text-xs font-bold text-slate-700 mb-1">WhatsApp নম্বর (বুকিংয়ের জন্য)</label>
                     <input type="text" value={settings.whatsapp || ''} onChange={(e) => setSettings((p) => ({ ...p, whatsapp: e.target.value }))} className="w-full px-3 py-2 border rounded-xl text-xs font-bold" />
                   </div>
+                  <div className="sm:col-span-2 p-3 rounded-xl border border-emerald-200 bg-emerald-50/60 space-y-3">
+                    <p className="text-xs font-black text-slate-800">📥 ছবি ডাউনলোডের আগে ফলো করার লিংক</p>
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                      <div>
+                        <label className="block text-xs font-bold text-slate-700 mb-1">YouTube চ্যানেলের লিংক</label>
+                        <input type="url" placeholder="https://www.youtube.com/@..." value={settings.youtubeUrl || ''} onChange={(e) => setSettings((p) => ({ ...p, youtubeUrl: e.target.value }))} className="w-full px-3 py-2 border rounded-xl text-xs font-bold" />
+                      </div>
+                      <div>
+                        <label className="block text-xs font-bold text-slate-700 mb-1">Facebook পেজের লিংক</label>
+                        <input type="url" placeholder="https://www.facebook.com/..." value={settings.followFbUrl || ''} onChange={(e) => setSettings((p) => ({ ...p, followFbUrl: e.target.value }))} className="w-full px-3 py-2 border rounded-xl text-xs font-bold" />
+                      </div>
+                    </div>
+                    <p className="text-[11px] text-slate-500">ফাঁকা রাখলে সাইটের ডিফল্ট YouTube চ্যানেল ও Facebook পেজ লিংক ব্যবহার হয় (হেডার, ফুটার ও ডাউনলোডের পপ-আপে)।</p>
+                  </div>
                   <label className="sm:col-span-2 flex items-start gap-2 p-3 bg-amber-50 border border-amber-200 rounded-xl text-xs text-slate-700 cursor-pointer">
                     <input
                       type="checkbox"

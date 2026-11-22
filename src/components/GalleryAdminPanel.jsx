@@ -18,6 +18,7 @@ export default function GalleryAdminPanel({ adminKey, images, onChange, showToas
     const files = [...(e.target.files || [])];
     e.target.value = '';
     if (!files.length) return;
+    if (!caption.trim()) { showToast('আগে ক্যাপশন লিখুন — ছবির নিচে সবাই এটা দেখবে (যেমন: আজকের রেডি ব্রয়লারের রেট)', 'error'); return; }
     setBusy(true);
     let list = images;
     let done = 0;
@@ -58,8 +59,8 @@ export default function GalleryAdminPanel({ adminKey, images, onChange, showToas
       <div className="p-4 rounded-2xl border border-emerald-200 bg-emerald-50/60 space-y-3">
         <div className="grid sm:grid-cols-2 gap-3">
           <div>
-            <label className="block text-xs font-bold text-slate-700 mb-1">ক্যাপশন (ঐচ্ছিক)</label>
-            <input className={input} value={caption} onChange={(e) => setCaption(e.target.value)} maxLength={120} placeholder="যেমন: আজকের সোনালী ও ব্রয়লার রেট" />
+            <label className="block text-xs font-bold text-slate-700 mb-1">ক্যাপশন * <span className="font-normal text-slate-500">(ছবির নিচে সবাইকে দেখানো হবে)</span></label>
+            <input className={input} value={caption} onChange={(e) => setCaption(e.target.value)} maxLength={120} placeholder="যেমন: ২২ নভেম্বরের রেডি ব্রয়লার ও ডিমের রেট" />
           </div>
           <div>
             <label className="block text-xs font-bold text-slate-700 mb-1">কোথায় দেখাবে</label>

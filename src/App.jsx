@@ -427,7 +427,7 @@ export default function App() {
             />
 
             <RateCta lang={lang} onClick={() => setSubmitKind('doc')} />
-            <GallerySection images={gallery} kind="doc" lang={lang} />
+            <GallerySection images={gallery} kind="doc" lang={lang} settings={settings} />
 
             <StatsOverview rates={shownRates} lang={lang} isStale={shownStale} />
 
@@ -536,7 +536,7 @@ export default function App() {
             )}
 
             <RateCta lang={lang} onClick={() => setSubmitKind('ready')} />
-            <GallerySection images={gallery} kind="ready" lang={lang} />
+            <GallerySection images={gallery} kind="ready" lang={lang} settings={settings} />
 
             <ReadyMarketSection
               readyRates={readyArchive ? readyArchive.rates : readyRates}

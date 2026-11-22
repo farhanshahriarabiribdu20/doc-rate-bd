@@ -1,13 +1,25 @@
 import React, { useEffect, useState } from 'react';
-import { X, ChevronLeft, ChevronRight } from 'lucide-react';
+import { X, ChevronLeft, ChevronRight, Download } from 'lucide-react';
+import FollowGateModal, { FOLLOW_KEY, downloadPicture } from './FollowGateModal';
+import { YOUTUBE_URL, FB_PAGE_URL } from '../data/links';
 
 /**
  * Rate pictures the admin uploaded (rate charts, price lists, photos). `kind` = 'doc' | 'ready' picks
  * the pictures meant for that tab (pictures marked "both" show everywhere).
  */
-export default function GallerySection({ images, kind, lang }) {
+export default function GallerySection({ images, kind, lang, settings }) {
   const bn = lang === 'bn';
+  const fmt = (ms) => { try { return new Intl.DateTimeFormat('bn-BD', { dateStyle: 'long', timeZone: 'Asia/Dhaka' }).format(new Date(ms)); } catch { return ''; } };
+  // every picture always carries a title, so people know what it is even when no caption was typed
+  const titleOf = (img) => img.caption || (bn ? 'রেট চার্ট' : 'Rate chart');
   const [open, setOpen] = useState(-1);
+  const [gateFor, setGateFor] = useState(null); // picture waiting for the follow confirmation
+  const requestDownload = (img) => {
+    let ok = false;
+    try { ok = localStorage.getItem(FOLLOW_KEY) === '1'; } catch { /* ignore */ }
+    if (ok) downloadPicture(img.url, `fosholnexa-${img.id}.jpg`);
+    else setGateFor(img);
+  };
   const shown = (images || []).filter((i) => i.target === 'all' || i.target === kind);
 
   useEffect(() => {
@@ -34,16 +46,22 @@ export default function GallerySection({ images, kind, lang }) {
 
       <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-3">
         {shown.map((img, idx) => (
-          <button
-            key={img.id}
-            onClick={() => setOpen(idx)}
-            className="group text-left bg-white border border-slate-200 rounded-2xl overflow-hidden shadow-xs hover:shadow-md hover:border-emerald-300 transition cursor-pointer"
-          >
+          <div key={img.id} className="group bg-white border border-slate-200 rounded-2xl overflow-hidden shadow-xs hover:shadow-md hover:border-emerald-300 transition flex flex-col">
+          <button onClick={() => setOpen(idx)} className="text-left cursor-pointer flex-1">
             <div className="aspect-[4/5] bg-slate-100 overflow-hidden">
-              <img src={img.url} alt={img.caption || 'rate'} loading="lazy" className="w-full h-full object-contain group-hover:scale-[1.02] transition duration-300" />
+              <img src={img.url} alt={titleOf(img)} loading="lazy" className="w-full h-full object-contain group-hover:scale-[1.02] transition duration-300" />
             </div>
-            {img.caption && <p className="px-3 py-2 text-xs font-bold text-slate-700 line-clamp-2">{img.caption}</p>}
+            <div className="px-3 py-2.5 border-t border-slate-100">
+              <p className="text-xs sm:text-sm font-black text-slate-800 leading-snug line-clamp-2">{titleOf(img)}</p>
+              <p className="text-[11px] text-slate-500 mt-0.5">📅 {fmt(img.createdAt)}</p>
+            </div>
           </button>
+          <div className="px-3 pb-3">
+            <button onClick={() => requestDownload(img)} className="w-full flex items-center justify-center gap-1.5 px-3 py-2 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white font-black text-xs cursor-pointer">
+              <Download className="w-4 h-4" /> {bn ? 'ডাউনলোড' : 'Download'}
+            </button>
+          </div>
+          </div>
         ))}
       </div>
 
@@ -57,10 +75,24 @@ export default function GallerySection({ images, kind, lang }) {
             </>
           )}
           <figure className="max-w-4xl max-h-full flex flex-col items-center gap-2" onClick={(e) => e.stopPropagation()}>
-            <img src={cur.url} alt={cur.caption || 'rate'} className="max-h-[82vh] max-w-full rounded-xl shadow-2xl object-contain" />
-            {cur.caption && <figcaption className="text-white text-sm font-bold text-center">{cur.caption}</figcaption>}
+            <img src={cur.url} alt={titleOf(cur)} className="max-h-[82vh] max-w-full rounded-xl shadow-2xl object-contain" />
+            <figcaption className="text-white text-center">
+              <span className="block text-sm sm:text-base font-black">{titleOf(cur)}</span>
+              <span className="block text-xs text-white/70">📅 {fmt(cur.createdAt)}</span>
+            </figcaption>
+            <button onClick={() => requestDownload(cur)} className="flex items-center gap-1.5 px-4 py-2 rounded-xl bg-emerald-500 hover:bg-emerald-400 text-slate-950 font-black text-sm cursor-pointer">
+              <Download className="w-4 h-4" /> {bn ? 'ডাউনলোড' : 'Download'}
+            </button>
           </figure>
         </div>
+      )}
+      {gateFor && (
+        <FollowGateModal
+          image={gateFor}
+          youtubeUrl={settings?.youtubeUrl || YOUTUBE_URL}
+          facebookUrl={settings?.followFbUrl || FB_PAGE_URL}
+          onClose={() => setGateFor(null)}
+        />
       )}
     </section>
   );
