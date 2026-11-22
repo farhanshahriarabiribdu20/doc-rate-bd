@@ -111,6 +111,30 @@ export default function App() {
   const [archiveBusy, setArchiveBusy] = useState(false);
   useEffect(() => { fetchRateDates().then(setArchiveDates); }, []);
 
+  // Same date-wise view for the ready-market (mokam) rates.
+  const [readyDates, setReadyDates] = useState([]);
+  const [readyArchive, setReadyArchive] = useState(null); // { date, rates }
+  const [readyNotice, setReadyNotice] = useState('');
+  const [readyBusy, setReadyBusy] = useState(false);
+  useEffect(() => { fetchRateDates('ready').then(setReadyDates); }, []);
+  const backToLatestReady = () => { setReadyArchive(null); setReadyNotice(''); };
+  const handlePickReadyDate = async (date) => {
+    const live = settings.readyDateISO;
+    if (!live || date >= live) { backToLatestReady(); return; }
+    setReadyBusy(true);
+    const result = await fetchRateDay(date, 'ready');
+    setReadyBusy(false);
+    if (!result || !result.date || !result.rates.length) {
+      setReadyNotice(lang === 'bn' ? 'এই তারিখে বা এর আগে কোনো মোকাম রেট সংরক্ষিত নেই।' : 'No mokam rates are saved for this date or any earlier date.');
+      return;
+    }
+    if (result.date >= live) { backToLatestReady(); return; }
+    setReadyArchive({ date: result.date, rates: result.rates });
+    setReadyNotice(result.exact ? '' : (lang === 'bn'
+      ? `${formatBn(date)} তারিখে রেট নেই, তাই ${formatBn(result.date)} তারিখের রেট দেখানো হচ্ছে।`
+      : `No rates on ${formatEn(date)}; showing ${formatEn(result.date)} instead.`));
+  };
+
   const backToLatest = () => { setArchive(null); setArchiveNotice(''); };
   const handlePickDate = async (date) => {
     const live = settings.reportDateISO;
@@ -457,10 +481,25 @@ export default function App() {
         {/* Tab 2: Ready Broiler, Color, Sonali & Egg Market Section */}
         {activeTab === 'ready' && (
           <>
+            {settings.readyDateISO && (
+              <div className="mt-6">
+                <DateRatePicker
+                  lang={lang}
+                  liveDate={settings.readyDateISO}
+                  dates={readyDates}
+                  viewing={readyArchive?.date || null}
+                  notice={readyNotice}
+                  busy={readyBusy}
+                  onPick={handlePickReadyDate}
+                  onBackToLive={backToLatestReady}
+                />
+              </div>
+            )}
+
             <ReadyMarketSection
-              readyRates={readyRates}
+              readyRates={readyArchive ? readyArchive.rates : readyRates}
               lang={lang}
-              settings={settings}
+              settings={readyArchive ? { ...settings, readyDateISO: readyArchive.date } : settings}
             />
 
             {/* Quick Return to DOC Banner */}

@@ -101,6 +101,12 @@ export default async function handler(req, res) {
       } catch (err) {
         console.error('rate day archive failed:', err);
       }
+      // Same for the ready-market (mokam) rates, under the date they are for.
+      try {
+        if (isDate(payload.settings?.readyDateISO) && readyRates.length) await saveRateDay(payload.settings.readyDateISO, readyRates, 'ready');
+      } catch (err) {
+        console.error('ready day archive failed:', err);
+      }
 
       return res.status(200).json({ success: true, updatedAt: payload.updatedAt });
     }

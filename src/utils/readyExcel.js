@@ -167,3 +167,23 @@ export function applyReadyPlan(readyRates, rows) {
   }));
   return [...updated, ...added];
 }
+
+/**
+ * Archive days for the other date sheets of the file (for the visitors' date-wise view).
+ * Each day is built from the sheet alone: a rate that sheet does not have stays 0 (shown as a dash),
+ * so an old day never borrows today's rate.
+ */
+export function buildReadyArchiveDays(sheets, exceptDate, readyRates) {
+  const blank = readyRates.map((r) => {
+    const z = { ...r };
+    for (const { key } of READY_FIELDS) z[key] = 0;
+    z.sonaliSuper = 0;
+    return z;
+  });
+  return sheets
+    .filter((sh) => sh.dateISO !== exceptDate)
+    .map((sh) => {
+      const plan = planReadyImport(sh, blank);
+      return { date: sh.dateISO, rates: applyReadyPlan(blank, plan.rows) };
+    });
+}
