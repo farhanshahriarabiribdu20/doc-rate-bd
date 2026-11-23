@@ -179,6 +179,20 @@ export default function Navbar({
             <span className="hidden sm:inline">{lang === 'bn' ? 'ইউটিউব' : 'YouTube'}</span>
           </a>
 
+          {/* Telegram rate channel (shown once the admin sets the link) */}
+          {settings?.telegramUrl && (
+            <a
+              href={settings.telegramUrl}
+              target="_blank"
+              rel="noopener noreferrer"
+              title={lang === 'bn' ? 'টেলিগ্রামে রেট আপডেট পান' : 'Get rate updates on Telegram'}
+              className="flex items-center gap-1.5 px-3 py-2 rounded-xl bg-sky-50/90 hover:bg-sky-100 text-sky-700 border border-sky-200/90 transition shadow-2xs font-bold text-xs cursor-pointer active:scale-95"
+            >
+              <span aria-hidden="true">✈️</span>
+              <span className="hidden sm:inline">{lang === 'bn' ? 'টেলিগ্রাম' : 'Telegram'}</span>
+            </a>
+          )}
+
           {/* WhatsApp Group Button */}
           <a
             href="https://chat.whatsapp.com/B9A22d7rAQ4HfQyaRPwn4o"

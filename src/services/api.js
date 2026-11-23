@@ -219,3 +219,15 @@ export async function fetchRateTrend() {
     return res.ok && body?.success ? { days: body.days || {}, names: body.names || {} } : null;
   } catch { return null; }
 }
+
+/** Admin: post a message to the Telegram channel. Returns { ok, notConfigured, error }. */
+export async function sendTelegram(key, text) {
+  try {
+    const res = await fetch('/api/telegram', { method: 'POST', headers: adminHeaders(key), body: JSON.stringify({ text }) });
+    const body = await json(res);
+    if (res.ok && body?.success) return { ok: true };
+    return { ok: false, notConfigured: body?.error === 'not_configured', error: body?.error || `HTTP ${res.status}` };
+  } catch (err) {
+    return { ok: false, error: err.message || 'network' };
+  }
+}

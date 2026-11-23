@@ -2,7 +2,7 @@ import React from 'react';
 import { YOUTUBE_URL, FB_PAGE_URL } from '../data/links';
 import { Phone, MessageCircle, MapPin, ShieldAlert, ShieldCheck } from 'lucide-react';
 
-export default function Footer({ lang, isStale = false }) {
+export default function Footer({ lang, isStale = false, settings }) {
   return (
     <footer className="bg-slate-950 text-slate-400 text-xs mt-16 border-t border-slate-800">
       {/* Top Banner Disclaimer */}
@@ -127,6 +127,13 @@ export default function Footer({ lang, isStale = false }) {
               <span className="w-4 h-4 rounded bg-[#FF0000] text-white flex items-center justify-center text-[8px] font-black shrink-0">▶</span>
               <span>আমাদের ইউটিউব চ্যানেল</span>
             </a>
+
+            {settings?.telegramUrl && (
+              <a href={settings.telegramUrl} target="_blank" rel="noreferrer" className="flex items-center gap-2 text-sky-400 hover:text-sky-300 font-semibold transition">
+                <span className="w-4 h-4 text-[12px] leading-none shrink-0">✈️</span>
+                <span>টেলিগ্রামে প্রতিদিনের রেট আপডেট</span>
+              </a>
+            )}
 
             <div className="flex items-center gap-2 text-slate-400 pt-1">
               <MapPin className="w-4 h-4 text-emerald-500 shrink-0" />
