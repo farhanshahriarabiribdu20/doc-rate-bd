@@ -627,7 +627,7 @@ export default function App() {
       />
 
       {/* Footer */}
-      <Footer lang={lang} isStale={isStale} />
+      <Footer lang={lang} isStale={isStale} settings={settings} />
     </div>
   );
 }

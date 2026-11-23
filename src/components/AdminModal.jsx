@@ -16,9 +16,10 @@ import { applyExcelPlan } from '../utils/excelRates';
 import { clearZoneRates } from '../data/zones';
 import {
   adminLogin, publishSiteData, fetchFeedbacks, deleteFeedback, clearAllFeedbacks, saveRateDays,
-  fetchRateSubmissions, fetchGalleryFull, deleteRateSubmissions
+  fetchRateSubmissions, fetchGalleryFull, deleteRateSubmissions, sendTelegram
 } from '../services/api';
 import { todayISO } from '../utils/date';
+import { buildShareText } from '../utils/shareText';
 import { DIVISIONS } from '../data/initialData';
 
 const SESSION_KEY = 'fosholnexa_admin_key'; // sessionStorage only: cleared when the tab closes
@@ -564,6 +565,21 @@ function AdminModalContent({
             )}
             {adminKey && (
               <button
+                onClick={async () => {
+                  if (!window.confirm('আজকের রেট টেলিগ্রাম চ্যানেলে পোস্ট হবে। পাঠাব?')) return;
+                  const r = await sendTelegram(adminKey, buildShareText({ rates, notice, settings }));
+                  if (r.ok) showToast('✅ টেলিগ্রাম চ্যানেলে পাঠানো হয়েছে।');
+                  else if (r.notConfigured) showToast('টেলিগ্রাম এখনো সেট করা হয়নি (Vercel-এ TELEGRAM_BOT_TOKEN ও TELEGRAM_CHAT_ID দিন)।', 'error');
+                  else showToast(`পাঠানো যায়নি: ${r.error}`, 'error');
+                }}
+                className="flex items-center gap-1.5 px-3 py-2 rounded-xl text-xs font-black bg-sky-100 hover:bg-sky-200 text-sky-900 border border-sky-300 transition cursor-pointer"
+                title="আজকের রেট টেলিগ্রাম চ্যানেলে পাঠান"
+              >
+                <span aria-hidden="true">✈️</span> <span className="hidden sm:inline">টেলিগ্রামে পাঠান</span>
+              </button>
+            )}
+            {adminKey && (
+              <button
                 onClick={() => setActiveTab('history')}
                 className="flex items-center gap-1.5 px-3 py-2 rounded-xl text-xs font-black bg-slate-100 hover:bg-slate-200 text-slate-800 transition cursor-pointer"
                 title="আগের অবস্থায় ফিরুন (আনডু)"
@@ -1100,6 +1116,10 @@ function AdminModalContent({
                     <input type="text" value={settings.whatsapp || ''} onChange={(e) => setSettings((p) => ({ ...p, whatsapp: e.target.value }))} className="w-full px-3 py-2 border rounded-xl text-xs font-bold" />
                   </div>
                   <div className="sm:col-span-2 p-3 rounded-xl border border-emerald-200 bg-emerald-50/60 space-y-3">
+                    <div>
+                      <label className="block text-xs font-bold text-slate-700 mb-1">✈️ Telegram চ্যানেলের লিংক (ভিজিটররা জয়েন করবে)</label>
+                      <input type="url" placeholder="https://t.me/..." value={settings.telegramUrl || ''} onChange={(e) => setSettings((p) => ({ ...p, telegramUrl: e.target.value }))} className="w-full px-3 py-2 border rounded-xl text-xs font-bold" />
+                    </div>
                     <p className="text-xs font-black text-slate-800">📥 ছবি ডাউনলোডের আগে ফলো করার লিংক</p>
                     <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                       <div>
