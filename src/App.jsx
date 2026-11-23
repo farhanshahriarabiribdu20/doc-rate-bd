@@ -453,8 +453,8 @@ export default function App() {
             <AlertTriangle className="w-5 h-5 text-amber-600 shrink-0 mt-0.5" />
             <p className="text-xs sm:text-sm font-semibold leading-relaxed">
               {lang === 'bn'
-                ? `⚠️ এই রেটগুলো ${toBnDigits(reportAge)} দিন আগের (${settings.reportDateBn})। বুকিংয়ের আগে আজকের সঠিক দর জানতে কল করুন: ${settings.hotline}`
-                : `⚠️ These rates are ${reportAge} days old (${settings.reportDateEn}). Please call ${settings.hotline} to confirm today's price before booking.`}
+                ? `এই রেট ${toBnDigits(reportAge)} দিন আগের (${settings.reportDateBn})। আজকের সঠিক দর জানতে কল করুন: ${settings.hotline}`
+                : `These rates are ${reportAge} days old (${settings.reportDateEn}). Call ${settings.hotline} for today's price.`}
             </p>
           </div>
         )}
@@ -598,7 +598,7 @@ export default function App() {
               sub={lang === 'bn' ? 'দেশের আঞ্চলিক মোকাম অনুযায়ী ব্রয়লার, কালার, সোনালী ও ডিমের পাইকারি দর' : 'Wholesale rates of broiler, color, sonali and eggs across regional hubs'}
               chips={settings.readyDateISO ? [{ text: `📅 ${lang === 'bn' ? formatBn(readyArchive?.date || settings.readyDateISO) : formatEn(readyArchive?.date || settings.readyDateISO)}`, tone: 'ok' }] : []}
             />
-            <div className="grid lg:grid-cols-2 gap-4 items-stretch">
+            <div className="grid gap-4">
             {settings.readyDateISO && (
               <DateRatePicker
                   lang={lang}
@@ -612,7 +612,6 @@ export default function App() {
                 />
             )}
 
-            <RateCta lang={lang} onClick={() => setSubmitKind('ready')} />
             </div>
             <GallerySection images={gallery} kind="ready" lang={lang} settings={settings} />
 
