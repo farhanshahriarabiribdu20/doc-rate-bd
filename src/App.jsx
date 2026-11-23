@@ -298,6 +298,24 @@ export default function App() {
     return true;
   });
 
+  // Cheapest rate in each category (needs 3+ companies to be meaningful), for the "lowest price" badge.
+  const lowestIds = (() => {
+    const groups = {};
+    shownRates.forEach((r) => {
+      const g = (r.category || '').startsWith('layer') ? 'layer' : (r.category || 'other');
+      const v = Number(rateForRegion(r, selectedDivision));
+      if (Number.isFinite(v) && v > 0) (groups[g] = groups[g] || []).push({ id: r.id, v });
+    });
+    const ids = new Set();
+    Object.values(groups).forEach((list) => {
+      if (list.length < 3) return;
+      const min = Math.min(...list.map((x) => x.v));
+      if (min === Math.max(...list.map((x) => x.v))) return;
+      list.filter((x) => x.v === min).forEach((x) => ids.add(x.id));
+    });
+    return ids;
+  })();
+
   const sortedRates = [...filteredRates].sort((a, b) => {
     const rateA = rateForRegion(a, selectedDivision);
     const rateB = rateForRegion(b, selectedDivision);
@@ -416,6 +434,7 @@ export default function App() {
                     onOpenBooking={(it) => setBookingItem(it)}
                     isStale={shownStale}
                     rateDateISO={shownDateISO}
+                    isLowest={lowestIds.has(item.id)}
                     lang={lang}
                   />
                 ))}
