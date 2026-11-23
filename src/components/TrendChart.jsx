@@ -60,7 +60,7 @@ export default function TrendChart({ lang }) {
   const name = options.find((o) => o.k === selected);
 
   return (
-    <div className="bg-white rounded-3xl p-4 sm:p-6 border border-slate-200/90 shadow-xs">
+    <div id="trend-chart" className="bg-white rounded-3xl p-4 sm:p-6 border border-slate-200/90 shadow-xs scroll-mt-40">
       <div className="flex flex-wrap items-start justify-between gap-3 mb-4">
         <div className="min-w-0">
           <h3 className="font-black text-slate-900 text-base sm:text-lg flex items-center gap-2">

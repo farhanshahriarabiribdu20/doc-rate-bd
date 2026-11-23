@@ -23,8 +23,9 @@ const TOOLS = [
   { id: 'mort', label: 'মৃত্যুহার ক্ষতি', icon: HeartPulse, desc: 'মুরগি মরলে কত টাকা ক্ষতি', C: Mortality }
 ];
 
-export default function FarmTools({ isOpen, onClose, onOpenProfit }) {
+export default function FarmTools({ isOpen, onClose, onOpenProfit, initialTool }) {
   const [active, setActive] = useState('fcr');
+  useEffect(() => { if (isOpen && initialTool && TOOLS.some((t) => t.id === initialTool)) setActive(initialTool); }, [isOpen, initialTool]);
   useEffect(() => { if (isOpen) track(`tool:${active}`); }, [isOpen, active]);
   if (!isOpen) return null;
   const tool = TOOLS.find((t) => t.id === active) || TOOLS[0];

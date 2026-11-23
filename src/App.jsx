@@ -16,6 +16,7 @@ import BookingModal from './components/BookingModal';
 const BannerGeneratorModal = lazy(() => import('./components/BannerGeneratorModal'));
 const AdminModal = lazy(() => import('./components/AdminModal'));
 import FavAlert from './components/FavAlert';
+import MasterSearch from './components/MasterSearch';
 import { fetchVotes, sendVote } from './services/votes';
 import WeeklySummary from './components/WeeklySummary';
 import FeedbackWidget from './components/FeedbackWidget';
@@ -316,6 +317,21 @@ export default function App() {
   const [marketKey, setMarketKey] = useState(0); // bump to reload the public listings
   const [submitKind, setSubmitKind] = useState(null); // visitor rate form: null | 'ready' | 'doc'
   const [isAdminOpen, setIsAdminOpen] = useState(false);
+  const [toolStart, setToolStart] = useState('fcr');
+  const [readyPreset, setReadyPreset] = useState({ q: '', n: 0 });
+  const scrollToId = (sel) => setTimeout(() => { document.querySelector(sel)?.scrollIntoView({ behavior: 'smooth', block: 'start' }); }, 250);
+  // master search: jump to the thing the visitor picked
+  const handleSearchGo = (go) => {
+    if (!go) return;
+    if (go.type === 'tab') { setActiveTab(go.tab); window.scrollTo({ top: 0, behavior: 'smooth' }); }
+    else if (go.type === 'rate') { setActiveTab('doc'); setSelectedCategory('all'); setSearchQuery(go.company); scrollToId('[data-search-anchor="rates"]'); }
+    else if (go.type === 'ready') { setActiveTab('ready'); setReadyPreset((p) => ({ q: go.name, n: p.n + 1 })); scrollToId('[data-search-anchor="ready"]'); }
+    else if (go.type === 'feed') { setActiveTab('doc'); scrollToId('#feed-title'); }
+    else if (go.type === 'weekly') { setActiveTab('doc'); scrollToId('[aria-label="সাপ্তাহিক সারসংক্ষেপ"]'); }
+    else if (go.type === 'trend') { setActiveTab('doc'); scrollToId('#trend-chart'); }
+    else if (go.type === 'tool') { setToolStart(go.id); setIsToolsOpen(true); }
+    else if (go.type === 'profit') setIsCalculatorOpen(true);
+  };
   const mountBanner = useEverTrue(isBannerOpen);
   const mountTools = useEverTrue(isToolsOpen);
   const mountCalc = useEverTrue(isCalculatorOpen);
@@ -425,6 +441,11 @@ export default function App() {
 
       {/* Main Container */}
       <main className="flex-1 max-w-7xl w-full mx-auto px-4 sm:px-6 lg:px-8 py-6 sm:py-8">
+        {/* Master search: one box for the whole site */}
+        <div className="mb-5 sm:mb-6">
+          <MasterSearch rates={liveRates} readyRates={readyRates} feeds={feedPrices} onGo={handleSearchGo} />
+        </div>
+
         {/* Outdated-rate warning */}
         {shownStale && (
           <div role="alert" className="mb-5 flex items-start gap-3 rounded-2xl border border-amber-300 bg-amber-50 p-4 text-amber-950">
@@ -478,6 +499,7 @@ export default function App() {
             <FeedPrices feeds={feedPrices} />
 
             {/* Filters */}
+            <div data-search-anchor="rates" className="-mb-3 scroll-mt-40" />
             <FilterBar
               selectedCategory={selectedCategory}
               setSelectedCategory={setSelectedCategory}
@@ -591,7 +613,9 @@ export default function App() {
             </div>
             <GallerySection images={gallery} kind="ready" lang={lang} settings={settings} />
 
+            <div data-search-anchor="ready" className="scroll-mt-40" />
             <ReadyMarketSection
+              presetSearch={readyPreset}
               readyRates={readyArchive ? readyArchive.rates : readyRates}
               lang={lang}
               settings={readyArchive ? { ...settings, readyDateISO: readyArchive.date } : settings}
@@ -719,6 +743,7 @@ export default function App() {
         <Suspense fallback={null}>
           <FarmTools
             isOpen={isToolsOpen}
+            initialTool={toolStart}
             onClose={() => setIsToolsOpen(false)}
             onOpenProfit={() => { setIsToolsOpen(false); setIsCalculatorOpen(true); }}
           />
