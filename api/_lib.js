@@ -26,6 +26,19 @@ export const isAdminConfigured = () => Boolean(process.env.ADMIN_PASSWORD);
 
 const wait = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
 
+// Wrong-password throttle (in memory: free, and enough to make guessing impractical on a serverless function).
+const FAIL_WINDOW_MS = 15 * 60 * 1000;
+const MAX_FAILS_PER_IP = 8;
+const fails = new Map(); // ip -> [timestamps]
+const ipOf = (req) => String(req.headers['x-forwarded-for'] || req.headers['x-real-ip'] || req.socket?.remoteAddress || 'x').split(',')[0].trim().slice(0, 64);
+const recentFails = (ip, now) => (fails.get(ip) || []).filter((t) => now - t < FAIL_WINDOW_MS);
+function lockedOut(ip) {
+  const now = Date.now();
+  if (recentFails(ip, now).length >= MAX_FAILS_PER_IP) return true;
+  return false;
+}
+const noteFail = (ip) => { const now = Date.now(); fails.set(ip, [...recentFails(ip, now), now]); };
+
 /**
  * Returns true when the request carries the correct admin key.
  * Otherwise sends the error response itself and returns false.
@@ -40,6 +53,12 @@ export async function requireAdmin(req, res) {
     return false;
   }
 
+  const ip = ipOf(req);
+  if (lockedOut(ip)) {
+    res.status(429).json({ success: false, code: 'TOO_MANY_ATTEMPTS', error: 'অনেকবার ভুল পাসওয়ার্ড দেওয়া হয়েছে। ১৫ মিনিট পরে আবার চেষ্টা করুন।' });
+    return false;
+  }
+
   const provided = req.headers['x-admin-key'];
   const ok =
     typeof provided === 'string' &&
@@ -47,6 +66,7 @@ export async function requireAdmin(req, res) {
     timingSafeEqual(digest(provided), digest(process.env.ADMIN_PASSWORD));
 
   if (!ok) {
+    noteFail(ip);
     await wait(700); // slow down password guessing
     res.status(401).json({ success: false, code: 'UNAUTHORIZED', error: 'Wrong admin password' });
     return false;
@@ -167,3 +187,38 @@ export const snapshotTime = (pathname) => {
   const m = /history\/(\d{4})-(\d{2})-(\d{2})T(\d{2})-(\d{2})-(\d{2})-(\d{3})Z/.exec(pathname || '');
   return m ? Date.UTC(+m[1], +m[2] - 1, +m[3], +m[4], +m[5], +m[6], +m[7]) : 0;
 };
+
+// ---------- feed prices (admin-managed; price change history kept per item) ----------
+import { FEED_TYPES } from '../src/data/feedTypes.js';
+
+const toEnDigits = (v) => String(v ?? '').replace(/[০-৯]/g, (d) => '০১২৩৪৫৬৭৮৯'.indexOf(d));
+const oneLine = (v, max) => (typeof v === 'string' ? v.replace(/\s+/g, ' ').trim().slice(0, max) : '');
+const dhakaToday = () => new Date(Date.now() + 6 * 3600 * 1000).toISOString().slice(0, 10);
+
+export function sanitizeFeeds(input, prevList = []) {
+  if (!Array.isArray(input)) return null;
+  const prevById = new Map((Array.isArray(prevList) ? prevList : []).map((f) => [f.id, f]));
+  const seen = new Set();
+  const out = [];
+  for (const f of input.slice(0, 300)) {
+    const item = f && typeof f === 'object' ? f : {};
+    const company = oneLine(item.company, 60);
+    const product = oneLine(item.product, 80);
+    const price = Math.round(Number(toEnDigits(item.price).replace(/[,\s]/g, '')));
+    if (!company || !product || !Number.isFinite(price) || price < 100 || price > 20000) continue;
+    let id = oneLine(item.id, 40).replace(/[^A-Za-z0-9_-]/g, '') || genId('fd');
+    if (seen.has(id)) id = genId('fd');
+    seen.add(id);
+    const old = prevById.get(id);
+    let prevPrice = old?.prevPrice || 0;
+    let changed = old?.changed || dhakaToday();
+    if (old && old.price !== price) { prevPrice = old.price; changed = dhakaToday(); }
+    out.push({
+      id, company, product,
+      type: FEED_TYPES.includes(item.type) ? item.type : 'অন্যান্য',
+      weight: oneLine(item.weight, 12) || '৫০ কেজি',
+      price, prevPrice, changed
+    });
+  }
+  return out;
+}

@@ -48,8 +48,8 @@ const KEEP_DAYS = 35;
 const EVENT_RE = /^[a-z0-9_:.-]{1,40}$/;
 const MAX_EVENTS_PER_REQUEST = 25;
 const MAX_KEYS_PER_DAY = 120;
-const FLUSH_MS = 3 * 3600 * 1000;
-const FLUSH_BUSY_MS = 3600 * 1000;
+const FLUSH_MS = 6 * 3600 * 1000; // fewer Blob writes on the free plan (Redis, when configured, is exact anyway)
+const FLUSH_BUSY_MS = 3 * 3600 * 1000;
 const FLUSH_BUSY_COUNT = 40;
 const CHECK_MS = 10 * 60 * 1000;
 

@@ -1,7 +1,25 @@
 import { put, del } from '@vercel/blob';
 import { readFresh, writeFresh } from './_fresh.js';
 import { randomBytes } from 'node:crypto';
-import { noStore, parseBody, requireAdmin } from './_lib.js';
+import { noStore, parseBody, requireAdmin, sanitizeFeeds } from './_lib.js';
+
+const FEED_PATH = 'feed-prices.json';
+
+// ?feed=1: feed (poultry food) price list. GET public / POST admin {feeds:[...]} replaces the list.
+async function feedHandler(req, res) {
+  if (req.method === 'GET') {
+    res.setHeader('Cache-Control', 'public, s-maxage=120, stale-while-revalidate=600');
+    const data = await readFresh(FEED_PATH);
+    return res.status(200).json({ success: true, feeds: Array.isArray(data?.feeds) ? data.feeds : [] });
+  }
+  if (req.method !== 'POST') return res.status(405).json({ success: false, error: 'Method not allowed' });
+  if (!(await requireAdmin(req, res))) return;
+  const prev = await readFresh(FEED_PATH);
+  const feeds = sanitizeFeeds(parseBody(req)?.feeds, prev?.feeds);
+  if (!feeds) return res.status(400).json({ success: false, error: 'feeds array is required' });
+  await writeFresh(FEED_PATH, { feeds }, prev?.v);
+  return res.status(200).json({ success: true, feeds });
+}
 
 // Rate pictures (rate charts, price lists, photos) the admin uploads. They show in a gallery above the
 // rates on the DOC tab, the Ready tab, or both.
@@ -51,6 +69,7 @@ const matchesMagic = (buf, type) => {
 export default async function handler(req, res) {
   noStore(res);
   try {
+    if (req.query?.feed) return await feedHandler(req, res);
     if (req.method === 'GET') {
       const { images, v } = await readIndex();
       res.setHeader('Cache-Control', 'public, s-maxage=60, stale-while-revalidate=300');
