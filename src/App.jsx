@@ -21,6 +21,7 @@ import { fetchVotes, sendVote } from './services/votes';
 import WeeklySummary from './components/WeeklySummary';
 import FeedbackWidget from './components/FeedbackWidget';
 import ReadyMarketSection from './components/ReadyMarketSection';
+import DistrictReports, { ReportBanner } from './components/DistrictReports';
 import Footer from './components/Footer';
 import { fetchSiteData, fetchRateDates, fetchRateDay, fetchGallery } from './services/api';
 import { ageInDays, formatBn, formatEn, toBnDigits } from './utils/date';
@@ -461,6 +462,7 @@ export default function App() {
         {/* Tab 1: DOC Rates */}
         {activeTab === 'doc' && (
           <div className="flex flex-col gap-5 sm:gap-6">
+            <ReportBanner />
             <PageHead
               title={lang === 'bn' ? 'আজকের বাচ্চার বাজার দর' : 'Day-Old Chick (DOC) Rates'}
               sub={lang === 'bn' ? 'সকল কোম্পানির ব্রয়লার, কালার, সোনালী ও লেয়ার বাচ্চার নির্ভরযোগ্য পাইকারি বাজারদর' : 'Reliable wholesale rates of Broiler, Color, Sonali and Layer chicks'}
@@ -590,6 +592,7 @@ export default function App() {
         {/* Tab 2: Ready Broiler, Color, Sonali & Egg Market Section */}
         {activeTab === 'ready' && (
           <div className="flex flex-col gap-5 sm:gap-6">
+            <ReportBanner />
             <PageHead
               title={lang === 'bn' ? 'রেডি মুরগি ও ডিমের রেট' : 'Ready Poultry & Egg Market Rates'}
               sub={lang === 'bn' ? 'দেশের আঞ্চলিক মোকাম অনুযায়ী ব্রয়লার, কালার, সোনালী ও ডিমের পাইকারি দর' : 'Wholesale rates of broiler, color, sonali and eggs across regional hubs'}
@@ -620,6 +623,8 @@ export default function App() {
               lang={lang}
               settings={readyArchive ? { ...settings, readyDateISO: readyArchive.date } : settings}
             />
+
+            {!readyArchive && <DistrictReports />}
 
             {/* Quick Return to DOC Banner */}
             <div className="bg-gradient-to-r from-emerald-950 via-teal-950 to-slate-950 text-white p-5 sm:p-6 rounded-3xl border border-emerald-700/50 shadow-xl flex flex-col sm:flex-row items-center justify-between gap-4">

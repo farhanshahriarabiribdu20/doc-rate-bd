@@ -1,5 +1,6 @@
 import { put, list, del } from '@vercel/blob';
-import { randomBytes } from 'node:crypto';
+import { randomBytes, createHash } from 'node:crypto';
+import { DISTRICTS as DISTRICTS_BN } from '../src/data/districts.js';
 import { noStore, parseBody, requireAdmin } from './_lib.js';
 import { readFresh, writeFresh } from './_fresh.js';
 
@@ -38,6 +39,65 @@ async function flushVotes(force) {
   await writeFresh(VOTES_PATH, { date: pend.date, c, flushedAt: now }, stored?.v);
   lastFlush = now;
   pend = { date: '', c: {}, n: 0 };
+}
+
+// ---- district rate reports (?reports=1) ----
+// Visitors report today's ready-bird/egg rates for any of the 64 districts. A report is shown at once
+// (one report = that value, two or more = their median, worked out in the browser). One blob holds the
+// current day: { date, d: { district: [ { f: {field: n}, t: ms, h: ipHash, n: name } ] } }.
+// A person who reports a district again replaces their own earlier report, so one person cannot
+// outweigh others. Everything resets with the next Dhaka day.
+const REPORTS_PATH = 'district-reports.json';
+const REPORT_FIELDS = { broiler: [30, 600], colorBird: [30, 700], sonali: [30, 700], eggBrown: [1, 30], eggWhite: [1, 30] };
+const REPORT_KEEP = 15; // newest reports kept per district
+const REPORT_IP_DAILY = 12; // reports one IP may send per day
+const ipDay = { date: '', n: new Map() };
+
+const clientHash = (req) => {
+  const fwd = String(req.headers?.['x-forwarded-for'] || req.headers?.['x-real-ip'] || 'unknown').split(',')[0].trim();
+  return createHash('sha256').update(`fn-rp:${fwd}`).digest('hex').slice(0, 10);
+};
+
+async function reportsHandler(req, res, districts) {
+  if (req.method === 'GET') {
+    res.setHeader('Cache-Control', 'public, s-maxage=60, stale-while-revalidate=300');
+    const stored = await readFresh(REPORTS_PATH);
+    const today = dhakaDay();
+    const d = stored?.date === today ? stored.d || {} : {};
+    // Hash and exact times stay private; the browser only needs the numbers, the time and the name.
+    const out = {};
+    for (const [k, list] of Object.entries(d)) out[k] = list.map((r) => ({ f: r.f, t: r.t, n: r.n || '' }));
+    return res.status(200).json({ success: true, date: today, d: out });
+  }
+  if (req.method !== 'POST') return res.status(405).json({ success: false, error: 'Method not allowed' });
+  const body = parseBody(req);
+  if (!body) return res.status(400).json({ success: false, error: 'Invalid JSON body' });
+  if (typeof body.website === 'string' && body.website.trim() !== '') return res.status(201).json({ success: true });
+  const district = typeof body.district === 'string' ? body.district.trim() : '';
+  if (!districts.includes(district)) return res.status(400).json({ success: false, error: 'জেলা বেছে নিন।' });
+  const f = {};
+  for (const [field, [min, max]] of Object.entries(REPORT_FIELDS)) {
+    const raw = body.values?.[field];
+    if (raw === undefined || raw === null || String(raw).trim() === '') continue;
+    const n = Number(String(raw).replace(/,/g, ''));
+    if (!Number.isFinite(n) || n < min || n > max) return res.status(400).json({ success: false, error: `রেট ${min}–${max} এর মধ্যে হতে হবে।` });
+    f[field] = Math.round(n * 100) / 100;
+  }
+  if (!Object.keys(f).length) return res.status(400).json({ success: false, error: 'অন্তত একটি রেট লিখুন।' });
+  const today = dhakaDay();
+  const h = clientHash(req);
+  if (ipDay.date !== today) { ipDay.date = today; ipDay.n = new Map(); }
+  const used = ipDay.n.get(h) || 0;
+  if (used >= REPORT_IP_DAILY) return res.status(429).json({ success: false, error: 'আজকের জন্য আর রেট পাঠানো যাবে না। কাল আবার চেষ্টা করুন।' });
+  ipDay.n.set(h, used + 1);
+  const name = typeof body.name === 'string' ? body.name.replace(/\s+/g, ' ').trim().slice(0, 40) : '';
+  const stored = await readFresh(REPORTS_PATH);
+  const d = stored?.date === today ? { ...(stored.d || {}) } : {};
+  const list = (d[district] || []).filter((r) => r.h !== h);
+  list.push({ f, t: Date.now(), h, n: name });
+  d[district] = list.slice(-REPORT_KEEP);
+  await writeFresh(REPORTS_PATH, { date: today, d }, stored?.v);
+  return res.status(201).json({ success: true });
 }
 
 async function votesHandler(req, res) {
@@ -148,6 +208,7 @@ export default async function handler(req, res) {
 
   try {
     if (req.query?.votes) return await votesHandler(req, res);
+    if (req.query?.reports) return await reportsHandler(req, res, DISTRICTS_BN);
     // POST (public): submit new feedback
     if (req.method === 'POST') {
       const body = parseBody(req);
