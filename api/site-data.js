@@ -5,8 +5,10 @@ import {
   snapshotTime,
   sanitizeRates,
   sanitizeReadyRates,
-  sanitizeSettings
+  sanitizeSettings,
+  sanitizeDealers
 } from './_lib.js';
+import { readFresh, writeFresh } from './_fresh.js';
 import { isDate, saveRateDay } from './_days.js';
 
 const BLOB_PATH = 'site-data.json';
@@ -46,10 +48,33 @@ async function snapshotPrevious(force) {
   }
 }
 
+const DEALERS_PATH = 'dealers.json';
+
+// GET ?dealers=1 (public) -> dealer / agent contact list;  PUT ?dealers=1 (admin) -> replace the list.
+// Kept in its own file so the daily rate publishing never touches it.
+async function dealersHandler(req, res) {
+  if (req.method === 'GET') {
+    res.setHeader('Cache-Control', 'public, s-maxage=120, stale-while-revalidate=600');
+    const data = await readFresh(DEALERS_PATH);
+    return res.status(200).json({ success: true, dealers: Array.isArray(data?.dealers) ? data.dealers : [] });
+  }
+  if (req.method === 'PUT') {
+    res.setHeader('Cache-Control', 'no-store');
+    if (!(await requireAdmin(req, res))) return;
+    const dealers = sanitizeDealers(parseBody(req)?.dealers);
+    if (!dealers) return res.status(400).json({ success: false, error: 'dealers array is required' });
+    const prev = await readFresh(DEALERS_PATH);
+    await writeFresh(DEALERS_PATH, { dealers }, prev?.v);
+    return res.status(200).json({ success: true, dealers });
+  }
+  return res.status(405).json({ success: false, error: 'Method not allowed' });
+}
+
 // GET (public)  -> latest published rates / notice / public settings
 // PUT (admin)   -> publish new data for every visitor
 export default async function handler(req, res) {
   try {
+    if (req.query?.dealers) return await dealersHandler(req, res);
     if (req.method === 'GET') {
       // Cached at the Vercel edge: visitors never hit Blob storage on every page view.
       res.setHeader('Cache-Control', 'public, s-maxage=30, stale-while-revalidate=300');

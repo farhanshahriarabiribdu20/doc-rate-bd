@@ -231,3 +231,26 @@ export async function sendTelegram(key, text) {
     return { ok: false, error: err.message || 'network' };
   }
 }
+
+// ---- dealers / agents list ----
+export async function fetchDealers() {
+  try {
+    const res = await fetch('/api/site-data?dealers=1');
+    if (!res.ok) return [];
+    const json = await res.json();
+    return Array.isArray(json.dealers) ? json.dealers : [];
+  } catch {
+    return [];
+  }
+}
+
+export async function saveDealers(key, dealers) {
+  try {
+    const res = await fetch('/api/site-data?dealers=1', { method: 'PUT', headers: adminHeaders(key), body: JSON.stringify({ dealers }) });
+    const json = await res.json().catch(() => ({}));
+    if (!res.ok || !json.success) return { ok: false, error: json.error || 'সেভ হয়নি' };
+    return { ok: true, dealers: json.dealers };
+  } catch {
+    return { ok: false, error: 'নেটওয়ার্ক সমস্যা' };
+  }
+}

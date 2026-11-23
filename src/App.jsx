@@ -15,10 +15,11 @@ import ShareModal from './components/ShareModal';
 import BookingModal from './components/BookingModal';
 import BannerGeneratorModal from './components/BannerGeneratorModal';
 import AdminModal from './components/AdminModal';
+import DealerSection from './components/DealerSection';
 import FeedbackWidget from './components/FeedbackWidget';
 import ReadyMarketSection from './components/ReadyMarketSection';
 import Footer from './components/Footer';
-import { fetchSiteData, fetchRateDates, fetchRateDay, fetchGallery } from './services/api';
+import { fetchSiteData, fetchRateDates, fetchRateDay, fetchGallery, fetchDealers } from './services/api';
 import { ageInDays, formatBn, formatEn, toBnDigits } from './utils/date';
 import {
   INITIAL_RATES,
@@ -173,6 +174,8 @@ export default function App() {
   // rate pictures uploaded by the admin
   const [gallery, setGallery] = useState([]);
   useEffect(() => { fetchGallery().then((g) => { if (g) setGallery(g); }); }, []);
+  const [dealers, setDealers] = useState([]);
+  useEffect(() => { fetchDealers().then(setDealers); }, []);
   const backToLatestReady = () => { setReadyArchive(null); setReadyNotice(''); };
   const handlePickReadyDate = async (date) => {
     const live = settings.readyDateISO;
@@ -406,6 +409,8 @@ export default function App() {
             <StatsOverview rates={shownRates} lang={lang} isStale={shownStale} />
 
             <GallerySection images={gallery} kind="doc" lang={lang} settings={settings} />
+
+            <DealerSection dealers={dealers} />
 
             {/* Real Top Hatcheries Live Price Comparison Chart */}
             <PriceChart rates={shownRates} lang={lang} />

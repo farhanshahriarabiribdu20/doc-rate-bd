@@ -1,6 +1,7 @@
 // Shared helpers for the serverless API.
 // Files that start with "_" are NOT exposed as routes by Vercel.
 import { createHash, timingSafeEqual } from 'node:crypto';
+import { DISTRICTS } from '../src/data/districts.js';
 
 // ---------- request / response helpers ----------
 
@@ -167,3 +168,34 @@ export const snapshotTime = (pathname) => {
   const m = /history\/(\d{4})-(\d{2})-(\d{2})T(\d{2})-(\d{2})-(\d{2})-(\d{3})Z/.exec(pathname || '');
   return m ? Date.UTC(+m[1], +m[2] - 1, +m[3], +m[4], +m[5], +m[6], +m[7]) : 0;
 };
+
+
+// ---------- dealers / agents (admin-managed contact list) ----------
+const DEALER_PHONE_RE = /^(?:\+?88)?(01[3-9]\d{8})$/;
+const toEnDigits = (v) => String(v || '').replace(/[০-৯]/g, (d) => '০১২৩৪৫৬৭৮৯'.indexOf(d));
+const oneLine = (v, max) => (typeof v === 'string' ? v.replace(/\s+/g, ' ').trim().slice(0, max) : '');
+
+export function sanitizeDealers(input) {
+  if (!Array.isArray(input)) return null;
+  const seen = new Set();
+  const out = [];
+  for (const d of input.slice(0, 600)) {
+    const item = d && typeof d === 'object' ? d : {};
+    const phone = DEALER_PHONE_RE.exec(toEnDigits(oneLine(item.phone, 20)).replace(/[\s-]/g, ''))?.[1];
+    const name = oneLine(item.name, 80);
+    if (!phone || name.length < 2) continue;
+    let id = oneLine(item.id, 40).replace(/[^A-Za-z0-9_-]/g, '') || genId('dl');
+    if (seen.has(id)) id = genId('dl');
+    seen.add(id);
+    out.push({
+      id,
+      name,
+      company: oneLine(item.company, 60),
+      district: DISTRICTS.includes(item.district) ? item.district : '',
+      address: oneLine(item.address, 120),
+      phone,
+      note: oneLine(item.note, 100)
+    });
+  }
+  return out;
+}

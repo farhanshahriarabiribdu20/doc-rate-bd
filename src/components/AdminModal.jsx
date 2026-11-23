@@ -2,7 +2,7 @@ import { normalizeGrade } from '../data/grades';
 import React, { useState, useEffect, useCallback, useRef } from 'react';
 import {
   X, Lock, ShieldCheck, Plus, Trash2, Download, Upload, RotateCcw, Check, Settings,
-  Bird, Phone, MessageSquareText, CloudUpload, LogOut, ChevronDown, ChevronUp, CalendarClock, Egg, AlertTriangle, ClipboardPaste, Undo2, History, Megaphone, FileSpreadsheet, Inbox, ImagePlus, Store
+  Bird, Phone, MessageSquareText, CloudUpload, LogOut, ChevronDown, ChevronUp, CalendarClock, Egg, AlertTriangle, ClipboardPaste, Undo2, History, Megaphone, FileSpreadsheet, Inbox, ImagePlus, Store, Users
 } from 'lucide-react';
 import WhatsAppPastePanel from './WhatsAppPastePanel';
 import VersionHistoryPanel from './VersionHistoryPanel';
@@ -11,6 +11,8 @@ import ReadyExcelPanel from './ReadyExcelPanel';
 import SubmissionsPanel from './SubmissionsPanel';
 import GalleryAdminPanel from './GalleryAdminPanel';
 import MarketAdminPanel from './MarketAdminPanel';
+import DealerAdminPanel from './DealerAdminPanel';
+import { fetchDealers } from '../services/api';
 import { fetchMarketAdmin, marketAdminAction } from '../services/market';
 import { applyReadyPlan } from '../utils/readyExcel';
 import { applyExcelPlan } from '../utils/excelRates';
@@ -231,6 +233,8 @@ function AdminModalContent({
   }, [adminKey]);
 
   const onMarketTab = activeTab === 'market';
+  const [dealers, setDealers] = useState([]);
+  useEffect(() => { if (activeTab === 'dealers') fetchDealers().then(setDealers); }, [activeTab]);
   useEffect(() => {
     if (adminKey) loadMarket();
   }, [adminKey, onMarketTab, loadMarket]);
@@ -714,6 +718,9 @@ function AdminModalContent({
               <button onClick={() => setActiveTab('gallery')} className={tabClass('gallery')}>
                 <ImagePlus className="w-4 h-4" /> রেট চার্ট ও ছবি
               </button>
+              <button onClick={() => setActiveTab('dealers')} className={tabClass('dealers')}>
+                <Users className="w-4 h-4" /> ডিলার তালিকা
+              </button>
               <button onClick={() => setActiveTab('market')} className={tabClass('market')}>
                 <Store className="w-4 h-4" /> বিক্রেতার বিজ্ঞাপন
                 {(market?.items || []).some((i) => i.status === 'pending') && (
@@ -1002,6 +1009,10 @@ function AdminModalContent({
 
             {activeTab === 'gallery' && (
               <GalleryAdminPanel adminKey={adminKey} gallery={gallery} onChange={setGallery} showToast={showToast} />
+            )}
+
+            {activeTab === 'dealers' && (
+              <DealerAdminPanel adminKey={adminKey} dealers={dealers} onChange={setDealers} showToast={showToast} />
             )}
 
             {activeTab === 'market' && (
