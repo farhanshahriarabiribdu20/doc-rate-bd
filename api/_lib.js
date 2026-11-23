@@ -146,6 +146,8 @@ export function sanitizeSettings(input) {
     youtubeUrl: /^https:\/\//i.test(str(s.youtubeUrl, 200)) ? str(s.youtubeUrl, 200) : '', // YouTube channel link (picture-download follow step)
     followFbUrl: /^https:\/\//i.test(str(s.followFbUrl, 200)) ? str(s.followFbUrl, 200) : '', // Facebook page link (picture-download follow step)
     telegramUrl: /^https:\/\/(t|telegram)\.me\//i.test(str(s.telegramUrl, 200)) ? str(s.telegramUrl, 200) : '', // public Telegram channel to join
+    telegramAuto: s.telegramAuto === true, // post the day's rates to Telegram automatically
+    telegramPostedDate: /^\d{4}-\d{2}-\d{2}$/.test(str(s.telegramPostedDate, 10)) ? str(s.telegramPostedDate, 10) : '', // last rate date already posted
     reportDateBn: str(s.reportDateBn, 80),
     reportDateEn: str(s.reportDateEn, 80)
   };

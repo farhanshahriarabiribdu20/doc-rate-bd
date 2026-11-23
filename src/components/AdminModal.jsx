@@ -323,6 +323,36 @@ function AdminModalContent({
 
   const handlePublish = () => publishLatest({ silent: false });
 
+  // Automatic Telegram post: once per rate date, when the admin stops editing (quiet period) or closes the panel.
+  const tgSendingRef = useRef(false);
+  const postTelegramIfDue = useCallback(async () => {
+    const { rates: r, notice: n, settings: s } = latestRef.current;
+    const key = adminKeyRef.current;
+    if (!key || !s?.telegramAuto || tgSendingRef.current) return;
+    if (!/^\d{4}-\d{2}-\d{2}$/.test(s.reportDateISO || '') || s.telegramPostedDate === s.reportDateISO) return;
+    tgSendingRef.current = true;
+    try {
+      const sent = await sendTelegram(key, buildShareText({ rates: r, notice: n, settings: s }));
+      if (!sent.ok) { showToast(sent.notConfigured ? 'টেলিগ্রাম সেট করা নেই।' : `টেলিগ্রামে অটো-পোস্ট হয়নি: ${sent.error}`, 'error'); return; }
+      // Remember the date on the server too, so no other device or visit posts it again.
+      const payload = { ...latestRef.current, settings: { ...latestRef.current.settings, telegramPostedDate: s.reportDateISO } };
+      const saved = await publishSiteData(key, payload);
+      if (saved.ok) onPublishedRef.current({ ...payload, updatedAt: saved.updatedAt }, { keepDirty: false });
+      showToast('✅ আজকের রেট টেলিগ্রাম চ্যানেলে অটো-পোস্ট হয়েছে।');
+    } finally {
+      tgSendingRef.current = false;
+    }
+  }, [showToast]);
+
+  useEffect(() => {
+    if (!adminKey || !settings.telegramAuto) return undefined;
+    const t = setTimeout(postTelegramIfDue, 3 * 60 * 1000);
+    return () => clearTimeout(t);
+  }, [adminKey, rates, readyRates, notice, settings, postTelegramIfDue]);
+
+  // Closing the panel means "I'm done": post right away if today's rates were not posted yet.
+  useEffect(() => () => { postTelegramIfDue(); }, [postTelegramIfDue]);
+
   // Debounced auto-publish: waits for the admin to stop typing.
   useEffect(() => {
     if (!adminKey || !dirty) return undefined;
@@ -568,7 +598,7 @@ function AdminModalContent({
                 onClick={async () => {
                   if (!window.confirm('আজকের রেট টেলিগ্রাম চ্যানেলে পোস্ট হবে। পাঠাব?')) return;
                   const r = await sendTelegram(adminKey, buildShareText({ rates, notice, settings }));
-                  if (r.ok) showToast('✅ টেলিগ্রাম চ্যানেলে পাঠানো হয়েছে।');
+                  if (r.ok) { showToast('✅ টেলিগ্রাম চ্যানেলে পাঠানো হয়েছে।'); setSettings((p) => ({ ...p, telegramPostedDate: p.reportDateISO || '' })); }
                   else if (r.notConfigured) showToast('টেলিগ্রাম এখনো সেট করা হয়নি (Vercel-এ TELEGRAM_BOT_TOKEN ও TELEGRAM_CHAT_ID দিন)।', 'error');
                   else showToast(`পাঠানো যায়নি: ${r.error}`, 'error');
                 }}
@@ -1120,6 +1150,12 @@ function AdminModalContent({
                       <label className="block text-xs font-bold text-slate-700 mb-1">✈️ Telegram চ্যানেলের লিংক (ভিজিটররা জয়েন করবে)</label>
                       <input type="url" placeholder="https://t.me/..." value={settings.telegramUrl || ''} onChange={(e) => setSettings((p) => ({ ...p, telegramUrl: e.target.value }))} className="w-full px-3 py-2 border rounded-xl text-xs font-bold" />
                     </div>
+                    <label className="flex items-start gap-2 text-xs font-bold text-slate-800 cursor-pointer">
+                      <input type="checkbox" checked={settings.telegramAuto === true} onChange={(e) => setSettings((p) => ({ ...p, telegramAuto: e.target.checked }))} className="mt-0.5 w-4 h-4 accent-sky-600" />
+                      <span>নতুন তারিখের রেট প্রকাশের পর টেলিগ্রাম চ্যানেলে অটো-পোস্ট করুন
+                        <span className="block font-medium text-slate-600 mt-0.5">রেট এডিট থামানোর ৩ মিনিট পরে, অথবা প্যানেল বন্ধ করলে সাথে সাথে। একই তারিখের রেট একবারই যাবে (আবার পাঠাতে "✈️ টেলিগ্রামে পাঠান" চাপুন)।</span>
+                      </span>
+                    </label>
                     <p className="text-xs font-black text-slate-800">📥 ছবি ডাউনলোডের আগে ফলো করার লিংক</p>
                     <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                       <div>
