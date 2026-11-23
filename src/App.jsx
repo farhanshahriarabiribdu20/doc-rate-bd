@@ -7,6 +7,7 @@ import RateCard from './components/RateCard';
 import RateTable from './components/RateTable';
 import PriceChart from './components/PriceChart';
 import TrendChart from './components/TrendChart';
+import CompareModal from './components/CompareModal';
 import InstallPrompt from './components/InstallPrompt';
 import Calculator from './components/Calculator';
 import ShareModal from './components/ShareModal';
@@ -238,6 +239,8 @@ export default function App() {
   const [searchQuery, setSearchQuery] = useState('');
   const [sortBy, setSortBy] = useState('default');
   const [viewMode, setViewMode] = useState('cards');
+  const [compareIds, setCompareIds] = useState([]); // up to 3 rate cards picked for comparison
+  const [compareOpen, setCompareOpen] = useState(false);
 
   // Modals
   const [isCalculatorOpen, setIsCalculatorOpen] = useState(false);
@@ -297,6 +300,24 @@ export default function App() {
 
     return true;
   });
+
+  // Cheapest rate in each category (needs 3+ companies to be meaningful), for the "lowest price" badge.
+  const lowestIds = (() => {
+    const groups = {};
+    shownRates.forEach((r) => {
+      const g = (r.category || '').startsWith('layer') ? 'layer' : (r.category || 'other');
+      const v = Number(rateForRegion(r, selectedDivision));
+      if (Number.isFinite(v) && v > 0) (groups[g] = groups[g] || []).push({ id: r.id, v });
+    });
+    const ids = new Set();
+    Object.values(groups).forEach((list) => {
+      if (list.length < 3) return;
+      const min = Math.min(...list.map((x) => x.v));
+      if (min === Math.max(...list.map((x) => x.v))) return;
+      list.filter((x) => x.v === min).forEach((x) => ids.add(x.id));
+    });
+    return ids;
+  })();
 
   const sortedRates = [...filteredRates].sort((a, b) => {
     const rateA = rateForRegion(a, selectedDivision);
@@ -416,6 +437,12 @@ export default function App() {
                     onOpenBooking={(it) => setBookingItem(it)}
                     isStale={shownStale}
                     rateDateISO={shownDateISO}
+                    isLowest={lowestIds.has(item.id)}
+                    compare={{
+                      selected: compareIds.includes(item.id),
+                      disabled: compareIds.length >= 3,
+                      onToggle: () => setCompareIds((ids) => (ids.includes(item.id) ? ids.filter((x) => x !== item.id) : ids.length < 3 ? [...ids, item.id] : ids))
+                    }}
                     lang={lang}
                   />
                 ))}
@@ -563,6 +590,27 @@ export default function App() {
           readyRates={readyRates}
           docRates={liveRates}
           onClose={() => setSubmitKind(null)}
+        />
+      )}
+      {compareIds.length > 0 && activeTab === 'doc' && !compareOpen && (
+        <div className="fixed z-40 bottom-4 left-1/2 -translate-x-1/2 flex items-center gap-2 bg-slate-900 text-white rounded-2xl shadow-2xl pl-4 pr-2 py-2 print:hidden">
+          <span className="text-xs font-bold">{lang === 'bn' ? `${compareIds.length}টি বাছা হয়েছে` : `${compareIds.length} selected`}</span>
+          <button
+            disabled={compareIds.length < 2}
+            onClick={() => setCompareOpen(true)}
+            className="px-3.5 py-1.5 rounded-xl bg-amber-400 text-slate-950 text-xs font-black disabled:opacity-50 cursor-pointer"
+          >
+            {compareIds.length < 2 ? (lang === 'bn' ? 'আরও ১টি বাছুন' : 'Pick one more') : (lang === 'bn' ? 'তুলনা করুন' : 'Compare')}
+          </button>
+          <button onClick={() => setCompareIds([])} className="px-2.5 py-1.5 rounded-xl text-xs font-bold text-slate-300 hover:text-white cursor-pointer">{lang === 'bn' ? 'মুছুন' : 'Clear'}</button>
+        </div>
+      )}
+      {compareOpen && (
+        <CompareModal
+          lang={lang}
+          items={compareIds.map((id) => liveRates.find((r) => r.id === id) || shownRates.find((r) => r.id === id)).filter(Boolean)}
+          onClose={() => setCompareOpen(false)}
+          onRemove={(id) => setCompareIds((ids) => { const next = ids.filter((x) => x !== id); if (next.length < 2) setCompareOpen(false); return next; })}
         />
       )}
       <InstallPrompt lang={lang} />
