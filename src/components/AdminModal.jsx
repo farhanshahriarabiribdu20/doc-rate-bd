@@ -2,7 +2,7 @@ import { normalizeGrade } from '../data/grades';
 import React, { useState, useEffect, useCallback, useRef } from 'react';
 import {
   X, Lock, ShieldCheck, Plus, Trash2, Download, Upload, RotateCcw, Check, Settings,
-  Bird, Phone, MessageSquareText, CloudUpload, LogOut, ChevronDown, ChevronUp, CalendarClock, Egg, AlertTriangle, ClipboardPaste, Undo2, History, Megaphone, FileSpreadsheet, Inbox, ImagePlus, Store
+  Bird, Phone, MessageSquareText, CloudUpload, LogOut, ChevronDown, ChevronUp, CalendarClock, Egg, AlertTriangle, ClipboardPaste, Undo2, History, Megaphone, FileSpreadsheet, Inbox, ImagePlus, Store, Wheat
 } from 'lucide-react';
 import WhatsAppPastePanel from './WhatsAppPastePanel';
 import VersionHistoryPanel from './VersionHistoryPanel';
@@ -10,6 +10,8 @@ import ExcelImportPanel from './ExcelImportPanel';
 import ReadyExcelPanel from './ReadyExcelPanel';
 import SubmissionsPanel from './SubmissionsPanel';
 import GalleryAdminPanel from './GalleryAdminPanel';
+import FeedAdminPanel from './FeedAdminPanel';
+import { fetchFeeds } from '../services/feed';
 import AnalyticsPanel from './AnalyticsPanel';
 import MarketAdminPanel from './MarketAdminPanel';
 import { fetchMarketAdmin, marketAdminAction } from '../services/market';
@@ -206,6 +208,8 @@ function AdminModalContent({
     setGalleryState(next);
     try { localStorage.setItem('fn_gallery_admin', JSON.stringify(next)); } catch { /* ignore */ }
   }, []);
+  const [feedList, setFeedList] = useState([]);
+  useEffect(() => { if (activeTab === 'feedprices') fetchFeeds().then(setFeedList); }, [activeTab]);
   const onGalleryTab = activeTab === 'gallery';
   useEffect(() => {
     if (!adminKey || !onGalleryTab) return;
@@ -721,6 +725,9 @@ function AdminModalContent({
                   <span className="ml-1 px-1.5 py-0.5 rounded-full text-[10px] bg-amber-400 text-slate-950 font-black">{market.items.filter((i) => i.status === 'pending').length}</span>
                 )}
               </button>
+              <button onClick={() => setActiveTab('feedprices')} className={tabClass('feedprices')}>
+                <Wheat className="w-4 h-4" /> ফিডের দাম
+              </button>
               <button onClick={() => setActiveTab('analytics')} className={tabClass('analytics')}>
                 📊 পরিসংখ্যান
               </button>
@@ -1006,6 +1013,10 @@ function AdminModalContent({
 
             {activeTab === 'gallery' && (
               <GalleryAdminPanel adminKey={adminKey} gallery={gallery} onChange={setGallery} showToast={showToast} />
+            )}
+
+            {activeTab === 'feedprices' && (
+              <FeedAdminPanel adminKey={adminKey} feeds={feedList} onChange={setFeedList} showToast={showToast} />
             )}
 
             {activeTab === 'market' && (

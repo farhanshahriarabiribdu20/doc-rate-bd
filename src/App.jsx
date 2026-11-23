@@ -35,6 +35,8 @@ import DateRatePicker from './components/DateRatePicker';
 import RateSubmitModal from './components/RateSubmitModal';
 import RateCta from './components/RateCta';
 import GallerySection from './components/GallerySection';
+import FeedPrices from './components/FeedPrices';
+import { fetchFeeds } from './services/feed';
 import MarketSection from './components/MarketSection';
 import SellerModal from './components/SellerModal';
 import { useLiveVisitors } from './utils/useLiveVisitors';
@@ -136,6 +138,8 @@ export default function App() {
   const [readyRates, setReadyRates] = useState(() => (cached?.readyRates?.length ? cached.readyRates : INITIAL_READY_RATES));
   const [notice, setNotice] = useState(() => cached?.notice || INITIAL_TICKER_NOTICE);
   const [updatedAt, setUpdatedAt] = useState(cached?.updatedAt || null);
+  const [feedPrices, setFeedPrices] = useState([]);
+  useEffect(() => { fetchFeeds().then(setFeedPrices); }, []);
   const feeds = INITIAL_FEEDS;
 
   // Admin drafts: edits stay local until the admin presses "Publish".
@@ -429,6 +433,8 @@ export default function App() {
             <PriceChart rates={shownRates} lang={lang} />
             <WeeklySummary lang={lang} />
             <TrendChart lang={lang} />
+
+            <FeedPrices feeds={feedPrices} />
 
             {/* Filters */}
             <FilterBar

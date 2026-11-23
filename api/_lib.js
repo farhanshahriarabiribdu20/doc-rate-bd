@@ -187,3 +187,38 @@ export const snapshotTime = (pathname) => {
   const m = /history\/(\d{4})-(\d{2})-(\d{2})T(\d{2})-(\d{2})-(\d{2})-(\d{3})Z/.exec(pathname || '');
   return m ? Date.UTC(+m[1], +m[2] - 1, +m[3], +m[4], +m[5], +m[6], +m[7]) : 0;
 };
+
+// ---------- feed prices (admin-managed; price change history kept per item) ----------
+import { FEED_TYPES } from '../src/data/feedTypes.js';
+
+const toEnDigits = (v) => String(v ?? '').replace(/[০-৯]/g, (d) => '০১২৩৪৫৬৭৮৯'.indexOf(d));
+const oneLine = (v, max) => (typeof v === 'string' ? v.replace(/\s+/g, ' ').trim().slice(0, max) : '');
+const dhakaToday = () => new Date(Date.now() + 6 * 3600 * 1000).toISOString().slice(0, 10);
+
+export function sanitizeFeeds(input, prevList = []) {
+  if (!Array.isArray(input)) return null;
+  const prevById = new Map((Array.isArray(prevList) ? prevList : []).map((f) => [f.id, f]));
+  const seen = new Set();
+  const out = [];
+  for (const f of input.slice(0, 300)) {
+    const item = f && typeof f === 'object' ? f : {};
+    const company = oneLine(item.company, 60);
+    const product = oneLine(item.product, 80);
+    const price = Math.round(Number(toEnDigits(item.price).replace(/[,\s]/g, '')));
+    if (!company || !product || !Number.isFinite(price) || price < 100 || price > 20000) continue;
+    let id = oneLine(item.id, 40).replace(/[^A-Za-z0-9_-]/g, '') || genId('fd');
+    if (seen.has(id)) id = genId('fd');
+    seen.add(id);
+    const old = prevById.get(id);
+    let prevPrice = old?.prevPrice || 0;
+    let changed = old?.changed || dhakaToday();
+    if (old && old.price !== price) { prevPrice = old.price; changed = dhakaToday(); }
+    out.push({
+      id, company, product,
+      type: FEED_TYPES.includes(item.type) ? item.type : 'অন্যান্য',
+      weight: oneLine(item.weight, 12) || '৫০ কেজি',
+      price, prevPrice, changed
+    });
+  }
+  return out;
+}
