@@ -471,7 +471,7 @@ export default function App() {
               ]}
             />
 
-            <div className="grid lg:grid-cols-2 gap-4 items-stretch">
+            <div className="grid gap-4">
             <DateRatePicker
               lang={lang}
               liveDate={settings.reportDateISO}

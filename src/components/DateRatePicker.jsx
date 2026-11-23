@@ -13,8 +13,8 @@ export default function DateRatePicker({ lang, liveDate, dates, viewing, notice,
   const recent = dates.filter((d) => d !== liveDate).slice(0, 7);
 
   return (
-    <div className="h-full flex flex-col rounded-2xl bg-white border border-slate-200 shadow-xs p-4 sm:p-5">
-      <div className="flex items-start gap-3">
+    <div className="flex flex-col lg:flex-row lg:flex-wrap lg:items-center lg:gap-x-5 rounded-2xl bg-white border border-slate-200 shadow-xs p-4 sm:p-5">
+      <div className="flex items-start gap-3 lg:flex-1 lg:min-w-0">
         <div className="w-10 h-10 rounded-xl bg-emerald-50 border border-emerald-100 flex items-center justify-center shrink-0">
           <CalendarDays className="w-5 h-5 text-emerald-600" />
         </div>
@@ -30,12 +30,12 @@ export default function DateRatePicker({ lang, liveDate, dates, viewing, notice,
         </div>
       </div>
 
-      <div className={`mt-3 flex items-center gap-2 rounded-xl px-3 py-2.5 border text-xs sm:text-sm font-bold ${viewing ? 'bg-amber-50 border-amber-300 text-amber-900' : 'bg-emerald-50 border-emerald-200 text-emerald-900'}`}>
+      <div className={`mt-3 lg:mt-0 flex items-center gap-2 rounded-xl px-3 py-2.5 border text-xs sm:text-sm font-bold ${viewing ? 'bg-amber-50 border-amber-300 text-amber-900' : 'bg-emerald-50 border-emerald-200 text-emerald-900'}`}>
         <span>📅</span>
         <span>{fmt(viewing || liveDate)}</span>
       </div>
 
-      <div className="mt-auto pt-3 flex flex-wrap gap-2">
+      <div className="mt-auto pt-3 lg:mt-0 lg:pt-0 flex flex-wrap gap-2">
         <button
           type="button"
           onClick={() => setOpen((v) => !v)}
@@ -55,10 +55,10 @@ export default function DateRatePicker({ lang, liveDate, dates, viewing, notice,
         )}
       </div>
 
-      {notice && <p className="mt-3 text-xs font-bold text-amber-800 bg-amber-50 border border-amber-200 rounded-xl px-3 py-2">{notice}</p>}
+      {notice && <p className="mt-3 lg:basis-full text-xs font-bold text-amber-800 bg-amber-50 border border-amber-200 rounded-xl px-3 py-2">{notice}</p>}
 
       {open && (
-        <div className="mt-3 bg-slate-50 border border-slate-200 rounded-xl p-3 space-y-3">
+        <div className="mt-3 lg:basis-full bg-slate-50 border border-slate-200 rounded-xl p-3 space-y-3">
           <div className="flex items-center justify-between gap-2">
             <label className="text-xs font-black text-slate-700">{bn ? 'তারিখ অনুযায়ী রেট দেখুন' : 'View rates by date'}</label>
             <button type="button" onClick={() => setOpen(false)} className="p-1 rounded-lg text-slate-400 hover:bg-slate-100 cursor-pointer" aria-label="close">
