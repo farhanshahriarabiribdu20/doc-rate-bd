@@ -1,5 +1,5 @@
 import React from 'react';
-import { Check, X, Ban, EyeOff, Trash2, RefreshCw, Loader2, Store, UserCheck } from 'lucide-react';
+import { Check, X, Ban, EyeOff, Trash2, RefreshCw, Loader2, Store, UserCheck, BadgeCheck, Star } from 'lucide-react';
 import { PRODUCT_BN, UNIT_BN } from '../services/market';
 
 const bnNum = (n) => new Intl.NumberFormat('bn-BD', { maximumFractionDigits: 2 }).format(n);
@@ -72,6 +72,11 @@ export default function MarketAdminPanel({ data, loading, error, onReload, onAct
                   <p className="text-[11px] text-slate-500 mt-1">
                     {it.sellerName} ({it.userId}) · {it.phone} · {when(it.createdAt)}
                   </p>
+                  <p className="text-[11px] mt-0.5 flex flex-wrap items-center gap-2">
+                    {it.district && <span className="text-slate-500">জেলা: {it.district}</span>}
+                    {it.verified && <span className="inline-flex items-center gap-0.5 font-black text-emerald-700"><BadgeCheck className="w-3 h-3" /> যাচাইকৃত</span>}
+                    {it.rating && <span className="inline-flex items-center gap-0.5 font-black text-amber-600"><Star className="w-3 h-3 fill-amber-400 text-amber-400" />{bnNum(it.rating.avg)} ({bnNum(it.rating.count)})</span>}
+                  </p>
                 </div>
                 <span className={`shrink-0 px-2 py-0.5 rounded-full text-[10px] font-black ${stCls}`}>{stText}</span>
               </div>
@@ -83,6 +88,10 @@ export default function MarketAdminPanel({ data, loading, error, onReload, onAct
                   <button onClick={() => onAction({ op: 'hide', id: it.id })} className="flex items-center gap-1 px-2.5 py-1.5 rounded-lg bg-amber-50 hover:bg-amber-100 text-amber-800 font-black text-xs cursor-pointer"><EyeOff className="w-3.5 h-3.5" /> লুকান</button>
                 )}
                 <button onClick={() => { if (window.confirm('বিজ্ঞাপনটি মুছে ফেলবেন?')) onAction({ op: 'delete', id: it.id }); }} className="flex items-center gap-1 px-2.5 py-1.5 rounded-lg bg-red-50 hover:bg-red-100 text-red-700 font-black text-xs cursor-pointer"><Trash2 className="w-3.5 h-3.5" /> মুছুন</button>
+                <button onClick={() => onAction({ op: it.verified ? 'unverify' : 'verify', userId: it.userId })} className={`flex items-center gap-1 px-2.5 py-1.5 rounded-lg font-black text-xs cursor-pointer ${it.verified ? 'bg-emerald-100 text-emerald-800 hover:bg-emerald-200' : 'bg-emerald-50 text-emerald-700 hover:bg-emerald-100'}`}><BadgeCheck className="w-3.5 h-3.5" /> {it.verified ? 'যাচাই বাতিল' : 'যাচাইকৃত করুন'}</button>
+                {it.rating && (
+                  <button onClick={() => { if (window.confirm(`${it.userId} এর সব রেটিং মুছে ফেলবেন?`)) onAction({ op: 'resetRating', userId: it.userId }); }} className="flex items-center gap-1 px-2.5 py-1.5 rounded-lg bg-slate-100 hover:bg-slate-200 text-slate-700 font-black text-xs cursor-pointer"><Star className="w-3.5 h-3.5" /> রেটিং রিসেট</button>
+                )}
                 {isBanned ? (
                   <button onClick={() => onAction({ op: 'unban', userId: it.userId })} className="flex items-center gap-1 px-2.5 py-1.5 rounded-lg bg-slate-100 hover:bg-slate-200 text-slate-700 font-black text-xs cursor-pointer"><UserCheck className="w-3.5 h-3.5" /> ব্লক খুলুন</button>
                 ) : (
