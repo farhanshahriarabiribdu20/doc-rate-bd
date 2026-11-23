@@ -210,11 +210,11 @@ export default function Navbar({
           {/* Calculator Button */}
           <button
             onClick={onOpenCalculator}
-            title={lang === 'bn' ? 'বাচ্চা ও ফিড খরচ ক্যালকুলেটর' : 'Farm Cost Calculator'}
+            title={lang === 'bn' ? 'খামার টুলস ও ক্যালকুলেটর' : 'Farm Tools & Calculators'}
             className="flex items-center gap-1.5 px-3 py-2 rounded-xl bg-amber-500 hover:bg-amber-400 text-slate-950 font-bold text-xs transition shadow-xs cursor-pointer active:scale-95"
           >
             <CalcIcon className="w-4 h-4 text-slate-950" />
-            <span className="hidden md:inline">{lang === 'bn' ? 'ক্যালকুলেটর' : 'Calculator'}</span>
+            <span className="hidden md:inline">{lang === 'bn' ? 'খামার টুলস' : 'Farm Tools'}</span>
           </button>
         </div>
       </div>
