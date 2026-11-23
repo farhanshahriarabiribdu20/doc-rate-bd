@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { ShoppingBag, MapPin, Search, LayoutGrid, Table as TableIcon, Egg, Bird } from 'lucide-react';
 import { getReadyMarketStats } from '../data/readyMarketData';
 import { formatBn, formatEn, todayISO } from '../utils/date';
@@ -6,8 +6,10 @@ import { formatBn, formatEn, todayISO } from '../utils/date';
 // A rate that was not in the sheet is 0: show a dash instead of ৳0.
 const money = (v) => (Number(v) > 0 ? `৳${v}` : '—');
 
-export default function ReadyMarketSection({ readyRates = [], lang = 'bn', settings = {} }) {
+export default function ReadyMarketSection({ readyRates = [], lang = 'bn', settings = {}, presetSearch }) {
   const [search, setSearch] = useState('');
+  // the master search can fill the box (n changes on every request)
+  useEffect(() => { if (presetSearch?.n) setSearch(presetSearch.q || ''); }, [presetSearch?.n]); // eslint-disable-line react-hooks/exhaustive-deps
   const [selectedProduct, setSelectedProduct] = useState('all'); // 'all' | 'broiler' | 'sonali' | 'color' | 'egg' | 'ps'
   const [viewMode, setViewMode] = useState('table'); // 'table' | 'cards'
 

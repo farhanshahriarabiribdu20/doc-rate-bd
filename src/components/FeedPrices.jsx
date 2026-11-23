@@ -20,10 +20,10 @@ export default function FeedPrices({ feeds }) {
   const sel = 'w-full sm:w-auto bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl px-3 py-2 text-sm text-slate-700 dark:text-slate-200';
 
   return (
-    <section className="mt-8" aria-labelledby="feed-title">
+    <section className="mt-8 scroll-mt-40" aria-labelledby="feed-title">
       <div className="flex items-center gap-2">
         <Wheat className="w-5 h-5 text-amber-600" />
-        <h2 id="feed-title" className="text-lg font-black text-slate-900 dark:text-white">পোল্ট্রি ফিডের দাম</h2>
+        <h2 id="feed-title" className="scroll-mt-40 text-lg font-black text-slate-900 dark:text-white">পোল্ট্রি ফিডের দাম</h2>
       </div>
       <p className="text-xs text-slate-500 dark:text-slate-400 mb-3">বস্তা প্রতি পাইকারি দাম{latest ? ` · সর্বশেষ আপডেট ${toBn(latest)}` : ''}। এলাকাভেদে সামান্য ভিন্ন হতে পারে।</p>
 
