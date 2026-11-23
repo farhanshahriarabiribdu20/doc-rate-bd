@@ -16,6 +16,7 @@ import ShareModal from './components/ShareModal';
 import BookingModal from './components/BookingModal';
 import BannerGeneratorModal from './components/BannerGeneratorModal';
 import AdminModal from './components/AdminModal';
+import FavAlert from './components/FavAlert';
 import WeeklySummary from './components/WeeklySummary';
 import FeedbackWidget from './components/FeedbackWidget';
 import ReadyMarketSection from './components/ReadyMarketSection';
@@ -422,6 +423,8 @@ export default function App() {
 
             <RateCta lang={lang} onClick={() => setSubmitKind('doc')} />
             </div>
+
+            {!archive && favKeys.length > 0 && <FavAlert rates={liveRates} favKeys={favKeys} />}
 
             <StatsOverview rates={shownRates} lang={lang} isStale={shownStale} />
 
