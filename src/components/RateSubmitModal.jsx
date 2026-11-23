@@ -90,13 +90,6 @@ export default function RateSubmitModal({ lang = 'bn', readyRates = [], docRates
           </div>
         ) : (
           <form onSubmit={handleSubmit} className="p-5 space-y-4">
-            <div className="grid grid-cols-2 gap-2">
-              {[['ready', bn ? '🍗 রেডি মুরগি/ডিম (মোকাম)' : '🍗 Ready birds/eggs'], ['doc', bn ? '🐣 বাচ্চার (DOC) রেট' : '🐣 DOC rate']].map(([k, label]) => (
-                <button key={k} type="button" onClick={() => switchKind(k)} className={`px-3 py-2.5 rounded-xl text-xs font-black border-2 cursor-pointer transition ${kind === k ? 'bg-emerald-600 text-white border-emerald-600' : 'bg-white text-slate-700 border-slate-200 hover:border-emerald-300'}`}>
-                  {label}
-                </button>
-              ))}
-            </div>
 
             <div>
               <label className="block text-xs font-bold text-slate-700 mb-1">{kind === 'ready' ? (bn ? 'মোকাম *' : 'Mokam *') : (bn ? 'কোম্পানি ও ব্রিড *' : 'Company & breed *')}</label>
