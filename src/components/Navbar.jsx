@@ -122,10 +122,10 @@ export default function Navbar({
         </div>
 
         {/* Middle Section Navigation Tabs */}
-        <nav className="order-last sm:order-none w-full sm:w-auto flex items-center bg-slate-100 p-1 rounded-2xl border border-slate-200/90 shadow-2xs">
+        <nav className="order-last w-full flex items-center bg-slate-100 p-1 rounded-2xl border border-slate-200/90 shadow-2xs">
           <button
             onClick={() => setActiveTab('doc')}
-            className={`flex-1 sm:flex-none justify-center whitespace-nowrap px-1.5 sm:px-4 py-1.5 rounded-xl font-black text-[11px] sm:text-xs transition-all cursor-pointer flex items-center gap-1 sm:gap-1.5 ${
+            className={`flex-1 justify-center whitespace-nowrap px-1.5 sm:px-4 py-1.5 sm:py-2 rounded-xl font-black text-[11px] sm:text-sm transition-all cursor-pointer flex items-center gap-1 sm:gap-1.5 ${
               activeTab === 'doc'
                 ? 'bg-emerald-700 text-white shadow-xs'
                 : 'text-slate-600 hover:text-slate-900'
@@ -136,7 +136,7 @@ export default function Navbar({
           </button>
           <button
             onClick={() => setActiveTab('ready')}
-            className={`flex-1 sm:flex-none justify-center whitespace-nowrap px-1.5 sm:px-4 py-1.5 rounded-xl font-black text-[11px] sm:text-xs transition-all cursor-pointer flex items-center gap-1 sm:gap-1.5 ${
+            className={`flex-1 justify-center whitespace-nowrap px-1.5 sm:px-4 py-1.5 sm:py-2 rounded-xl font-black text-[11px] sm:text-sm transition-all cursor-pointer flex items-center gap-1 sm:gap-1.5 ${
               activeTab === 'ready'
                 ? 'bg-emerald-700 text-white shadow-xs'
                 : 'text-slate-600 hover:text-slate-900'
@@ -148,7 +148,7 @@ export default function Navbar({
           </button>
           <button
             onClick={() => setActiveTab('market')}
-            className={`flex-1 sm:flex-none justify-center whitespace-nowrap px-1.5 sm:px-4 py-1.5 rounded-xl font-black text-[11px] sm:text-xs transition-all cursor-pointer flex items-center gap-1 sm:gap-1.5 ${
+            className={`flex-1 justify-center whitespace-nowrap px-1.5 sm:px-4 py-1.5 sm:py-2 rounded-xl font-black text-[11px] sm:text-sm transition-all cursor-pointer flex items-center gap-1 sm:gap-1.5 ${
               activeTab === 'market'
                 ? 'bg-emerald-700 text-white shadow-xs'
                 : 'text-slate-600 hover:text-slate-900'
