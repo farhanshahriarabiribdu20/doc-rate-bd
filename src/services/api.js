@@ -63,6 +63,33 @@ export async function fetchHistoryVersion(key, id) {
   } catch { return null; }
 }
 
+/** Admin: daily backups [{ id, day, uploadedAt, size }], newest first, or null. */
+export async function fetchBackups(key) {
+  try {
+    const res = await fetch('/api/site-history?backups=1', { headers: adminHeaders(key) });
+    const body = await json(res);
+    return res.ok && body?.success && Array.isArray(body.backups) ? body.backups : null;
+  } catch { return null; }
+}
+
+/** Admin: full content of one backup ({ site, market, gallery, createdAt }) or null. */
+export async function fetchBackup(key, id) {
+  try {
+    const res = await fetch(`/api/site-history?backup=${encodeURIComponent(id)}`, { headers: adminHeaders(key) });
+    const body = await json(res);
+    return res.ok && body?.success ? body.data : null;
+  } catch { return null; }
+}
+
+/** Admin: take a backup right now. Returns true on success. */
+export async function runBackupNow(key) {
+  try {
+    const res = await fetch('/api/site-history?run=1', { method: 'POST', headers: adminHeaders(key) });
+    const body = await json(res);
+    return res.ok && body?.success === true && !!body.created;
+  } catch { return false; }
+}
+
 /** Public: submit visitor feedback. Returns { ok }. */
 export async function submitFeedback(data) {
   try {
