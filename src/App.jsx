@@ -36,7 +36,6 @@ import { Bird, AlertTriangle } from 'lucide-react';
 import { rateForRegion } from './data/zones';
 import DateRatePicker from './components/DateRatePicker';
 import RateSubmitModal from './components/RateSubmitModal';
-import RateCta from './components/RateCta';
 import GallerySection from './components/GallerySection';
 import FeedPrices from './components/FeedPrices';
 import { fetchFeeds } from './services/feed';
@@ -462,7 +461,7 @@ export default function App() {
         {/* Tab 1: DOC Rates */}
         {activeTab === 'doc' && (
           <div className="flex flex-col gap-5 sm:gap-6">
-            <ReportBanner />
+            <ReportBanner onDocRate={() => setSubmitKind('doc')} />
             <PageHead
               title={lang === 'bn' ? 'আজকের বাচ্চার বাজার দর' : 'Day-Old Chick (DOC) Rates'}
               sub={lang === 'bn' ? 'সকল কোম্পানির ব্রয়লার, কালার, সোনালী ও লেয়ার বাচ্চার নির্ভরযোগ্য পাইকারি বাজারদর' : 'Reliable wholesale rates of Broiler, Color, Sonali and Layer chicks'}
@@ -484,7 +483,6 @@ export default function App() {
               onBackToLive={backToLatest}
             />
 
-            <RateCta lang={lang} onClick={() => setSubmitKind('doc')} />
             </div>
 
             {!archive && favKeys.length > 0 && <FavAlert rates={liveRates} favKeys={favKeys} />}
@@ -592,7 +590,7 @@ export default function App() {
         {/* Tab 2: Ready Broiler, Color, Sonali & Egg Market Section */}
         {activeTab === 'ready' && (
           <div className="flex flex-col gap-5 sm:gap-6">
-            <ReportBanner />
+            <ReportBanner onDocRate={() => setSubmitKind('doc')} />
             <PageHead
               title={lang === 'bn' ? 'রেডি মুরগি ও ডিমের রেট' : 'Ready Poultry & Egg Market Rates'}
               sub={lang === 'bn' ? 'দেশের আঞ্চলিক মোকাম অনুযায়ী ব্রয়লার, কালার, সোনালী ও ডিমের পাইকারি দর' : 'Wholesale rates of broiler, color, sonali and eggs across regional hubs'}
