@@ -3,6 +3,7 @@
   "short_name": "FosholNexa",
   "description": "প্রতিদিনের DOC (এক দিনের বাচ্চা), রেডি মুরগি ও ডিমের লাইভ বাজারদর",
   "lang": "bn",
+  "id": "/",
   "start_url": "/",
   "scope": "/",
   "display": "standalone",

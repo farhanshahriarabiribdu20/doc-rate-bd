@@ -7,6 +7,7 @@ import RateCard from './components/RateCard';
 import RateTable from './components/RateTable';
 import PriceChart from './components/PriceChart';
 import TrendChart from './components/TrendChart';
+import InstallPrompt from './components/InstallPrompt';
 import Calculator from './components/Calculator';
 import ShareModal from './components/ShareModal';
 import BookingModal from './components/BookingModal';
@@ -564,6 +565,7 @@ export default function App() {
           onClose={() => setSubmitKind(null)}
         />
       )}
+      <InstallPrompt lang={lang} />
       <BannerGeneratorModal
         isOpen={isBannerOpen}
         onClose={() => setIsBannerOpen(false)}
