@@ -1,3 +1,4 @@
+import { normalizeGrade, GRADE_STYLE } from '../data/grades';
 import React from 'react';
 import { AlertTriangle, MapPin } from 'lucide-react';
 import PriceChange from './PriceChange';
@@ -73,10 +74,12 @@ export default function RateCard({ item, selectedDivision, isStale = false, rate
           <p className="text-xs text-slate-500 font-semibold mt-0.5">
             {lang === 'bn' ? 'জাত:' : 'Breed:'} <span className="text-slate-800 font-bold">{item.breed}</span>
           </p>
-          <span className="inline-flex items-center gap-1 mt-2 text-[11px] font-black px-2.5 py-0.5 rounded-full bg-emerald-600 text-white shadow-xs">
-            <span>★</span>
-            <span>{lang === 'bn' ? 'গ্রেড-এ (Grade-A)' : 'Grade-A'}</span>
-          </span>
+          {normalizeGrade(item.grade) !== 'none' && (
+            <span className={`inline-flex items-center gap-1 mt-2 text-[11px] font-black px-2.5 py-0.5 rounded-full shadow-xs ${GRADE_STYLE[normalizeGrade(item.grade)]}`}>
+              <span>★</span>
+              <span>{lang === 'bn' ? `গ্রেড-${{ A: 'এ', B: 'বি', C: 'সি' }[normalizeGrade(item.grade)]} (Grade-${normalizeGrade(item.grade)})` : `Grade-${normalizeGrade(item.grade)}`}</span>
+            </span>
+          )}
         </div>
 
         {/* Region / Zone */}

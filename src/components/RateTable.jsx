@@ -1,3 +1,4 @@
+import { normalizeGrade, GRADE_STYLE } from '../data/grades';
 import React from 'react';
 import { Printer, MapPin, ShieldCheck, AlertTriangle } from 'lucide-react';
 import PriceChange from './PriceChange';
@@ -74,7 +75,9 @@ export default function RateTable({ rates, selectedDivision, isStale = false, ra
                   </td>
                   <td className="py-3.5 px-4">
                     <span className="font-bold text-slate-800">{item.breed}</span>
-                    <span className="ml-1.5 inline-flex items-center gap-0.5 text-[10px] font-black px-2 py-0.5 rounded-full bg-emerald-600 text-white align-middle">★ Grade-A</span>
+                    {normalizeGrade(item.grade) !== 'none' && (
+                      <span className={`ml-1.5 inline-flex items-center gap-0.5 text-[10px] font-black px-2 py-0.5 rounded-full align-middle ${GRADE_STYLE[normalizeGrade(item.grade)]}`}>★ Grade-{normalizeGrade(item.grade)}</span>
+                    )}
                     <div className="mt-0.5 flex items-center gap-1 text-[11px] text-emerald-800">
                       <MapPin className="w-3 h-3 text-emerald-600 shrink-0" />
                       <span className="font-semibold text-slate-600">{currentRegion}</span>
