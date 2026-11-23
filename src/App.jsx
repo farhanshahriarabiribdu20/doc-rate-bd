@@ -21,6 +21,7 @@ import { fetchVotes, sendVote } from './services/votes';
 import WeeklySummary from './components/WeeklySummary';
 import FeedbackWidget from './components/FeedbackWidget';
 import ReadyMarketSection from './components/ReadyMarketSection';
+import DistrictReports from './components/DistrictReports';
 import Footer from './components/Footer';
 import { fetchSiteData, fetchRateDates, fetchRateDay, fetchGallery } from './services/api';
 import { ageInDays, formatBn, formatEn, toBnDigits } from './utils/date';
@@ -620,6 +621,8 @@ export default function App() {
               lang={lang}
               settings={readyArchive ? { ...settings, readyDateISO: readyArchive.date } : settings}
             />
+
+            {!readyArchive && <DistrictReports />}
 
             {/* Quick Return to DOC Banner */}
             <div className="bg-gradient-to-r from-emerald-950 via-teal-950 to-slate-950 text-white p-5 sm:p-6 rounded-3xl border border-emerald-700/50 shadow-xl flex flex-col sm:flex-row items-center justify-between gap-4">
