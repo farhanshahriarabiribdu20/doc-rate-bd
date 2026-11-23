@@ -10,6 +10,7 @@ import TrendChart from './components/TrendChart';
 import CompareModal from './components/CompareModal';
 import InstallPrompt from './components/InstallPrompt';
 import Calculator from './components/Calculator';
+import { track, trackVisit } from './services/track';
 import FarmTools from './components/FarmTools';
 import ShareModal from './components/ShareModal';
 import BookingModal from './components/BookingModal';
@@ -118,6 +119,8 @@ export default function App() {
     try { localStorage.setItem('fn_fontscale', String(fontLevel)); } catch { /* ignore */ }
   }, [fontLevel]);
   const [activeTab, setActiveTab] = useState('doc'); // 'doc' | 'ready' | 'market'
+  useEffect(() => { trackVisit(); }, []);
+  useEffect(() => { track(`tab:${activeTab}`); }, [activeTab]);
 
   // Site data: published (server) data wins over bundled defaults.
   const [settings, setSettings] = useState(() => buildSettings(cached?.settings));
@@ -253,8 +256,10 @@ export default function App() {
 
   // Modals
   const [isCalculatorOpen, setIsCalculatorOpen] = useState(false);
+  useEffect(() => { if (isCalculatorOpen) track('calc'); }, [isCalculatorOpen]);
   const [isToolsOpen, setIsToolsOpen] = useState(false);
   const [isShareOpen, setIsShareOpen] = useState(false);
+  useEffect(() => { if (isShareOpen) track('share'); }, [isShareOpen]);
   const [isBannerOpen, setIsBannerOpen] = useState(false);
   const live = useLiveVisitors(settings.showLiveVisitors !== false);
   const [sellerOpen, setSellerOpen] = useState(false); // seller login / ads modal
@@ -262,6 +267,7 @@ export default function App() {
   const [submitKind, setSubmitKind] = useState(null); // visitor rate form: null | 'ready' | 'doc'
   const [isAdminOpen, setIsAdminOpen] = useState(false);
   const [bookingItem, setBookingItem] = useState(null);
+  useEffect(() => { if (bookingItem) track(`book:${bookingItem.id}`); }, [bookingItem]);
 
   // Listen for secret #admin in URL and secret shortcut (Ctrl + Shift + A)
   useEffect(() => {

@@ -10,6 +10,7 @@ import ExcelImportPanel from './ExcelImportPanel';
 import ReadyExcelPanel from './ReadyExcelPanel';
 import SubmissionsPanel from './SubmissionsPanel';
 import GalleryAdminPanel from './GalleryAdminPanel';
+import AnalyticsPanel from './AnalyticsPanel';
 import MarketAdminPanel from './MarketAdminPanel';
 import { fetchMarketAdmin, marketAdminAction } from '../services/market';
 import { applyReadyPlan } from '../utils/readyExcel';
@@ -720,6 +721,9 @@ function AdminModalContent({
                   <span className="ml-1 px-1.5 py-0.5 rounded-full text-[10px] bg-amber-400 text-slate-950 font-black">{market.items.filter((i) => i.status === 'pending').length}</span>
                 )}
               </button>
+              <button onClick={() => setActiveTab('analytics')} className={tabClass('analytics')}>
+                📊 পরিসংখ্যান
+              </button>
               <button onClick={() => setActiveTab('feedback')} className={tabClass('feedback')}>
                 <MessageSquareText className="w-4 h-4" /> মতামত ও পরামর্শ
                 {feedbacks.length > 0 && (
@@ -1007,6 +1011,8 @@ function AdminModalContent({
             {activeTab === 'market' && (
               <MarketAdminPanel data={market} loading={marketLoading} error={marketError} onReload={loadMarket} onAction={handleMarketAction} />
             )}
+
+            {activeTab === 'analytics' && <AnalyticsPanel adminKey={adminKey} rates={rates} />}
 
             {activeTab === 'feedback' && (
               <div className="space-y-4">
