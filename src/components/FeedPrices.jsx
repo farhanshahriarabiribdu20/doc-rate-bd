@@ -27,8 +27,8 @@ export default function FeedPrices({ feeds }) {
       </div>
       <p className="text-xs text-slate-500 dark:text-slate-400 mb-3">বস্তা প্রতি পাইকারি দাম{latest ? ` · সর্বশেষ আপডেট ${toBn(latest)}` : ''}। এলাকাভেদে সামান্য ভিন্ন হতে পারে।</p>
 
-      <div className="flex flex-col sm:flex-row gap-2 mb-3">
-        <div className="relative flex-1 min-w-0">
+      <div className="grid grid-cols-2 sm:flex sm:flex-row gap-2 mb-3">
+        <div className="relative flex-1 min-w-0 col-span-2">
           <Search className="w-4 h-4 text-slate-400 absolute left-3 top-1/2 -translate-y-1/2" />
           <input value={q} onChange={(e) => setQ(e.target.value)} placeholder="কোম্পানি বা পণ্য খুঁজুন" className={`${sel} pl-9`} />
         </div>

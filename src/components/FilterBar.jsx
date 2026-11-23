@@ -18,7 +18,7 @@ export default function FilterBar({
   lang
 }) {
   return (
-    <div className="bg-white rounded-3xl p-4 sm:p-5 border border-slate-200/90 shadow-xs space-y-4">
+    <div className="bg-white rounded-3xl p-3.5 sm:p-5 border border-slate-200/90 shadow-xs space-y-3 sm:space-y-4">
       {/* Category Pills */}
       <div className="flex items-center gap-2 overflow-x-auto pb-1 scrollbar-none">
         {(favCount > 0 || selectedCategory === 'fav') && (
@@ -50,9 +50,9 @@ export default function FilterBar({
       </div>
 
       {/* Secondary Controls: Search, Division, Sort, View Switcher */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-12 gap-3 items-center pt-1 border-t border-slate-100">
+      <div className="grid grid-cols-2 lg:grid-cols-12 gap-2.5 sm:gap-3 items-center pt-3 border-t border-slate-100">
         {/* Search */}
-        <div className="lg:col-span-4 relative">
+        <div className="col-span-2 lg:col-span-4 relative">
           <Search className="w-4 h-4 text-slate-400 absolute left-3.5 top-1/2 -translate-y-1/2" />
           <input
             type="text"
@@ -72,7 +72,7 @@ export default function FilterBar({
         </div>
 
         {/* Division Filter */}
-        <div className="lg:col-span-3 relative">
+        <div className="col-span-2 sm:col-span-1 lg:col-span-3 relative">
           <div className="flex items-center bg-slate-50 border border-slate-200 rounded-xl px-3 py-1.5 focus-within:ring-2 focus-within:ring-emerald-500 focus-within:bg-white transition">
             <MapPin className="w-4 h-4 text-emerald-600 shrink-0 mr-2" />
             <select
@@ -93,7 +93,7 @@ export default function FilterBar({
         </div>
 
         {/* Sort Options */}
-        <div className="lg:col-span-3 relative">
+        <div className="col-span-1 lg:col-span-3 relative">
           <div className="flex items-center bg-slate-50 border border-slate-200 rounded-xl px-3 py-1.5 focus-within:ring-2 focus-within:ring-emerald-500 focus-within:bg-white transition">
             <ArrowUpDown className="w-4 h-4 text-slate-400 shrink-0 mr-2" />
             <select
@@ -110,7 +110,7 @@ export default function FilterBar({
         </div>
 
         {/* View Mode Switcher: Cards vs Table */}
-        <div className="lg:col-span-2 flex items-center justify-end">
+        <div className="col-span-1 lg:col-span-2 flex items-center justify-end">
           <div className="flex items-center bg-slate-100 p-1 rounded-xl border border-slate-200/60">
             <button
               onClick={() => setViewMode('cards')}
