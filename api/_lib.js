@@ -99,6 +99,7 @@ export function sanitizeRates(input) {
       minBooking: num(item.minBooking) || 500,
       bookingPhone: str(item.bookingPhone, 20),
       notes: str(item.notes, 200),
+      grade: ['A', 'B', 'C', 'none'].includes(item.grade) ? item.grade : 'A',
       divisionRates,
       zoneRates,
       rateDate: /^\d{4}-\d{2}-\d{2}$/.test(String(item.rateDate || '')) ? String(item.rateDate) : '',

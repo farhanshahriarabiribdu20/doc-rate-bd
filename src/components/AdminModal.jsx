@@ -1,3 +1,4 @@
+import { normalizeGrade } from '../data/grades';
 import React, { useState, useEffect, useCallback, useRef } from 'react';
 import {
   X, Lock, ShieldCheck, Plus, Trash2, Download, Upload, RotateCcw, Check, Settings,
@@ -414,6 +415,7 @@ function AdminModalContent({
       minBooking: 500,
       bookingPhone: settings.whatsapp || settings.hotline || '',
       notes: 'সরাসরি কোম্পানি সরবরাহ',
+      grade: 'A',
       divisionRates: Object.fromEntries(DIVISIONS.filter((d) => d.id !== 'all').map((d) => [d.id, base]))
     }, ...prev]);
     setShowAddDoc(false);
@@ -875,6 +877,15 @@ function AdminModalContent({
                           <div>
                             <span className="text-[10px] text-slate-500 block">গতকালের (৳)</span>
                             <input type="number" value={item.yesterdayRate} onChange={(e) => handleDocChange(item.id, 'yesterdayRate', Number(e.target.value))} className="w-16 px-2 py-1 bg-slate-50 border border-slate-200 rounded-lg text-xs font-medium text-slate-600 text-center" />
+                          </div>
+                          <div>
+                            <span className="text-[10px] text-slate-500 block">গ্রেড</span>
+                            <select value={normalizeGrade(item.grade)} onChange={(e) => handleDocChange(item.id, 'grade', e.target.value)} className="px-2 py-1 bg-slate-50 border border-slate-200 rounded-lg text-xs font-semibold">
+                              <option value="A">Grade-A</option>
+                              <option value="B">Grade-B</option>
+                              <option value="C">Grade-C</option>
+                              <option value="none">দেখাবে না</option>
+                            </select>
                           </div>
                           <div>
                             <span className="text-[10px] text-slate-500 block">স্ট্যাটাস</span>
