@@ -653,6 +653,36 @@ export default function App() {
             <span>➔</span>
           </a>
         </div>
+
+        {/* Telegram group banner (link comes from Admin > Settings) */}
+        {settings?.telegramUrl && (
+          <div className="mt-4 bg-gradient-to-r from-sky-900 via-sky-950 to-slate-900 text-white p-5 sm:p-6 rounded-3xl border border-sky-800/40 shadow-xl flex flex-col sm:flex-row items-center justify-between gap-4">
+            <div className="flex items-center gap-3.5 text-center sm:text-left">
+              <div className="w-12 h-12 rounded-2xl bg-sky-600/30 border border-sky-400/30 flex items-center justify-center shrink-0">
+                <svg className="w-6 h-6 fill-[#29A9EB]" viewBox="0 0 24 24" aria-hidden="true">
+                  <path d="M9.78 18.65l.28-4.23 7.68-6.92c.34-.31-.07-.46-.52-.19L7.74 13.3 3.64 12c-.88-.25-.89-.86.2-1.3l15.97-6.16c.73-.33 1.43.18 1.15 1.3l-2.72 12.81c-.19.91-.74 1.13-1.5.71L12.6 16.3l-1.99 1.93c-.23.23-.42.42-.83.42z"/>
+                </svg>
+              </div>
+              <div>
+                <h3 className="font-extrabold text-base sm:text-lg text-white">
+                  {lang === 'bn' ? 'আমাদের টেলিগ্রাম গ্রুপের সাথে যুক্ত হোন' : 'Join our Telegram Group'}
+                </h3>
+                <p className="text-xs text-sky-200 mt-0.5">
+                  {lang === 'bn' ? 'প্রতিদিনের বাচ্চার রেট ও বাজার আপডেট সবার আগে টেলিগ্রামে পেতে যোগ দিন।' : 'Get the daily rates and market updates first on Telegram.'}
+                </p>
+              </div>
+            </div>
+            <a
+              href={settings.telegramUrl}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="px-5 py-2.5 rounded-xl bg-[#29A9EB] hover:bg-sky-500 text-white font-bold text-xs transition shadow-lg shrink-0 flex items-center gap-2 cursor-pointer"
+            >
+              <span>{lang === 'bn' ? 'আমাদের টেলিগ্রাম গ্রুপের সাথে যুক্ত হোন' : 'Join Telegram Now'}</span>
+              <span>➔</span>
+            </a>
+          </div>
+        )}
         {activeTab === 'market' && (
           <MarketSection lang={lang} onOpenSeller={() => setSellerOpen(true)} refreshKey={marketKey} />
         )}
