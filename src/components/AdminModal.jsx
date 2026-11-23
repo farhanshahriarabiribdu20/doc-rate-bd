@@ -16,6 +16,10 @@ import AnalyticsPanel from './AnalyticsPanel';
 import MarketAdminPanel from './MarketAdminPanel';
 import { fetchMarketAdmin, marketAdminAction } from '../services/market';
 import { applyReadyPlan } from '../utils/readyExcel';
+
+// Region label shown on a rate card (what the company's rate covers). Free text; these are the usual choices.
+const REGION_OPTIONS = ['সেন্ট্রাল ও ইস্ট জোন', 'সেন্ট্রাল জোন', 'ইস্ট জোন', 'সাউথ জোন', 'নর্থ জোন', 'সমগ্র বাংলাদেশ'];
+const REGION_EN = { 'সেন্ট্রাল ও ইস্ট জোন': 'Central & East Zone', 'সেন্ট্রাল জোন': 'Central Zone', 'ইস্ট জোন': 'East Zone', 'সাউথ জোন': 'South Zone', 'নর্থ জোন': 'North Zone', 'সমগ্র বাংলাদেশ': 'All Bangladesh' };
 import { applyExcelPlan } from '../utils/excelRates';
 import { clearZoneRates } from '../data/zones';
 import {
@@ -110,6 +114,7 @@ function AdminModalContent({
   const [newTodayRate, setNewTodayRate] = useState(58);
   const [newYesterdayRate, setNewYesterdayRate] = useState(56);
   const [newStatus, setNewStatus] = useState('available');
+  const [newRegion, setNewRegion] = useState('');
 
   const showToast = useCallback((msg, type = 'ok') => {
     setToast({ msg, type });
@@ -417,6 +422,8 @@ function AdminModalContent({
       todayRate: base,
       yesterdayRate: Number(newYesterdayRate),
       status: newStatus,
+      regionBn: newRegion.trim(),
+      regionEn: REGION_EN[newRegion.trim()] || newRegion.trim(),
       minBooking: 500,
       bookingPhone: settings.whatsapp || settings.hotline || '',
       notes: 'সরাসরি কোম্পানি সরবরাহ',
@@ -426,6 +433,7 @@ function AdminModalContent({
     setShowAddDoc(false);
     setNewCompany('');
     setNewCompanyEn('');
+    setNewRegion('');
     showToast('নতুন বাচ্চার রেট যুক্ত হয়েছে (প্রকাশ করতে ভুলবেন না)');
   };
 
@@ -860,6 +868,10 @@ function AdminModalContent({
                           <option value="limited">সীমিত স্টক</option>
                         </select>
                       </div>
+                      <div className="sm:col-span-3">
+                        <label className="block text-[11px] font-bold text-slate-700 mb-1">অঞ্চল (কার্ডে দেখাবে)</label>
+                        <input type="text" list="region-options" value={newRegion} onChange={(e) => setNewRegion(e.target.value)} placeholder="যেমন: সেন্ট্রাল ও ইস্ট জোন" className="w-full px-2.5 py-1.5 bg-white border border-slate-300 rounded-lg text-xs" />
+                      </div>
                     </div>
                     <div className="flex justify-end gap-2 pt-2">
                       <button type="button" onClick={() => setShowAddDoc(false)} className="px-3 py-1.5 text-xs text-slate-600 bg-white border rounded-lg cursor-pointer">বাতিল</button>
@@ -867,6 +879,8 @@ function AdminModalContent({
                     </div>
                   </form>
                 )}
+
+                <datalist id="region-options">{REGION_OPTIONS.map((r) => <option key={r} value={r} />)}</datalist>
 
                 {/* Quick rate edit */}
                 <div className="space-y-2">
@@ -905,6 +919,12 @@ function AdminModalContent({
                               <option value="booking_open">বুকিং চালু</option>
                               <option value="limited">সীমিত</option>
                             </select>
+                          </div>
+                          <div>
+                            <span className="text-[10px] text-slate-500 block">অঞ্চল</span>
+                            <input type="text" list="region-options" value={item.regionBn || ''} placeholder="সেন্ট্রাল ও ইস্ট জোন"
+                              onChange={(e) => { handleDocChange(item.id, 'regionBn', e.target.value); handleDocChange(item.id, 'regionEn', REGION_EN[e.target.value.trim()] || e.target.value); }}
+                              className="w-40 px-2 py-1 bg-slate-50 border border-slate-200 rounded-lg text-xs font-semibold" />
                           </div>
                           <button
                             onClick={() => setExpandedId(expandedId === item.id ? null : item.id)}
