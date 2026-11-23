@@ -10,6 +10,7 @@ import TrendChart from './components/TrendChart';
 import CompareModal from './components/CompareModal';
 import InstallPrompt from './components/InstallPrompt';
 import Calculator from './components/Calculator';
+import FarmTools from './components/FarmTools';
 import ShareModal from './components/ShareModal';
 import BookingModal from './components/BookingModal';
 import BannerGeneratorModal from './components/BannerGeneratorModal';
@@ -244,6 +245,7 @@ export default function App() {
 
   // Modals
   const [isCalculatorOpen, setIsCalculatorOpen] = useState(false);
+  const [isToolsOpen, setIsToolsOpen] = useState(false);
   const [isShareOpen, setIsShareOpen] = useState(false);
   const [isBannerOpen, setIsBannerOpen] = useState(false);
   const live = useLiveVisitors(settings.showLiveVisitors !== false);
@@ -340,7 +342,7 @@ export default function App() {
           setActiveTab={setActiveTab}
           onOpenAdmin={() => setIsAdminOpen(true)}
           onOpenShare={() => setIsShareOpen(true)}
-          onOpenCalculator={() => setIsCalculatorOpen(true)}
+          onOpenCalculator={() => setIsToolsOpen(true)}
           onOpenBanner={() => setIsBannerOpen(true)}
           isDark={isDark}
           toggleTheme={() => setIsDark((d) => !d)}
@@ -623,6 +625,12 @@ export default function App() {
         settings={settings}
         notice={notice}
         lang={lang}
+      />
+
+      <FarmTools
+        isOpen={isToolsOpen}
+        onClose={() => setIsToolsOpen(false)}
+        onOpenProfit={() => { setIsToolsOpen(false); setIsCalculatorOpen(true); }}
       />
 
       <Calculator
