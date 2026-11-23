@@ -26,6 +26,19 @@ export const isAdminConfigured = () => Boolean(process.env.ADMIN_PASSWORD);
 
 const wait = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
 
+// Wrong-password throttle (in memory: free, and enough to make guessing impractical on a serverless function).
+const FAIL_WINDOW_MS = 15 * 60 * 1000;
+const MAX_FAILS_PER_IP = 8;
+const fails = new Map(); // ip -> [timestamps]
+const ipOf = (req) => String(req.headers['x-forwarded-for'] || req.headers['x-real-ip'] || req.socket?.remoteAddress || 'x').split(',')[0].trim().slice(0, 64);
+const recentFails = (ip, now) => (fails.get(ip) || []).filter((t) => now - t < FAIL_WINDOW_MS);
+function lockedOut(ip) {
+  const now = Date.now();
+  if (recentFails(ip, now).length >= MAX_FAILS_PER_IP) return true;
+  return false;
+}
+const noteFail = (ip) => { const now = Date.now(); fails.set(ip, [...recentFails(ip, now), now]); };
+
 /**
  * Returns true when the request carries the correct admin key.
  * Otherwise sends the error response itself and returns false.
@@ -40,6 +53,12 @@ export async function requireAdmin(req, res) {
     return false;
   }
 
+  const ip = ipOf(req);
+  if (lockedOut(ip)) {
+    res.status(429).json({ success: false, code: 'TOO_MANY_ATTEMPTS', error: 'অনেকবার ভুল পাসওয়ার্ড দেওয়া হয়েছে। ১৫ মিনিট পরে আবার চেষ্টা করুন।' });
+    return false;
+  }
+
   const provided = req.headers['x-admin-key'];
   const ok =
     typeof provided === 'string' &&
@@ -47,6 +66,7 @@ export async function requireAdmin(req, res) {
     timingSafeEqual(digest(provided), digest(process.env.ADMIN_PASSWORD));
 
   if (!ok) {
+    noteFail(ip);
     await wait(700); // slow down password guessing
     res.status(401).json({ success: false, code: 'UNAUTHORIZED', error: 'Wrong admin password' });
     return false;

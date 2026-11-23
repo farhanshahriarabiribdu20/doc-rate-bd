@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef, lazy, Suspense } from 'react';
 import Navbar from './components/Navbar';
 import Ticker from './components/Ticker';
 import StatsOverview from './components/StatsOverview';
@@ -9,13 +9,13 @@ import PriceChart from './components/PriceChart';
 import TrendChart from './components/TrendChart';
 import CompareModal from './components/CompareModal';
 import InstallPrompt from './components/InstallPrompt';
-import Calculator from './components/Calculator';
+const Calculator = lazy(() => import('./components/Calculator'));
 import { track, trackVisit } from './services/track';
-import FarmTools from './components/FarmTools';
+const FarmTools = lazy(() => import('./components/FarmTools'));
 import ShareModal from './components/ShareModal';
 import BookingModal from './components/BookingModal';
-import BannerGeneratorModal from './components/BannerGeneratorModal';
-import AdminModal from './components/AdminModal';
+const BannerGeneratorModal = lazy(() => import('./components/BannerGeneratorModal'));
+const AdminModal = lazy(() => import('./components/AdminModal'));
 import WeeklySummary from './components/WeeklySummary';
 import FeedbackWidget from './components/FeedbackWidget';
 import ReadyMarketSection from './components/ReadyMarketSection';
@@ -100,6 +100,13 @@ const buildSettings = (published) => {
   }
   return merged;
 };
+
+// Mount a lazily loaded panel the first time it is opened, then keep it mounted (its state survives closing).
+function useEverTrue(flag) {
+  const [seen, setSeen] = useState(Boolean(flag));
+  useEffect(() => { if (flag) setSeen(true); }, [flag]);
+  return flag || seen;
+}
 
 export default function App() {
   const [cached] = useState(readCache);
@@ -267,6 +274,10 @@ export default function App() {
   const [marketKey, setMarketKey] = useState(0); // bump to reload the public listings
   const [submitKind, setSubmitKind] = useState(null); // visitor rate form: null | 'ready' | 'doc'
   const [isAdminOpen, setIsAdminOpen] = useState(false);
+  const mountBanner = useEverTrue(isBannerOpen);
+  const mountTools = useEverTrue(isToolsOpen);
+  const mountCalc = useEverTrue(isCalculatorOpen);
+  const mountAdmin = useEverTrue(isAdminOpen);
   const [bookingItem, setBookingItem] = useState(null);
   useEffect(() => { if (bookingItem) track(`book:${bookingItem.id}`); }, [bookingItem]);
 
@@ -634,29 +645,41 @@ export default function App() {
         />
       )}
       <InstallPrompt lang={lang} />
-      <BannerGeneratorModal
-        isOpen={isBannerOpen}
-        onClose={() => setIsBannerOpen(false)}
-        rates={liveRates}
-        readyRates={readyRates}
-        feeds={feeds}
-        settings={settings}
-        notice={notice}
-        lang={lang}
-      />
+      {mountBanner && (
+        <Suspense fallback={null}>
+          <BannerGeneratorModal
+            isOpen={isBannerOpen}
+            onClose={() => setIsBannerOpen(false)}
+            rates={liveRates}
+            readyRates={readyRates}
+            feeds={feeds}
+            settings={settings}
+            notice={notice}
+            lang={lang}
+          />
+        </Suspense>
+      )}
 
-      <FarmTools
-        isOpen={isToolsOpen}
-        onClose={() => setIsToolsOpen(false)}
-        onOpenProfit={() => { setIsToolsOpen(false); setIsCalculatorOpen(true); }}
-      />
+      {mountTools && (
+        <Suspense fallback={null}>
+          <FarmTools
+            isOpen={isToolsOpen}
+            onClose={() => setIsToolsOpen(false)}
+            onOpenProfit={() => { setIsToolsOpen(false); setIsCalculatorOpen(true); }}
+          />
+        </Suspense>
+      )}
 
-      <Calculator
-        isOpen={isCalculatorOpen}
-        onClose={() => setIsCalculatorOpen(false)}
-        rates={liveRates}
-        lang={lang}
-      />
+      {mountCalc && (
+        <Suspense fallback={null}>
+          <Calculator
+            isOpen={isCalculatorOpen}
+            onClose={() => setIsCalculatorOpen(false)}
+            rates={liveRates}
+            lang={lang}
+          />
+        </Suspense>
+      )}
 
       <ShareModal
         isOpen={isShareOpen}
@@ -675,24 +698,28 @@ export default function App() {
         lang={lang}
       />
 
-      <AdminModal
-        isOpen={isAdminOpen}
-        onClose={() => setIsAdminOpen(false)}
-        rates={rates}
-        setRates={setRatesDraft}
-        readyRates={readyRates}
-        setReadyRates={setReadyRatesDraft}
-        notice={notice}
-        setNotice={setNoticeDraft}
-        settings={settings}
-        setSettings={setSettingsDraft}
-        dirty={dirty}
-        updatedAt={updatedAt}
-        onPublished={handlePublished}
-        onResetDefaults={handleResetDefaults}
-        onOpenPostKit={() => { setIsAdminOpen(false); setIsBannerOpen(true); }}
-        lang={lang}
-      />
+      {mountAdmin && (
+        <Suspense fallback={null}>
+          <AdminModal
+            isOpen={isAdminOpen}
+            onClose={() => setIsAdminOpen(false)}
+            rates={rates}
+            setRates={setRatesDraft}
+            readyRates={readyRates}
+            setReadyRates={setReadyRatesDraft}
+            notice={notice}
+            setNotice={setNoticeDraft}
+            settings={settings}
+            setSettings={setSettingsDraft}
+            dirty={dirty}
+            updatedAt={updatedAt}
+            onPublished={handlePublished}
+            onResetDefaults={handleResetDefaults}
+            onOpenPostKit={() => { setIsAdminOpen(false); setIsBannerOpen(true); }}
+            lang={lang}
+          />
+        </Suspense>
+      )}
 
       {/* Floating Website Feedback Widget (Bottom-Right) */}
       <FeedbackWidget
