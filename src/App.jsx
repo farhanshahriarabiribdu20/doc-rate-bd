@@ -7,7 +7,6 @@ import RateCard from './components/RateCard';
 import RateTable from './components/RateTable';
 import PriceChart from './components/PriceChart';
 import TrendChart from './components/TrendChart';
-import CompareModal from './components/CompareModal';
 import InstallPrompt from './components/InstallPrompt';
 const Calculator = lazy(() => import('./components/Calculator'));
 import { track, trackVisit } from './services/track';
@@ -17,6 +16,7 @@ import BookingModal from './components/BookingModal';
 const BannerGeneratorModal = lazy(() => import('./components/BannerGeneratorModal'));
 const AdminModal = lazy(() => import('./components/AdminModal'));
 import FavAlert from './components/FavAlert';
+import { fetchVotes, sendVote } from './services/votes';
 import WeeklySummary from './components/WeeklySummary';
 import FeedbackWidget from './components/FeedbackWidget';
 import ReadyMarketSection from './components/ReadyMarketSection';
@@ -270,14 +270,39 @@ export default function App() {
   const shownStale = archive ? false : isStale;
   const shownDateISO = archive ? archive.date : settings.reportDateISO;
 
+  const voteDate = !archive && /^\d{4}-\d{2}-\d{2}$/.test(settings.reportDateISO || '') ? settings.reportDateISO : '';
+  useEffect(() => { if (voteDate) fetchVotes(voteDate).then(setVoteCounts); }, [voteDate]);
+  const voteFor = (it) => {
+    if (!voteDate) return null;
+    const key = favKeyOf(it);
+    const mk = `${voteDate}|${key}`;
+    return {
+      counts: voteCounts[key] || [0, 0],
+      mine: myVotes[mk] || null,
+      onVote: (v) => {
+        if (myVotes[mk]) return;
+        const next = { ...myVotes, [mk]: v };
+        // keep only the last 200 votes in this browser
+        const keep = Object.fromEntries(Object.entries(next).slice(-200));
+        setMyVotes(keep);
+        try { localStorage.setItem('fn_rate_votes', JSON.stringify(keep)); } catch { /* ignore */ }
+        setVoteCounts((c) => { const cur = c[key] || [0, 0]; return { ...c, [key]: v === 'up' ? [cur[0] + 1, cur[1]] : [cur[0], cur[1] + 1] }; });
+        sendVote(voteDate, key, v);
+      }
+    };
+  };
+
   // Filters & Views
   const [selectedCategory, setSelectedCategory] = useState('all');
   const [selectedDivision, setSelectedDivision] = useState('all');
   const [searchQuery, setSearchQuery] = useState('');
   const [sortBy, setSortBy] = useState('default');
   const [viewMode, setViewMode] = useState('cards');
-  const [compareIds, setCompareIds] = useState([]); // up to 3 rate cards picked for comparison
-  const [compareOpen, setCompareOpen] = useState(false);
+  // "is this rate correct?" votes for the live report date
+  const [voteCounts, setVoteCounts] = useState({});
+  const [myVotes, setMyVotes] = useState(() => {
+    try { const v = JSON.parse(localStorage.getItem('fn_rate_votes') || '{}'); return v && typeof v === 'object' ? v : {}; } catch { return {}; }
+  });
 
   // Modals
   const [isCalculatorOpen, setIsCalculatorOpen] = useState(false);
@@ -493,11 +518,7 @@ export default function App() {
                     rateDateISO={shownDateISO}
                     isLowest={lowestIds.has(item.id)}
                     fav={favFor(item)}
-                    compare={{
-                      selected: compareIds.includes(item.id),
-                      disabled: compareIds.length >= 3,
-                      onToggle: () => setCompareIds((ids) => (ids.includes(item.id) ? ids.filter((x) => x !== item.id) : ids.length < 3 ? [...ids, item.id] : ids))
-                    }}
+                    vote={voteFor(item)}
                     lang={lang}
                   />
                 ))}
@@ -646,27 +667,6 @@ export default function App() {
           readyRates={readyRates}
           docRates={liveRates}
           onClose={() => setSubmitKind(null)}
-        />
-      )}
-      {compareIds.length > 0 && activeTab === 'doc' && !compareOpen && (
-        <div className="fixed z-40 bottom-4 left-1/2 -translate-x-1/2 flex items-center gap-2 bg-slate-900 text-white rounded-2xl shadow-2xl pl-4 pr-2 py-2 print:hidden">
-          <span className="text-xs font-bold">{lang === 'bn' ? `${compareIds.length}টি বাছা হয়েছে` : `${compareIds.length} selected`}</span>
-          <button
-            disabled={compareIds.length < 2}
-            onClick={() => setCompareOpen(true)}
-            className="px-3.5 py-1.5 rounded-xl bg-amber-400 text-slate-950 text-xs font-black disabled:opacity-50 cursor-pointer"
-          >
-            {compareIds.length < 2 ? (lang === 'bn' ? 'আরও ১টি বাছুন' : 'Pick one more') : (lang === 'bn' ? 'তুলনা করুন' : 'Compare')}
-          </button>
-          <button onClick={() => setCompareIds([])} className="px-2.5 py-1.5 rounded-xl text-xs font-bold text-slate-300 hover:text-white cursor-pointer">{lang === 'bn' ? 'মুছুন' : 'Clear'}</button>
-        </div>
-      )}
-      {compareOpen && (
-        <CompareModal
-          lang={lang}
-          items={compareIds.map((id) => liveRates.find((r) => r.id === id) || shownRates.find((r) => r.id === id)).filter(Boolean)}
-          onClose={() => setCompareOpen(false)}
-          onRemove={(id) => setCompareIds((ids) => { const next = ids.filter((x) => x !== id); if (next.length < 2) setCompareOpen(false); return next; })}
         />
       )}
       <InstallPrompt lang={lang} />

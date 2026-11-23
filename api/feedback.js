@@ -1,6 +1,68 @@
 import { put, list, del } from '@vercel/blob';
 import { randomBytes } from 'node:crypto';
 import { noStore, parseBody, requireAdmin } from './_lib.js';
+import { readFresh, writeFresh } from './_fresh.js';
+
+// ---- "is this rate correct?" votes (?votes=1) ----
+// One small blob holds today's counts: { date, c: { 'Company|Breed': [up, down] }, flushedAt }.
+// Votes are collected in memory and written to the blob at most every 3 hours (or after 40 votes),
+// so even a busy day costs only a handful of Blob writes on the free plan. A cold start can lose the
+// few votes still waiting in memory: the counts are a hint for visitors, not an accounting record.
+const VOTES_PATH = 'rate-votes.json';
+const FLUSH_GAP_MS = 3 * 3600 * 1000;
+const FLUSH_COUNT = 40;
+let pend = { date: '', c: {}, n: 0 };
+let lastFlush = 0;
+const dhakaDay = () => new Date(Date.now() + 6 * 3600 * 1000).toISOString().slice(0, 10);
+const isIso = (s) => typeof s === 'string' && /^\d{4}-\d{2}-\d{2}$/.test(s) && !Number.isNaN(Date.parse(`${s}T00:00:00Z`));
+
+function mergeInto(base, add) {
+  const c = { ...(base || {}) };
+  for (const [k, [u, d]] of Object.entries(add)) {
+    const cur = c[k] || [0, 0];
+    c[k] = [cur[0] + u, cur[1] + d];
+  }
+  return c;
+}
+
+async function flushVotes(force) {
+  if (!pend.n) return;
+  const stored = await readFresh(VOTES_PATH);
+  if (!lastFlush) lastFlush = Number(stored?.flushedAt) || 0;
+  const now = Date.now();
+  if (!force && pend.n < FLUSH_COUNT && now - lastFlush < FLUSH_GAP_MS) return;
+  let c;
+  if (stored?.date === pend.date) c = mergeInto(stored.c, pend.c);
+  else if (!stored?.date || pend.date > stored.date) c = pend.c;
+  else { pend = { date: '', c: {}, n: 0 }; return; } // older day than the stored one: ignore
+  await writeFresh(VOTES_PATH, { date: pend.date, c, flushedAt: now }, stored?.v);
+  lastFlush = now;
+  pend = { date: '', c: {}, n: 0 };
+}
+
+async function votesHandler(req, res) {
+  if (req.method === 'GET') {
+    res.setHeader('Cache-Control', 'public, s-maxage=60, stale-while-revalidate=300');
+    const stored = await readFresh(VOTES_PATH);
+    const date = typeof req.query?.d === 'string' ? req.query.d : stored?.date;
+    let c = stored?.date === date ? stored.c || {} : {};
+    if (pend.date === date) c = mergeInto(c, pend.c);
+    return res.status(200).json({ success: true, date, c });
+  }
+  if (req.method !== 'POST') return res.status(405).json({ success: false, error: 'Method not allowed' });
+  const { d, key, v } = parseBody(req) || {};
+  const today = Date.parse(`${dhakaDay()}T00:00:00Z`);
+  if (!isIso(d) || Math.abs(Date.parse(`${d}T00:00:00Z`) - today) > 3 * 86400000 || typeof key !== 'string' || !key.includes('|') || key.length > 120 || (v !== 'up' && v !== 'down')) {
+    return res.status(400).json({ success: false, error: 'Invalid vote' });
+  }
+  if (pend.n && pend.date !== d) await flushVotes(true);
+  pend.date = d;
+  const cur = pend.c[key] || [0, 0];
+  pend.c[key] = v === 'up' ? [cur[0] + 1, cur[1]] : [cur[0], cur[1] + 1];
+  pend.n += 1;
+  await flushVotes(false);
+  return res.status(200).json({ success: true });
+}
 
 // Each feedback is stored as its own small blob ("feedbacks/<id>-<random>.json").
 //  - no read-modify-write race when two people submit at the same time
@@ -85,6 +147,7 @@ export default async function handler(req, res) {
   }
 
   try {
+    if (req.query?.votes) return await votesHandler(req, res);
     // POST (public): submit new feedback
     if (req.method === 'POST') {
       const body = parseBody(req);
