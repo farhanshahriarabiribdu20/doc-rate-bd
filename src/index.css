@@ -173,3 +173,14 @@
 .dark [class~="from-slate-50"] { --tw-gradient-from: #121611; } .dark [class~="from-slate-50/60"] { --tw-gradient-from: #121611; }
 .dark [class~="from-slate-900"] { --tw-gradient-from: #0a0d09; } .dark [class~="via-slate-900"] { --tw-gradient-via: #0a0d09; } .dark [class~="to-slate-900"] { --tw-gradient-to: #0a0d09; }
 .dark [class~="from-slate-800"] { --tw-gradient-from: #1d241a; } .dark [class~="to-slate-800"] { --tw-gradient-to: #1d241a; }
+
+
+/* ===== Text size (A / A+ / A++ button in the navbar). Everything in rem scales with the root size;
+   the small fixed-px labels are scaled by the same factor so nothing stays tiny. ===== */
+:root { --fs: 1; }
+html { font-size: calc(16px * var(--fs)); }
+html .text-\[8px\] { font-size: calc(8px * var(--fs)); }
+html .text-\[10px\] { font-size: calc(10px * var(--fs)); }
+html .text-\[11px\] { font-size: calc(11px * var(--fs)); }
+html .text-\[12px\] { font-size: calc(12px * var(--fs)); }
+html .text-\[13px\] { font-size: calc(13px * var(--fs)); }
