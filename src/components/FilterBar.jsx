@@ -14,12 +14,23 @@ export default function FilterBar({
   setSortBy,
   viewMode,
   setViewMode,
+  favCount = 0,
   lang
 }) {
   return (
     <div className="bg-white rounded-3xl p-4 sm:p-5 border border-slate-200/90 shadow-xs space-y-4">
       {/* Category Pills */}
       <div className="flex items-center gap-2 overflow-x-auto pb-1 scrollbar-none">
+        {(favCount > 0 || selectedCategory === 'fav') && (
+          <button
+            onClick={() => setSelectedCategory('fav')}
+            className={`shrink-0 px-4 py-2 rounded-2xl text-xs sm:text-sm font-bold transition cursor-pointer ${
+              selectedCategory === 'fav' ? 'bg-amber-500 text-white shadow-sm' : 'bg-amber-50 hover:bg-amber-100 text-amber-700'
+            }`}
+          >
+            ⭐ {lang === 'bn' ? 'পছন্দের' : 'Favourites'} ({favCount})
+          </button>
+        )}
         {CATEGORIES.map((cat) => {
           const isActive = selectedCategory === cat.id;
           return (

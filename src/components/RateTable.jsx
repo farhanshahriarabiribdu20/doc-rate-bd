@@ -1,11 +1,12 @@
 import { normalizeGrade, GRADE_STYLE } from '../data/grades';
+import FavStar from './FavStar';
 import React from 'react';
 import { Printer, MapPin, ShieldCheck, AlertTriangle } from 'lucide-react';
 import PriceChange from './PriceChange';
 import { rateForRegion, zoneRegionName } from '../data/zones';
 import { formatBn, formatEn } from '../utils/date';
 
-export default function RateTable({ rates, selectedDivision, isStale = false, rateDateISO, lang }) {
+export default function RateTable({ rates, selectedDivision, isStale = false, rateDateISO, favFor, lang }) {
   const handlePrint = () => {
     window.print();
   };
@@ -71,6 +72,7 @@ export default function RateTable({ rates, selectedDivision, isStale = false, ra
               return (
                 <tr key={item.id} className="hover:bg-emerald-50/40 transition-colors">
                   <td className="py-3.5 px-4">
+                    {favFor && <FavStar {...favFor(item)} label="পছন্দের তালিকায় যোগ/বাদ" />}
                     <span className="font-extrabold text-slate-900">{item.company}</span>
                   </td>
                   <td className="py-3.5 px-4">

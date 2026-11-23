@@ -120,6 +120,18 @@ export default function App() {
     try { localStorage.setItem('fn_fontscale', String(fontLevel)); } catch { /* ignore */ }
   }, [fontLevel]);
   const [activeTab, setActiveTab] = useState('doc'); // 'doc' | 'ready' | 'market'
+  // favourite companies (this browser only), keyed by company|breed
+  const [favKeys, setFavKeys] = useState(() => {
+    try { const v = JSON.parse(localStorage.getItem('fn_favs') || '[]'); return Array.isArray(v) ? v.filter((x) => typeof x === 'string').slice(0, 100) : []; } catch { return []; }
+  });
+  const favKeyOf = (it) => `${it.company}|${it.breed || ''}`;
+  const toggleFav = (it) => setFavKeys((cur) => {
+    const k = favKeyOf(it);
+    const next = cur.includes(k) ? cur.filter((x) => x !== k) : [...cur, k];
+    try { localStorage.setItem('fn_favs', JSON.stringify(next)); } catch { /* ignore */ }
+    return next;
+  });
+  const favFor = (it) => ({ on: favKeys.includes(favKeyOf(it)), onToggle: () => toggleFav(it) });
   useEffect(() => { trackVisit(); }, []);
   useEffect(() => { track(`tab:${activeTab}`); }, [activeTab]);
 
@@ -298,6 +310,7 @@ export default function App() {
 
   // Filter pipeline for DOC rates
   const filteredRates = shownRates.filter((item) => {
+    if (selectedCategory === 'fav') return favKeys.includes(favKeyOf(item));
     if (selectedCategory !== 'all') {
       if (selectedCategory === 'layer_brown' && item.category !== 'layer_brown') return false;
       if (selectedCategory === 'layer_white' && item.category !== 'layer_white') return false;
@@ -431,6 +444,7 @@ export default function App() {
               setSortBy={setSortBy}
               viewMode={viewMode}
               setViewMode={setViewMode}
+              favCount={favKeys.length}
               lang={lang}
             />
 
@@ -458,6 +472,7 @@ export default function App() {
                     isStale={shownStale}
                     rateDateISO={shownDateISO}
                     isLowest={lowestIds.has(item.id)}
+                    fav={favFor(item)}
                     compare={{
                       selected: compareIds.includes(item.id),
                       disabled: compareIds.length >= 3,
@@ -475,6 +490,7 @@ export default function App() {
                 onOpenBooking={(it) => setBookingItem(it)}
                 isStale={shownStale}
                 rateDateISO={shownDateISO}
+                favFor={favFor}
                 lang={lang}
               />
             )}
