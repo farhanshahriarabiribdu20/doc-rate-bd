@@ -4,6 +4,17 @@ import { buildShareText, copyToClipboard, ratesForRegion, regionTitle } from '..
 import RegionSelect from './RegionSelect';
 import { getReadyMarketStats } from '../data/readyMarketData';
 
+// Every rounded box needs its own path, otherwise each fill() repaints all earlier boxes in the latest colour.
+const rr = (ctx, x, y, w, h, r) => { ctx.beginPath(); ctx.roundRect(x, y, w, h, r); };
+
+// Cuts text with an ellipsis so it never runs into the price next to it.
+const fit = (ctx, text, maxW) => {
+  if (ctx.measureText(text).width <= maxW) return text;
+  let t = text;
+  while (t.length > 1 && ctx.measureText(`${t}…`).width > maxW) t = t.slice(0, -1);
+  return `${t.trim()}…`;
+};
+
 export default function BannerGeneratorModal(props) {
   if (!props.isOpen) return null;
   return <BannerGeneratorModalContent {...props} />;
@@ -91,7 +102,7 @@ function BannerGeneratorModalContent({ onClose, rates: allRates, readyRates, fee
 
     // Top Header Card
     ctx.fillStyle = 'rgba(255, 255, 255, 0.06)';
-    ctx.roundRect(40, 40, width - 80, 130, 24);
+    rr(ctx, 40, 40, width - 80, 130, 24);
     ctx.fill();
     ctx.strokeStyle = 'rgba(255, 255, 255, 0.15)';
     ctx.lineWidth = 2;
@@ -120,9 +131,10 @@ function BannerGeneratorModalContent({ onClose, rates: allRates, readyRates, fee
     ctx.font = '900 44px "Hind Siliguri", "Segoe UI", sans-serif';
     ctx.fillStyle = '#ffffff';
     ctx.fillText('FosholNexa', 185, 98);
+    const brandW = ctx.measureText('FosholNexa').width;
 
     ctx.fillStyle = '#f59e0b';
-    ctx.fillText('BD', 415, 98);
+    ctx.fillText('BD', 185 + brandW + 8, 98);
 
     ctx.font = '600 20px "Hind Siliguri", "Segoe UI", sans-serif';
     ctx.fillStyle = '#4ade80';
@@ -155,7 +167,7 @@ function BannerGeneratorModalContent({ onClose, rates: allRates, readyRates, fee
 
     // Footer Contact Bar
     ctx.fillStyle = '#f59e0b';
-    ctx.roundRect(40, 920, width - 80, 110, 24);
+    rr(ctx, 40, 920, width - 80, 110, 24);
     ctx.fill();
 
     ctx.font = 'bold 32px "Hind Siliguri", "Segoe UI", sans-serif';
@@ -164,18 +176,21 @@ function BannerGeneratorModalContent({ onClose, rates: allRates, readyRates, fee
 
     ctx.font = '900 36px "Hind Siliguri", "Segoe UI", sans-serif';
     ctx.fillStyle = '#0c2116';
-    ctx.fillText(settings.hotline || '01619-500178', 600, 985);
+    const hotline = settings.hotline || '01619-500178';
+    ctx.fillText(hotline, 600, 985);
+    const hotW = ctx.measureText(hotline).width;
 
     ctx.font = '600 20px "Hind Siliguri", "Segoe UI", sans-serif';
     ctx.fillStyle = '#193b28';
-    ctx.fillText('(WhatsApp ও কল সুবিধা চালু আছে)', 840, 985);
+    ctx.fillText(fit(ctx, '(WhatsApp ও কল সুবিধা চালু আছে)', width - 70 - (600 + hotW + 16)), 600 + hotW + 16, 985);
 
   }, [bannerTheme, rates, readyRates, feeds, settings, notice, fontsReady]);
 
+  const showChange = division === 'all' || division === 'matrix';
   const drawCategoryBox = (ctx, x, y, w, h, title, list, accentColor) => {
     // Card background
     ctx.fillStyle = 'rgba(255, 255, 255, 0.05)';
-    ctx.roundRect(x, y, w, h, 20);
+    rr(ctx, x, y, w, h, 20);
     ctx.fill();
     ctx.strokeStyle = 'rgba(255, 255, 255, 0.12)';
     ctx.lineWidth = 1.5;
@@ -183,7 +198,7 @@ function BannerGeneratorModalContent({ onClose, rates: allRates, readyRates, fee
 
     // Title bar
     ctx.fillStyle = accentColor;
-    ctx.roundRect(x + 15, y + 15, w - 30, 48, 12);
+    rr(ctx, x + 15, y + 15, w - 30, 48, 12);
     ctx.fill();
 
     ctx.font = 'bold 22px "Hind Siliguri", "Segoe UI", sans-serif';
@@ -196,18 +211,29 @@ function BannerGeneratorModalContent({ onClose, rates: allRates, readyRates, fee
       // Row alternating bg
       if (index % 2 === 0) {
         ctx.fillStyle = 'rgba(255, 255, 255, 0.03)';
-        ctx.roundRect(x + 15, curY - 26, w - 30, 48, 8);
+        rr(ctx, x + 15, curY - 26, w - 30, 48, 8);
         ctx.fill();
       }
 
       ctx.font = 'bold 21px "Hind Siliguri", "Segoe UI", sans-serif';
       ctx.fillStyle = '#f1f5f9';
       const shortName = item.companyEn || item.company.split(' ')[0];
-      ctx.fillText(shortName + (item.breed ? ` (${item.breed})` : ''), x + 30, curY + 4);
+      ctx.fillText(fit(ctx, shortName + (item.breed ? ` (${item.breed})` : ''), w - 200), x + 30, curY + 4);
 
       ctx.font = '900 26px "Hind Siliguri", "Segoe UI", sans-serif';
       ctx.fillStyle = '#34d399';
       ctx.fillText(`৳${item.todayRate}`, x + w - 105, curY + 6);
+
+      // ▲▼ against yesterday (national rates only: regional rows have no yesterday figure)
+      const diff = showChange ? Number(item.todayRate) - Number(item.yesterdayRate) : 0;
+      if (showChange && Number(item.yesterdayRate) && diff !== 0) {
+        ctx.save();
+        ctx.textAlign = 'right';
+        ctx.font = 'bold 18px "Hind Siliguri", "Segoe UI", sans-serif';
+        ctx.fillStyle = diff > 0 ? '#fb7185' : '#4ade80'; // rise = bad for buyers, fall = good
+        ctx.fillText(`${diff > 0 ? '▲' : '▼'} ${Math.abs(diff)}`, x + w - 118, curY + 5);
+        ctx.restore();
+      }
 
       curY += 56;
     });
@@ -216,14 +242,14 @@ function BannerGeneratorModalContent({ onClose, rates: allRates, readyRates, fee
   // Shown when no feed prices are available: national averages of the ready-bird market.
   const drawReadyBox = (ctx, x, y, w, h, stats) => {
     ctx.fillStyle = 'rgba(255, 255, 255, 0.05)';
-    ctx.roundRect(x, y, w, h, 20);
+    rr(ctx, x, y, w, h, 20);
     ctx.fill();
     ctx.strokeStyle = 'rgba(255, 255, 255, 0.12)';
     ctx.lineWidth = 1.5;
     ctx.stroke();
 
     ctx.fillStyle = '#0284c7';
-    ctx.roundRect(x + 15, y + 15, w - 30, 48, 12);
+    rr(ctx, x + 15, y + 15, w - 30, 48, 12);
     ctx.fill();
 
     ctx.font = 'bold 22px "Hind Siliguri", "Segoe UI", sans-serif';
@@ -250,14 +276,14 @@ function BannerGeneratorModalContent({ onClose, rates: allRates, readyRates, fee
 
   const drawFeedsBox = (ctx, x, y, w, h, list) => {
     ctx.fillStyle = 'rgba(255, 255, 255, 0.05)';
-    ctx.roundRect(x, y, w, h, 20);
+    rr(ctx, x, y, w, h, 20);
     ctx.fill();
     ctx.strokeStyle = 'rgba(255, 255, 255, 0.12)';
     ctx.lineWidth = 1.5;
     ctx.stroke();
 
     ctx.fillStyle = '#0284c7';
-    ctx.roundRect(x + 15, y + 15, w - 30, 48, 12);
+    rr(ctx, x + 15, y + 15, w - 30, 48, 12);
     ctx.fill();
 
     ctx.font = 'bold 22px "Hind Siliguri", "Segoe UI", sans-serif';
