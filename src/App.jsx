@@ -419,7 +419,7 @@ export default function App() {
   return (
     <div className="min-h-screen flex flex-col bg-slate-50 text-slate-900">
       {/* Sticky Floating Header (Navbar + Floating Ticker) */}
-      <div className="sticky top-0 z-40 shadow-md">
+      <div className="sm:sticky sm:top-0 sm:z-40 shadow-md sm:shadow-md">
         <Navbar
           lang={lang}
           setLang={setLang}
@@ -437,6 +437,18 @@ export default function App() {
           liveVisitors={live}
         />
         <Ticker notice={notice} lang={lang} />
+      </div>
+
+      {/* Phones: only this slim tab bar stays on screen while scrolling */}
+      <div className="sm:hidden sticky top-0 z-40 bg-white/95 backdrop-blur-md border-b border-slate-200 shadow-sm px-3 py-1.5">
+        <div className="flex items-center bg-slate-100 p-1 rounded-2xl border border-slate-200/90">
+          {[['doc', '🐣', lang === 'bn' ? 'বাচ্চার দর' : 'DOC Rates'], ['ready', '🍗', lang === 'bn' ? 'রেডি মুরগি' : 'Ready & Eggs'], ['market', '🛒', lang === 'bn' ? 'বিক্রির বাজার' : 'Marketplace']].map(([id, icon, label]) => (
+            <button key={id} onClick={() => setActiveTab(id)} aria-pressed={activeTab === id}
+              className={`flex-1 justify-center whitespace-nowrap px-1.5 py-1.5 rounded-xl font-black text-[11px] flex items-center gap-1 transition cursor-pointer ${activeTab === id ? 'bg-emerald-700 text-white shadow-xs' : 'text-slate-600'}`}>
+              <span>{icon}</span><span>{label}</span>
+            </button>
+          ))}
+        </div>
       </div>
 
       {/* Main Container */}
@@ -470,6 +482,8 @@ export default function App() {
               ]}
             />
 
+            {/* On phones the rates come first; date picker, charts and extras follow */}
+            <div className="flex flex-col gap-5 sm:contents max-sm:order-2">
             <div className="grid lg:grid-cols-2 gap-4 items-stretch">
             <DateRatePicker
               lang={lang}
@@ -485,8 +499,11 @@ export default function App() {
             <RateCta lang={lang} onClick={() => setSubmitKind('doc')} />
             </div>
 
-            {!archive && favKeys.length > 0 && <FavAlert rates={liveRates} favKeys={favKeys} />}
+            </div>
 
+            {!archive && favKeys.length > 0 && <div className="max-sm:order-1"><FavAlert rates={liveRates} favKeys={favKeys} /></div>}
+
+            <div className="flex flex-col gap-5 sm:contents max-sm:order-3">
             <StatsOverview rates={shownRates} lang={lang} isStale={shownStale} />
 
             <GallerySection images={gallery} kind="doc" lang={lang} settings={settings} />
@@ -497,8 +514,10 @@ export default function App() {
             <TrendChart lang={lang} />
 
             <FeedPrices feeds={feedPrices} />
+            </div>
 
-            {/* Filters */}
+            {/* Filters + rates (first on phones) */}
+            <div className="flex flex-col gap-5 sm:gap-6 sm:contents max-sm:order-1">
             <div data-search-anchor="rates" className="-mb-3 scroll-mt-40" />
             <FilterBar
               selectedCategory={selectedCategory}
@@ -557,9 +576,10 @@ export default function App() {
                 lang={lang}
               />
             )}
+            </div>
 
             {/* Quick Explore Ready Market Banner */}
-            <div className="bg-white text-slate-900 p-5 sm:p-6 rounded-3xl border border-emerald-200 shadow-md border-l-4 border-l-emerald-600 flex flex-col sm:flex-row items-center justify-between gap-4">
+            <div className="max-sm:order-4 bg-white text-slate-900 p-5 sm:p-6 rounded-3xl border border-emerald-200 shadow-md border-l-4 border-l-emerald-600 flex flex-col sm:flex-row items-center justify-between gap-4">
               <div className="flex items-center gap-3.5 text-center sm:text-left">
                 <div className="w-12 h-12 rounded-2xl bg-amber-100 border border-amber-300 flex items-center justify-center text-2xl shrink-0">
                   🍗
@@ -650,8 +670,12 @@ export default function App() {
           </div>
         )}
 
+        {activeTab === 'market' && (
+          <MarketSection lang={lang} onOpenSeller={() => setSellerOpen(true)} refreshKey={marketKey} />
+        )}
+
         {/* Community Facebook Group Banner */}
-        <div className="mt-6 sm:mt-8 bg-gradient-to-r from-blue-900 via-indigo-950 to-slate-900 text-white p-5 sm:p-6 rounded-3xl border border-blue-800/40 shadow-xl flex flex-col sm:flex-row items-center justify-between gap-4">
+        <div className="mt-6 sm:mt-8 bg-gradient-to-r from-blue-900 via-indigo-950 to-slate-900 text-white p-4 sm:p-6 rounded-3xl border border-blue-800/40 shadow-xl flex flex-col sm:flex-row items-center justify-between gap-4">
           <div className="flex items-center gap-3.5 text-center sm:text-left">
             <div className="w-12 h-12 rounded-2xl bg-blue-600/30 border border-blue-400/30 flex items-center justify-center shrink-0">
               <svg className="w-6 h-6 fill-[#1877F2]" viewBox="0 0 24 24">
@@ -659,10 +683,10 @@ export default function App() {
               </svg>
             </div>
             <div>
-              <h3 className="font-extrabold text-base sm:text-lg text-white">
+              <h3 className="font-extrabold text-sm sm:text-lg text-white text-left">
                 {lang === 'bn' ? 'আমাদের ফেসবুক গ্রুপের সাথে যুক্ত হোন' : 'Join our Facebook Community'}
               </h3>
-              <p className="text-xs text-blue-200 mt-0.5">
+              <p className="hidden sm:block text-xs text-blue-200 mt-0.5">
                 {lang === 'bn' ? 'প্রতিদিনের বাজারদর আপডেট, খামারিদের অভিজ্ঞতা ও পরামর্শ পেতে আমাদের গ্রুপে যোগ দিন।' : 'Get daily price updates, poultry farming tips and discussions.'}
               </p>
             </div>
@@ -671,7 +695,7 @@ export default function App() {
             href="https://www.facebook.com/share/g/18vu9Y5cja/"
             target="_blank"
             rel="noopener noreferrer"
-            className="px-5 py-2.5 rounded-xl bg-[#1877F2] hover:bg-blue-600 text-white font-bold text-xs transition shadow-lg shrink-0 flex items-center gap-2 cursor-pointer"
+            className="w-full sm:w-auto justify-center px-5 py-2.5 rounded-xl bg-[#1877F2] hover:bg-blue-600 text-white font-bold text-xs transition shadow-lg shrink-0 flex items-center gap-2 cursor-pointer"
           >
             <span>{lang === 'bn' ? 'আমাদের ফেসবুক গ্রুপের সাথে যুক্ত হোন' : 'Join Group Now'}</span>
             <span>➔</span>
@@ -680,7 +704,7 @@ export default function App() {
 
         {/* Telegram group banner (link comes from Admin > Settings) */}
         {settings?.telegramUrl && (
-          <div className="mt-4 bg-gradient-to-r from-sky-900 via-sky-950 to-slate-900 text-white p-5 sm:p-6 rounded-3xl border border-sky-800/40 shadow-xl flex flex-col sm:flex-row items-center justify-between gap-4">
+          <div className="mt-3 sm:mt-4 bg-gradient-to-r from-sky-900 via-sky-950 to-slate-900 text-white p-4 sm:p-6 rounded-3xl border border-sky-800/40 shadow-xl flex flex-col sm:flex-row items-center justify-between gap-4">
             <div className="flex items-center gap-3.5 text-center sm:text-left">
               <div className="w-12 h-12 rounded-2xl bg-sky-600/30 border border-sky-400/30 flex items-center justify-center shrink-0">
                 <svg className="w-6 h-6 fill-[#29A9EB]" viewBox="0 0 24 24" aria-hidden="true">
@@ -688,10 +712,10 @@ export default function App() {
                 </svg>
               </div>
               <div>
-                <h3 className="font-extrabold text-base sm:text-lg text-white">
+                <h3 className="font-extrabold text-sm sm:text-lg text-white text-left">
                   {lang === 'bn' ? 'আমাদের টেলিগ্রাম গ্রুপের সাথে যুক্ত হোন' : 'Join our Telegram Group'}
                 </h3>
-                <p className="text-xs text-sky-200 mt-0.5">
+                <p className="hidden sm:block text-xs text-sky-200 mt-0.5">
                   {lang === 'bn' ? 'প্রতিদিনের বাচ্চার রেট ও বাজার আপডেট সবার আগে টেলিগ্রামে পেতে যোগ দিন।' : 'Get the daily rates and market updates first on Telegram.'}
                 </p>
               </div>
@@ -700,15 +724,12 @@ export default function App() {
               href={settings.telegramUrl}
               target="_blank"
               rel="noopener noreferrer"
-              className="px-5 py-2.5 rounded-xl bg-[#29A9EB] hover:bg-sky-500 text-white font-bold text-xs transition shadow-lg shrink-0 flex items-center gap-2 cursor-pointer"
+              className="w-full sm:w-auto justify-center px-5 py-2.5 rounded-xl bg-[#29A9EB] hover:bg-sky-500 text-white font-bold text-xs transition shadow-lg shrink-0 flex items-center gap-2 cursor-pointer"
             >
               <span>{lang === 'bn' ? 'আমাদের টেলিগ্রাম গ্রুপের সাথে যুক্ত হোন' : 'Join Telegram Now'}</span>
               <span>➔</span>
             </a>
           </div>
-        )}
-        {activeTab === 'market' && (
-          <MarketSection lang={lang} onOpenSeller={() => setSellerOpen(true)} refreshKey={marketKey} />
         )}
       </main>
 

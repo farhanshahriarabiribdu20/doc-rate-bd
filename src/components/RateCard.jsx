@@ -48,13 +48,15 @@ export default function RateCard({ item, selectedDivision, isStale = false, rate
   return (
     <div className="bg-white rounded-3xl border border-slate-200/90 shadow-xs hover:shadow-xl hover:border-emerald-300 transition-all duration-300 flex flex-col justify-between overflow-hidden group">
       {/* Top Header Card */}
-      <div className="p-5 border-b border-slate-100 relative">
-        <div className="flex items-center justify-between gap-2 mb-3">
+      <div className="p-4 sm:p-5 border-b border-slate-100 relative">
+        <div className="flex items-center justify-between gap-2 mb-2.5 sm:mb-3">
           <span className={`inline-flex items-center gap-1.5 text-xs font-bold px-2.5 py-0.5 rounded-full border ${catTag.bg}`}>
             <span className={`w-1.5 h-1.5 rounded-full ${catTag.dot}`}></span>
             <span>{catTag.label}</span>
           </span>
 
+          <span className="inline-flex items-center gap-1.5">
+          {fav && <FavStar on={fav.on} onToggle={fav.onToggle} label={lang === 'bn' ? 'পছন্দের তালিকায় যোগ/বাদ' : 'Toggle favourite'} />}
           {isStale ? (
             <span className="inline-flex items-center gap-1 text-[11px] font-bold text-amber-800 bg-amber-50 px-2.5 py-0.5 rounded-full border border-amber-300">
               <AlertTriangle className="w-3 h-3" />
@@ -66,6 +68,7 @@ export default function RateCard({ item, selectedDivision, isStale = false, rate
               <span>{lang === 'bn' ? 'ভেরিফাইড রেট' : 'Verified'}</span>
             </span>
           )}
+          </span>
         </div>
 
         {/* Company info */}
@@ -73,29 +76,31 @@ export default function RateCard({ item, selectedDivision, isStale = false, rate
           <h3 className="text-base sm:text-lg font-black text-slate-900 group-hover:text-emerald-700 transition leading-snug break-words" title={item.company}>
             {item.company}
           </h3>
-          <p className="text-xs text-slate-500 font-semibold mt-0.5">
+          <div className="flex flex-wrap items-center gap-x-2 gap-y-1.5 mt-0.5">
+          <p className="text-xs text-slate-500 font-semibold">
             {lang === 'bn' ? 'জাত:' : 'Breed:'} <span className="text-slate-800 font-bold">{item.breed}</span>
           </p>
           {normalizeGrade(item.grade) !== 'none' && (
-            <span className={`inline-flex items-center gap-1 mt-2 text-[11px] font-black px-2.5 py-0.5 rounded-full shadow-xs ${GRADE_STYLE[normalizeGrade(item.grade)]}`}>
+            <span className={`inline-flex items-center gap-1 text-[11px] font-black px-2.5 py-0.5 rounded-full shadow-xs ${GRADE_STYLE[normalizeGrade(item.grade)]}`}>
               <span>★</span>
               <span>{lang === 'bn' ? `গ্রেড-${{ A: 'এ', B: 'বি', C: 'সি' }[normalizeGrade(item.grade)]} (Grade-${normalizeGrade(item.grade)})` : `Grade-${normalizeGrade(item.grade)}`}</span>
             </span>
           )}
+          </div>
         </div>
 
         {/* Region / Zone */}
-        <div className="mt-3 flex items-center gap-1.5 text-xs text-emerald-900 bg-emerald-50/80 border border-emerald-200/70 px-2.5 py-1 rounded-xl w-fit">
-          <MapPin className="w-3.5 h-3.5 text-emerald-600 shrink-0" />
+        <div className="mt-2.5 sm:mt-3 flex items-start gap-1.5 text-[11px] sm:text-xs text-emerald-900 bg-emerald-50/80 border border-emerald-200/70 px-2.5 py-1 rounded-xl max-w-full">
+          <MapPin className="w-3.5 h-3.5 text-emerald-600 shrink-0 mt-px" />
           <span className="font-bold text-emerald-900">{lang === 'bn' ? 'অঞ্চল:' : 'Region:'}</span>
-          <span className="font-semibold text-emerald-950 truncate max-w-[210px]" title={currentRegion}>
+          <span className="font-semibold text-emerald-950 min-w-0" title={currentRegion}>
             {currentRegion}
           </span>
         </div>
       </div>
 
       {/* Middle Price Section */}
-      <div className="p-5 bg-gradient-to-b from-slate-50/60 to-white flex-1 flex flex-col justify-between">
+      <div className="p-4 sm:p-5 bg-gradient-to-b from-slate-50/60 to-white flex-1 flex flex-col justify-between">
         <div className="flex items-end justify-between gap-2">
           <div>
             <span className="text-[11px] font-bold text-slate-500 uppercase tracking-wider block">
@@ -128,13 +133,6 @@ export default function RateCard({ item, selectedDivision, isStale = false, rate
             </span>
           </div>
         </div>
-
-        {fav && (
-          <div className="mt-3 pt-3 border-t border-slate-100 flex items-center justify-between text-xs font-bold text-slate-700">
-            <span>{lang === 'bn' ? 'পছন্দের তালিকায়' : 'Favourite'}</span>
-            <FavStar on={fav.on} onToggle={fav.onToggle} label={lang === 'bn' ? 'পছন্দের তালিকায় যোগ/বাদ' : 'Toggle favourite'} />
-          </div>
-        )}
 
         {vote && <RateVote item={item} counts={vote.counts} mine={vote.mine} onVote={vote.onVote} />}
 

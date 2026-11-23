@@ -122,7 +122,7 @@ export default function Navbar({
         </div>
 
         {/* Middle Section Navigation Tabs */}
-        <nav className="order-last sm:order-none w-full sm:w-auto flex items-center bg-slate-100 p-1 rounded-2xl border border-slate-200/90 shadow-2xs">
+        <nav className="hidden sm:flex order-last sm:order-none w-full sm:w-auto items-center bg-slate-100 p-1 rounded-2xl border border-slate-200/90 shadow-2xs">
           <button
             onClick={() => setActiveTab('doc')}
             className={`flex-1 sm:flex-none justify-center whitespace-nowrap px-1.5 sm:px-4 py-1.5 rounded-xl font-black text-[11px] sm:text-xs transition-all cursor-pointer flex items-center gap-1 sm:gap-1.5 ${
