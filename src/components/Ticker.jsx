@@ -1,8 +1,8 @@
 import React from 'react';
 import {  } from 'lucide-react';
 
-const EXTRA_BN = 'আমাদের সকল রেট আপডেট সবার আগে এই ওয়েবসাইটে দেওয়া হয়, তারপর ফেসবুক ও অন্যান্য জায়গায় — তাই সবার আগে আপডেট পেতে ওয়েবসাইটে নজর রাখুন।';
-const EXTRA_EN = 'All our rate updates go on this website first, then Facebook and elsewhere — keep an eye on the website to get every update before anyone else.';
+const EXTRA_BN = 'সব রেট আপডেট সবার আগে এই ওয়েবসাইটে, তারপর ফেসবুকে।';
+const EXTRA_EN = 'Every rate update goes on this website first, then Facebook.';
 
 export default function Ticker({ notice, lang }) {
   const extra = lang === 'bn' ? EXTRA_BN : EXTRA_EN;

@@ -196,7 +196,7 @@ export function ReportBanner() {
           <div className="min-w-0 flex-1">
             <p className="text-[11px] sm:text-xs font-black tracking-wider uppercase bg-white/20 inline-block px-2.5 py-1 rounded-full">📢 সবার প্রতি অনুরোধ</p>
             <h2 className="mt-2 text-2xl sm:text-4xl font-black leading-tight drop-shadow-sm">রেডি মুরগি ও ডিমের রেট দিন!</h2>
-            <p className="mt-1.5 text-sm sm:text-base font-bold text-white/95 leading-relaxed">আপনার জেলার আজকের ব্রয়লার, কালার, সোনালী ও ডিমের রেট জানান — সাথে সাথে সবার জন্য প্রকাশ হবে। আপনার একটি রেট অন্য খামারিকে সঠিক সিদ্ধান্ত নিতে সাহায্য করবে।</p>
+            <p className="mt-1.5 text-sm sm:text-base font-bold text-white/95 leading-relaxed">আপনার জেলার ব্রয়লার, কালার, সোনালী ও ডিমের রেট জানান — সাথে সাথে সবার জন্য প্রকাশ হবে।</p>
           </div>
           <button onClick={() => setOpen(true)} className="shrink-0 w-full sm:w-auto px-6 py-3.5 sm:py-4 rounded-2xl bg-white text-orange-700 hover:bg-orange-50 font-black text-base sm:text-lg shadow-lg cursor-pointer animate-pulse">
             ✍️ এখনই রেট দিন
