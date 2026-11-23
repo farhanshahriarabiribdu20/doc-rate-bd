@@ -38,7 +38,7 @@ export default function PriceChart({ rates = [], lang }) {
   const range = maxPrice - minPrice || 1;
 
   return (
-    <div className="bg-white rounded-3xl p-5 sm:p-6 border border-slate-200/90 shadow-xs mb-6">
+    <div className="bg-white rounded-3xl p-5 sm:p-6 border border-slate-200/90 shadow-xs">
       {/* Header */}
       <div className="flex flex-wrap items-center justify-between gap-3 mb-6">
         <div>

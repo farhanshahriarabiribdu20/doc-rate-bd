@@ -210,3 +210,12 @@ export async function galleryAdmin(key, payload) {
     return { ok: false, images: null, error: 'ইন্টারনেট সংযোগ চেক করুন' };
   }
 }
+
+/** Rolling daily-rate history for the trend chart: { days, names } or null. */
+export async function fetchRateTrend() {
+  try {
+    const res = await fetch('/api/rate-trend');
+    const body = await json(res);
+    return res.ok && body?.success ? { days: body.days || {}, names: body.names || {} } : null;
+  } catch { return null; }
+}
