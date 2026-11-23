@@ -1,4 +1,5 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
+import { track } from '../services/track';
 import { X, Wrench, Wheat, BookOpen, Ruler, Syringe, Thermometer, TrendingUp, Egg, FlaskConical, HeartPulse, Calculator as CalcIcon } from 'lucide-react';
 import FeedFcr from './tools/FeedFcr';
 import BatchDiary from './tools/BatchDiary';
@@ -24,6 +25,7 @@ const TOOLS = [
 
 export default function FarmTools({ isOpen, onClose, onOpenProfit }) {
   const [active, setActive] = useState('fcr');
+  useEffect(() => { if (isOpen) track(`tool:${active}`); }, [isOpen, active]);
   if (!isOpen) return null;
   const tool = TOOLS.find((t) => t.id === active) || TOOLS[0];
   const Body = tool.C;

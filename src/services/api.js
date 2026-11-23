@@ -258,3 +258,12 @@ export async function sendTelegram(key, text) {
     return { ok: false, error: err.message || 'network' };
   }
 }
+
+/** Admin: usage statistics { mode: 'redis'|'blob', today, days: { 'YYYY-MM-DD': { event: count } } } or null. */
+export async function fetchStats(key) {
+  try {
+    const res = await fetch('/api/live-visitors?stats=1', { headers: { 'x-admin-key': key }, cache: 'no-store' });
+    const body = await json(res);
+    return res.ok && body?.success ? body : null;
+  } catch { return null; }
+}
