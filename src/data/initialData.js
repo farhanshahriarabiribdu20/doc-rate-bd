@@ -826,4 +826,4 @@ export const DIVISIONS = [
   { id: "barisal", nameBn: "বরিশাল বিভাগ (সাউথ জোন)", nameEn: "Barisal (South Zone)" }
 ];
 
-export const INITIAL_TICKER_NOTICE = "📢 শীর্ষ কোম্পানিগুলোর অফিসিয়াল বাজারদর হালনাগাদ করা হয়েছে। উন্নতমানের ব্রয়লার এবং কালার বাচ্চার বুকিং চলছে। সরাসরি কল বা WhatsApp করুন: 01619500178";
+export const INITIAL_TICKER_NOTICE = "📢 শীর্ষ কোম্পানিগুলোর অফিসিয়াল বাজারদর হালনাগাদ করা হয়েছে। সরাসরি কল বা WhatsApp করুন: 01619500178";

@@ -6,7 +6,9 @@ const EXTRA_EN = 'All our rate updates go on this website first, then Facebook a
 
 export default function Ticker({ notice, lang }) {
   const extra = lang === 'bn' ? EXTRA_BN : EXTRA_EN;
-  const text = notice && notice.includes(extra) ? notice : `${notice || ''}  ${extra}`;
+  // The chick-sale (booking) announcement is no longer shown, wherever the notice was saved from.
+  const base = (notice || '').split(/(?<=[।.!])\s*/).filter((x) => x && !x.includes('বাচ্চার বুকিং')).join(' ');
+  const text = base.includes(extra) ? base : `${base}  ${extra}`;
   return (
     <div className="bg-gradient-to-r from-emerald-900 via-teal-900 to-emerald-950 text-white shadow-xs border-y border-emerald-800/50 overflow-hidden">
       <div className="max-w-7xl mx-auto px-4 py-2 flex items-center gap-3">
