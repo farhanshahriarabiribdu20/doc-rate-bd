@@ -4,7 +4,7 @@ import PriceChange from './PriceChange';
 import { rateForRegion, zoneRegionName } from '../data/zones';
 import { formatBn, formatEn, todayISO } from '../utils/date';
 
-export default function RateCard({ item, selectedDivision, isStale = false, rateDateISO, isLowest = false, lang }) {
+export default function RateCard({ item, selectedDivision, isStale = false, rateDateISO, isLowest = false, compare, lang }) {
   const currentRate = rateForRegion(item, selectedDivision);
   const rateDateLabel = rateDateISO ? (lang === 'bn' ? formatBn(rateDateISO) : formatEn(rateDateISO)).split('(')[0].trim() : '';
   const isToday = rateDateISO === todayISO();
@@ -123,6 +123,13 @@ export default function RateCard({ item, selectedDivision, isStale = false, rate
             </span>
           </div>
         </div>
+
+        {compare && (
+          <label className={`mt-3 pt-3 border-t border-slate-100 flex items-center gap-2 text-xs font-bold select-none ${compare.disabled && !compare.selected ? 'text-slate-400' : 'text-slate-700 cursor-pointer'}`}>
+            <input type="checkbox" checked={compare.selected} disabled={compare.disabled && !compare.selected} onChange={compare.onToggle} className="w-4 h-4 accent-emerald-600" />
+            <span>{lang === 'bn' ? 'তুলনায় যোগ করুন' : 'Add to compare'}</span>
+          </label>
+        )}
 
         {/* Company note (only when there is one) */}
         {item.notes && (
