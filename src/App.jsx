@@ -16,6 +16,7 @@ import ShareModal from './components/ShareModal';
 import BookingModal from './components/BookingModal';
 import BannerGeneratorModal from './components/BannerGeneratorModal';
 import AdminModal from './components/AdminModal';
+import WeeklySummary from './components/WeeklySummary';
 import FeedbackWidget from './components/FeedbackWidget';
 import ReadyMarketSection from './components/ReadyMarketSection';
 import Footer from './components/Footer';
@@ -415,6 +416,7 @@ export default function App() {
 
             {/* Real Top Hatcheries Live Price Comparison Chart */}
             <PriceChart rates={shownRates} lang={lang} />
+            <WeeklySummary lang={lang} />
             <TrendChart lang={lang} />
 
             {/* Filters */}

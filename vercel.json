@@ -45,6 +45,10 @@
     {
       "path": "/api/site-history?cron=1",
       "schedule": "0 21 * * *"
+    },
+    {
+      "path": "/api/telegram?cron=weekly",
+      "schedule": "0 14 * * 5"
     }
   ]
 }

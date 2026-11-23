@@ -1,4 +1,45 @@
+import { timingSafeEqual } from 'node:crypto';
+import { get } from '@vercel/blob';
 import { parseBody, requireAdmin } from './_lib.js';
+import { readTrend } from './_days.js';
+import { readFresh, writeFresh } from './_fresh.js';
+import { weeklySummary, weeklyText } from '../src/utils/weeklySummary.js';
+
+const WEEKLY_PATH = 'telegram-weekly.json';
+
+const cronAllowed = (req) => {
+  const secret = process.env.CRON_SECRET;
+  if (!secret) return true; // the once-per-week marker below already caps what a stranger could trigger
+  const given = String(req.headers?.authorization || '');
+  const want = `Bearer ${secret}`;
+  return given.length === want.length && timingSafeEqual(Buffer.from(given), Buffer.from(want));
+};
+
+async function sendToChannel(text) {
+  const r = await fetch(`https://api.telegram.org/bot${process.env.TELEGRAM_BOT_TOKEN}/sendMessage`, {
+    method: 'POST',
+    headers: { 'content-type': 'application/json' },
+    body: JSON.stringify({ chat_id: process.env.TELEGRAM_CHAT_ID, text, disable_web_page_preview: true })
+  });
+  const out = await r.json().catch(() => ({}));
+  return r.ok && out.ok ? null : (out.description || `Telegram HTTP ${r.status}`);
+}
+
+// Weekly summary: only when the admin turned on "auto post" (settings.telegramAuto), at most once per last-rate date.
+async function weeklyCron(res) {
+  if (!process.env.TELEGRAM_BOT_TOKEN || !process.env.TELEGRAM_CHAT_ID) return res.status(200).json({ success: true, skipped: 'not_configured' });
+  const site = await get('site-data.json', { access: 'public', useCache: false }).catch(() => null);
+  const data = site && site.statusCode === 200 ? JSON.parse(await new Response(site.stream).text()) : null;
+  if (data?.settings?.telegramAuto !== true) return res.status(200).json({ success: true, skipped: 'auto_off' });
+  const summary = weeklySummary(await readTrend());
+  if (!summary) return res.status(200).json({ success: true, skipped: 'not_enough_data' });
+  const marker = await readFresh(WEEKLY_PATH);
+  if (marker?.to === summary.to) return res.status(200).json({ success: true, skipped: 'already_posted' });
+  const err = await sendToChannel(weeklyText(summary));
+  if (err) return res.status(502).json({ success: false, error: err });
+  await writeFresh(WEEKLY_PATH, { to: summary.to, at: new Date().toISOString() }, marker?.v);
+  return res.status(200).json({ success: true, posted: summary.to });
+}
 
 // POST (admin) { text } -> posts the day's rate message to the site's Telegram channel.
 // Needs two Vercel environment variables:
@@ -7,6 +48,10 @@ import { parseBody, requireAdmin } from './_lib.js';
 export default async function handler(req, res) {
   res.setHeader('Cache-Control', 'no-store');
   try {
+    if (req.method === 'GET' && req.query?.cron) {
+      if (!cronAllowed(req)) return res.status(401).json({ success: false, error: 'Unauthorized' });
+      return await weeklyCron(res);
+    }
     if (req.method !== 'POST') return res.status(405).json({ success: false, error: 'Method not allowed' });
     if (!(await requireAdmin(req, res))) return;
     const token = process.env.TELEGRAM_BOT_TOKEN;
