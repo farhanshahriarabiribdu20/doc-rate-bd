@@ -1,5 +1,5 @@
-import React, { useState } from 'react';
-import { X, Calculator as CalcIcon, Coins } from 'lucide-react';
+import React, { useState, useEffect } from 'react';
+import { X, Calculator as CalcIcon, Coins, Copy, Check } from 'lucide-react';
 
 export default function Calculator(props) {
   if (!props.isOpen) return null;
@@ -12,18 +12,32 @@ const averageRate = (rates, category) => {
   return nums.length ? Math.round(nums.reduce((a, b) => a + b, 0) / nums.length) : 0;
 };
 
+const SAVE_KEY = 'fn_calc_inputs';
+const loadSaved = () => {
+  try { return JSON.parse(localStorage.getItem(SAVE_KEY)) || {}; } catch { return {}; }
+};
+const num = (v) => (Number.isFinite(Number(v)) ? Number(v) : 0);
+
 function CalculatorContent({ onClose, rates, lang }) {
+  const saved = loadSaved();
   const liveBroiler = averageRate(rates, 'broiler');
   const liveSonali = averageRate(rates, 'sonali');
-  const [chickType, setChickType] = useState('broiler');
-  const [chickCount, setChickCount] = useState(1000);
-  const [chickPrice, setChickPrice] = useState(liveBroiler || 40); // live broiler average
-  const [feedBagPrice, setFeedBagPrice] = useState(3400); // 50kg bag
-  const [feedPerBirdKg, setFeedPerBirdKg] = useState(3.0); // 3kg per broiler
-  const [medCostPerBird, setMedCostPerBird] = useState(15);
-  const [mortalityRate, setMortalityRate] = useState(4); // 4%
-  const [targetWeightKg, setTargetWeightKg] = useState(1.8);
-  const [sellingPricePerKg, setSellingPricePerKg] = useState(185);
+  const [chickType, setChickType] = useState(saved.chickType || 'broiler');
+  const [chickCount, setChickCount] = useState(saved.chickCount ?? 1000);
+  const [chickPrice, setChickPrice] = useState(saved.chickPrice ?? (liveBroiler || 40)); // live broiler average
+  const [feedBagPrice, setFeedBagPrice] = useState(saved.feedBagPrice ?? (3400)); // 50kg bag
+  const [feedPerBirdKg, setFeedPerBirdKg] = useState(saved.feedPerBirdKg ?? (3.0)); // 3kg per broiler
+  const [medCostPerBird, setMedCostPerBird] = useState(saved.medCostPerBird ?? (15));
+  const [mortalityRate, setMortalityRate] = useState(saved.mortalityRate ?? (4)); // 4%
+  const [targetWeightKg, setTargetWeightKg] = useState(saved.targetWeightKg ?? (1.8));
+  const [sellingPricePerKg, setSellingPricePerKg] = useState(saved.sellingPricePerKg ?? (185));
+
+  const [copied, setCopied] = useState(false);
+  useEffect(() => {
+    try {
+      localStorage.setItem(SAVE_KEY, JSON.stringify({ chickType, chickCount, chickPrice, feedBagPrice, feedPerBirdKg, medCostPerBird, mortalityRate, targetWeightKg, sellingPricePerKg }));
+    } catch { /* storage unavailable */ }
+  }, [chickType, chickCount, chickPrice, feedBagPrice, feedPerBirdKg, medCostPerBird, mortalityRate, targetWeightKg, sellingPricePerKg]);
 
   // Auto preset switch
   const handleTypeChange = (type) => {
@@ -57,6 +71,22 @@ function CalculatorContent({ onClose, rates, lang }) {
   const netProfit = totalRevenue - totalInvestment;
   const profitPerBird = survivingBirds > 0 ? Math.round(netProfit / survivingBirds) : 0;
   const costPerKgLive = totalWeightKg > 0 ? Math.round(totalInvestment / totalWeightKg) : 0;
+  const fcr = totalWeightKg > 0 ? totalFeedKg / totalWeightKg : 0;
+  const margin = totalRevenue > 0 ? (netProfit / totalRevenue) * 100 : 0;
+  const scenarios = [-20, -10, 0, 10, 20].map((d) => ({ d, price: sellingPricePerKg + d, profit: totalWeightKg * (sellingPricePerKg + d) - totalInvestment }));
+  const fmt = (n) => `${n >= 0 ? '+' : '-'}৳${Math.abs(Math.round(n)).toLocaleString()}`;
+  const fmtShort = (n) => { const v = Math.abs(Math.round(n)); const t = v >= 10000000 ? `${(v / 10000000).toFixed(1)}কো` : v >= 100000 ? `${(v / 100000).toFixed(1)}লা` : v.toLocaleString(); return `${n >= 0 ? '+' : '-'}${t}`; };
+  const copySummary = async () => {
+    const bn = lang === 'bn';
+    const text = bn
+      ? `🐔 ব্যাচ হিসাব (FosholNexa BD)\nবাচ্চা: ${num(chickCount)} পিস × ৳${num(chickPrice)}\nমোট বিনিয়োগ: ৳${Math.round(totalInvestment).toLocaleString()}\nউৎপাদন খরচ: ৳${costPerKgLive}/কেজি, FCR ${fcr.toFixed(2)}\nবিক্রয় দর ৳${num(sellingPricePerKg)}/কেজিতে ${netProfit >= 0 ? 'লাভ' : 'ক্ষতি'}: ${fmt(netProfit)}\nfosholnexa.com`
+      : `Batch estimate (FosholNexa BD)\nChicks: ${num(chickCount)} x ৳${num(chickPrice)}\nInvestment: ৳${Math.round(totalInvestment).toLocaleString()}\nCost: ৳${costPerKgLive}/kg, FCR ${fcr.toFixed(2)}\nAt ৳${num(sellingPricePerKg)}/kg: ${fmt(netProfit)}\nfosholnexa.com`;
+    try {
+      await navigator.clipboard.writeText(text);
+      setCopied(true);
+      setTimeout(() => setCopied(false), 2000);
+    } catch { /* clipboard blocked */ }
+  };
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-xs animate-in fade-in duration-200">
@@ -260,6 +290,38 @@ function CalculatorContent({ onClose, rates, lang }) {
                 </span>
               </div>
             </div>
+
+            <div className="grid grid-cols-3 gap-3 mt-4 text-center">
+              <div className="bg-slate-800/60 rounded-xl p-2.5 border border-slate-700">
+                <span className="text-[11px] text-slate-400 block">FCR</span>
+                <span className="text-base font-black text-white">{fcr ? fcr.toFixed(2) : '—'}</span>
+              </div>
+              <div className="bg-slate-800/60 rounded-xl p-2.5 border border-slate-700">
+                <span className="text-[11px] text-slate-400 block">{lang === 'bn' ? 'লাভের হার' : 'Margin'}</span>
+                <span className={`text-base font-black ${margin >= 0 ? 'text-emerald-400' : 'text-red-400'}`}>{totalRevenue > 0 ? `${margin.toFixed(1)}%` : '—'}</span>
+              </div>
+              <div className="bg-slate-800/60 rounded-xl p-2.5 border border-slate-700">
+                <span className="text-[11px] text-slate-400 block">{lang === 'bn' ? 'ব্রেক-ইভেন দর' : 'Break-even'}</span>
+                <span className="text-base font-black text-amber-400">{costPerKgLive ? `৳${costPerKgLive}` : '—'}</span>
+              </div>
+            </div>
+
+            <div className="mt-4">
+              <p className="text-[11px] font-bold text-slate-400 mb-2">{lang === 'bn' ? 'বিক্রয় দর কমলে/বাড়লে লাভ-ক্ষতি (৳/কেজি)' : 'Profit if sale rate changes (৳/kg)'}</p>
+              <div className="grid grid-cols-5 gap-1.5 text-center">
+                {scenarios.map((sc) => (
+                  <div key={sc.d} className={`rounded-lg py-2 px-1 border ${sc.d === 0 ? 'border-amber-400/70 bg-slate-800' : 'border-slate-700 bg-slate-800/50'}`}>
+                    <span className="text-[10px] text-slate-400 block">৳{sc.price}</span>
+                    <span className={`text-[10px] sm:text-xs whitespace-nowrap font-black ${sc.profit >= 0 ? 'text-emerald-400' : 'text-red-400'}`}>{fmtShort(sc.profit)}</span>
+                  </div>
+                ))}
+              </div>
+            </div>
+
+            <button onClick={copySummary} className="mt-4 w-full flex items-center justify-center gap-2 py-2.5 rounded-xl bg-white/10 hover:bg-white/15 text-xs font-bold cursor-pointer transition">
+              {copied ? <Check className="w-4 h-4 text-emerald-400" /> : <Copy className="w-4 h-4" />}
+              {copied ? (lang === 'bn' ? 'কপি হয়েছে' : 'Copied') : (lang === 'bn' ? 'হিসাব কপি করুন (শেয়ারের জন্য)' : 'Copy summary to share')}
+            </button>
           </div>
         </div>
       </div>
