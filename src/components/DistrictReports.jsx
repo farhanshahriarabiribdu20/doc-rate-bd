@@ -192,18 +192,18 @@ export function ReportBanner({ onDocRate }) {
     <>
       <div className="relative overflow-hidden rounded-3xl bg-gradient-to-r from-amber-500 via-orange-500 to-rose-500 text-white p-5 sm:p-7 shadow-xl border border-amber-300/60">
         <div className="absolute -right-6 -top-6 text-[120px] sm:text-[160px] opacity-15 select-none leading-none" aria-hidden="true">🐔</div>
-        <div className="relative flex flex-col sm:flex-row sm:items-center gap-4 sm:gap-6">
-          <div className="min-w-0 flex-1">
+        <div className="relative flex flex-col gap-4 sm:gap-5">
+          <div className="min-w-0">
             <p className="text-[11px] sm:text-xs font-black tracking-wider uppercase bg-white/20 inline-block px-2.5 py-1 rounded-full">📢 সবার প্রতি অনুরোধ</p>
             <h2 className="mt-2 text-2xl sm:text-4xl font-black leading-tight drop-shadow-sm">বাচ্চা, মুরগি ও ডিমের রেট দিন!</h2>
             <p className="mt-1.5 text-sm sm:text-base font-bold text-white/95 leading-relaxed">আপনার জানা বাচ্চার, রেডি মুরগি বা ডিমের রেট জানান — সবাই উপকৃত হবে।</p>
           </div>
-          <div className="shrink-0 w-full sm:w-auto flex flex-col gap-2.5">
-            <button onClick={() => setOpen(true)} className="w-full px-6 py-3.5 rounded-2xl bg-white text-orange-700 hover:bg-orange-50 font-black text-base shadow-lg cursor-pointer">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5 sm:gap-3 sm:max-w-2xl">
+            <button onClick={() => setOpen(true)} className="w-full px-5 py-3.5 sm:py-4 rounded-2xl bg-white text-orange-700 hover:bg-orange-50 font-black text-base sm:text-lg shadow-lg cursor-pointer">
               🐔 মুরগি ও ডিমের রেট দিন
             </button>
             {onDocRate && (
-              <button onClick={onDocRate} className="w-full px-6 py-3.5 rounded-2xl bg-orange-900/40 hover:bg-orange-900/55 border border-white/50 text-white font-black text-base cursor-pointer">
+              <button onClick={onDocRate} className="w-full px-5 py-3.5 sm:py-4 rounded-2xl bg-white/15 hover:bg-white/25 border-2 border-white text-white font-black text-base sm:text-lg cursor-pointer">
                 🐣 বাচ্চার রেট দিন
               </button>
             )}
