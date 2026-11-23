@@ -13,6 +13,8 @@ export default function Navbar({
   onOpenBanner,
   liveVisitors,
   isDark,
+  fontLevel = 0,
+  onCycleFont,
   toggleTheme,
   settings 
 }) {
@@ -66,6 +68,14 @@ export default function Navbar({
               <PhoneCall className="w-3 h-3 text-emerald-400" />
               <span>{lang === 'bn' ? 'হটলাইন:' : 'Hotline:'} {settings.hotline || '01619-500178'}</span>
             </a>
+            <button
+              onClick={onCycleFont}
+              aria-label={lang === 'bn' ? 'লেখার সাইজ বদলান' : 'Change text size'}
+              title={lang === 'bn' ? `লেখার সাইজ: ${['স্বাভাবিক', 'বড়', 'অনেক বড়'][fontLevel]} (বদলাতে চাপুন)` : `Text size: ${['normal', 'large', 'extra large'][fontLevel]}`}
+              className="flex items-center justify-center min-w-7 h-6 px-1.5 rounded-full bg-emerald-900/80 hover:bg-emerald-800 text-emerald-100 border border-emerald-700/60 transition cursor-pointer font-black text-[11px] leading-none"
+            >
+              A{'+'.repeat(fontLevel)}
+            </button>
             <button
               onClick={toggleTheme}
               aria-label={isDark ? 'Light mode' : 'Dark mode'}

@@ -109,6 +109,14 @@ export default function App() {
     document.documentElement.classList.toggle('dark', isDark);
     try { localStorage.setItem('fn_theme', isDark ? 'dark' : 'light'); } catch { /* ignore */ }
   }, [isDark]);
+  // Text size: 0 = normal, 1 = large, 2 = extra large (kept in this browser only)
+  const [fontLevel, setFontLevel] = useState(() => {
+    try { const v = Number(localStorage.getItem('fn_fontscale')); return v === 1 || v === 2 ? v : 0; } catch { return 0; }
+  });
+  useEffect(() => {
+    document.documentElement.style.setProperty('--fs', ['1', '1.125', '1.25'][fontLevel]);
+    try { localStorage.setItem('fn_fontscale', String(fontLevel)); } catch { /* ignore */ }
+  }, [fontLevel]);
   const [activeTab, setActiveTab] = useState('doc'); // 'doc' | 'ready' | 'market'
 
   // Site data: published (server) data wins over bundled defaults.
@@ -346,6 +354,8 @@ export default function App() {
           onOpenBanner={() => setIsBannerOpen(true)}
           isDark={isDark}
           toggleTheme={() => setIsDark((d) => !d)}
+          fontLevel={fontLevel}
+          onCycleFont={() => setFontLevel((l) => (l + 1) % 3)}
           settings={settings}
           liveVisitors={live}
         />
