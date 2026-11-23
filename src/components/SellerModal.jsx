@@ -1,4 +1,5 @@
 import React, { useEffect, useState, useCallback } from 'react';
+import { DISTRICT_GROUPS } from '../data/districts';
 import { X, LogOut, Loader2, CheckCircle2, AlertTriangle, Trash2, RefreshCw, BadgeCheck, PlusCircle } from 'lucide-react';
 import {
   getSeller, saveSeller, clearSeller, registerSeller, loginSeller, fetchMine, createListing, updateListing,
@@ -17,7 +18,7 @@ const STATUS = {
   expired: { text: 'মেয়াদ শেষ', cls: 'bg-slate-200 text-slate-700' }
 };
 
-const emptyForm = { product: 'broiler', quantity: '', unit: 'kg', price: '', location: '', details: '' };
+const emptyForm = { product: 'broiler', quantity: '', unit: 'kg', price: '', district: '', location: '', details: '' };
 
 /**
  * Seller area: open a free account (user id + password), log in, post ready-bird / egg ads and
@@ -189,6 +190,17 @@ export default function SellerModal({ onClose, onChanged }) {
                   <div>
                     <label className={label}>{UNIT_BN[form.unit].per} দাম (৳) <span className="font-normal text-slate-500">— ফাঁকা রাখলে "দর আলোচনা সাপেক্ষে"</span></label>
                     <input type="number" min="0" step="any" className={input} value={form.price} onChange={setF('price')} placeholder="যেমন: 145" />
+                  </div>
+                  <div>
+                    <label className={label}>জেলা *</label>
+                    <select className={input} value={form.district} onChange={setF('district')} required>
+                      <option value="">জেলা বাছাই করুন</option>
+                      {DISTRICT_GROUPS.map((g) => (
+                        <optgroup key={g.division} label={g.division}>
+                          {g.districts.map((d) => <option key={d} value={d}>{d}</option>)}
+                        </optgroup>
+                      ))}
+                    </select>
                   </div>
                   <div>
                     <label className={label}>এলাকা / ঠিকানা *</label>

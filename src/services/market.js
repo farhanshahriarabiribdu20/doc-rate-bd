@@ -54,6 +54,9 @@ export async function fetchListings() {
   } catch { return null; }
 }
 
+/** Buyer rates the seller of a listing (1-5). One vote per person is enforced on the server. */
+export const rateSeller = (id, stars) => post({ action: 'rate', id, stars });
+
 export const registerSeller = (data) => post({ action: 'register', ...data });
 export const loginSeller = (userId, password) => post({ action: 'login', userId, password });
 

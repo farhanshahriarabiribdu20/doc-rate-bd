@@ -2,6 +2,7 @@ import { put, get } from '@vercel/blob';
 import { createHmac, randomBytes, scrypt, timingSafeEqual } from 'node:crypto';
 import { noStore, parseBody, requireAdmin } from './_lib.js';
 import { readFresh, writeFresh } from './_fresh.js';
+import { DISTRICTS } from '../src/data/districts.js';
 
 // Seller marketplace: anyone can open a free seller account (user id + password), log in and post
 // ready-bird / egg listings. Everybody can browse the live listings.
@@ -23,6 +24,8 @@ const LISTING_TTL_MS = 10 * 24 * 3600 * 1000;
 const KEEP_MS = 30 * 24 * 3600 * 1000; // old listings are dropped after this
 const MAX_ACTIVE_PER_SELLER = 5;
 const MAX_ITEMS = 600;
+const MAX_RATED_SELLERS = 500;
+const MAX_VOTERS = 100; // per seller
 const MIN_FORM_MS = 2500;
 
 const PRODUCTS = ['broiler', 'sonali', 'color', 'layer_hen', 'egg', 'duck', 'other'];
@@ -80,7 +83,7 @@ const writeJson = (path, data) =>
     cacheControlMaxAge: 60
   });
 
-const emptyStore = () => ({ settings: { requireApproval: true }, banned: [], items: [] });
+const emptyStore = () => ({ settings: { requireApproval: true }, banned: [], verified: [], ratings: {}, items: [] });
 
 async function readStore() {
   const data = await readFresh(LISTINGS_PATH);
@@ -90,6 +93,8 @@ async function readStore() {
     v: Number(data.v) || 0,
     settings: { requireApproval: data.settings?.requireApproval !== false },
     banned: Array.isArray(data.banned) ? data.banned.filter((x) => typeof x === 'string').slice(0, 500) : [],
+    verified: Array.isArray(data.verified) ? data.verified.filter((x) => typeof x === 'string').slice(0, 500) : [],
+    ratings: data.ratings && typeof data.ratings === 'object' && !Array.isArray(data.ratings) ? data.ratings : {},
     items: Array.isArray(data.items) ? data.items : []
   };
 }
@@ -125,14 +130,20 @@ function prune(store, now) {
 
 const publicItem = (it) => ({
   id: it.id, sellerName: it.sellerName, phone: it.phone, product: it.product, quantity: it.quantity, unit: it.unit,
-  price: it.price, location: it.location, details: it.details, createdAt: it.createdAt, expiresAt: it.expiresAt
+  price: it.price, location: it.location, district: it.district || '', details: it.details, createdAt: it.createdAt, expiresAt: it.expiresAt
 });
+
+// Seller trust info shown next to a listing: admin-granted "verified" tick and buyers' star rating.
+const trustOf = (store, userId) => {
+  const r = store.ratings[userId];
+  return { verified: store.verified.includes(userId), rating: r && r.count > 0 ? { avg: Math.round((r.sum / r.count) * 10) / 10, count: r.count } : null };
+};
 
 const mineItem = (it, now) => ({
   ...publicItem(it), status: it.status === 'live' && it.expiresAt <= now ? 'expired' : it.status
 });
 
-const adminItem = (it, now) => ({ ...mineItem(it, now), userId: it.userId });
+const adminItem = (it, now, store) => ({ ...mineItem(it, now), userId: it.userId, ...(store ? trustOf(store, it.userId) : {}) });
 
 function validateListing(body) {
   const product = PRODUCTS.includes(body.product) ? body.product : null;
@@ -146,8 +157,10 @@ function validateListing(body) {
   const price = Math.round(rawPrice * 100) / 100; // 0 = "দর আলোচনা সাপেক্ষে"
   const location = str(body.location, 80);
   if (location.length < 2) return { error: 'এলাকা/ঠিকানা লিখুন' };
+  const district = DISTRICTS.includes(body.district) ? body.district : '';
+  if (!district) return { error: 'জেলা বাছাই করুন' };
   const details = strMulti(body.details, 300);
-  return { value: { product, unit, quantity, price, location, details } };
+  return { value: { product, unit, quantity, price, location, district, details } };
 }
 
 // ---------- accounts ----------
@@ -282,6 +295,18 @@ async function adminAction(body, res) {
       store.banned = [...set].slice(0, 500);
       return {};
     }
+    if (op === 'verify' || op === 'unverify') {
+      if (!USER_RE.test(userId)) return { error: 'userId দিন', status: 400 };
+      const set = new Set(store.verified);
+      if (op === 'verify') set.add(userId); else set.delete(userId);
+      store.verified = [...set].slice(0, 500);
+      return {};
+    }
+    if (op === 'resetRating') {
+      if (!USER_RE.test(userId)) return { error: 'userId দিন', status: 400 };
+      delete store.ratings[userId];
+      return {};
+    }
     if (op === 'settings') {
       store.settings.requireApproval = body.requireApproval !== false;
       return {};
@@ -297,13 +322,43 @@ async function adminAction(body, res) {
     if (op === 'hide') return check.items.every((it) => it.id !== id || it.status === 'hidden');
     if (op === 'ban') return check.banned.includes(userId);
     if (op === 'unban') return !check.banned.includes(userId);
+    if (op === 'verify') return check.verified.includes(userId);
+    if (op === 'unverify') return !check.verified.includes(userId);
+    if (op === 'resetRating') return !check.ratings[userId];
     if (op === 'settings') return check.settings.requireApproval === (body.requireApproval !== false);
     if (op === 'approveAll') return !check.items.some((it) => it.status === 'pending');
     return true;
   });
   if (outcome.error) return res.status(outcome.status || 400).json({ success: false, error: outcome.error });
   const s = outcome.store;
-  return res.status(200).json({ success: true, items: s.items.map((it) => adminItem(it, now)), banned: s.banned, requireApproval: s.settings.requireApproval });
+  return res.status(200).json({ success: true, items: s.items.map((it) => adminItem(it, now, s)), banned: s.banned, requireApproval: s.settings.requireApproval });
+}
+
+// ---------- buyer rating ----------
+// Buyers have no accounts, so one vote per person is approximated by a hash of (IP + seller). It is not
+// fraud-proof, which is why the admin can reset a seller's rating. One rating costs one blob write.
+const clientIp = (req) => String(req.headers?.['x-forwarded-for'] || req.headers?.['x-real-ip'] || '').split(',')[0].trim() || 'unknown';
+
+async function rateSeller(body, req, res) {
+  const id = str(body.id, 40);
+  const stars = Math.round(Number(body.stars));
+  if (!id || !(stars >= 1 && stars <= 5)) return res.status(400).json({ success: false, error: 'রেটিং ১ থেকে ৫ এর মধ্যে দিন' });
+  const now = Date.now();
+  const ip = clientIp(req);
+  let voter = '';
+  const outcome = await mutateStore((store) => {
+    const it = store.items.find((x) => x.id === id && isLive(x, now));
+    if (!it) return { error: 'বিজ্ঞাপনটি পাওয়া যায়নি', status: 404 };
+    voter = hmac(`voter:${ip}|${it.userId}`).toString('hex').slice(0, 16);
+    const r = store.ratings[it.userId] || { sum: 0, count: 0, voters: [] };
+    if (r.voters.includes(voter)) return { error: 'আপনি এই বিক্রেতাকে আগেই রেটিং দিয়েছেন', status: 409 };
+    if (r.voters.length >= MAX_VOTERS) return { error: 'এই বিক্রেতার রেটিং সীমা পূর্ণ', status: 400 };
+    if (!store.ratings[it.userId] && Object.keys(store.ratings).length >= MAX_RATED_SELLERS) return { error: 'এখন রেটিং নেওয়া যাচ্ছে না', status: 503 };
+    store.ratings[it.userId] = { sum: r.sum + stars, count: r.count + 1, voters: [...r.voters, voter] };
+    return { userId: it.userId };
+  }, (check) => Object.values(check.ratings).some((r) => r.voters.includes(voter)));
+  if (outcome.error) return res.status(outcome.status || 400).json({ success: false, error: outcome.error });
+  return res.status(200).json({ success: true, ...trustOf(outcome.store, outcome.userId) });
 }
 
 export default async function handler(req, res) {
@@ -318,10 +373,10 @@ export default async function handler(req, res) {
       if (req.query?.admin) {
         if (!(await requireAdmin(req, res))) return;
         const store = await readStore();
-        return res.status(200).json({ success: true, items: store.items.map((it) => adminItem(it, now)), banned: store.banned, requireApproval: store.settings.requireApproval });
+        return res.status(200).json({ success: true, items: store.items.map((it) => adminItem(it, now, store)), banned: store.banned, requireApproval: store.settings.requireApproval });
       }
       const store = await readStore();
-      const items = store.items.filter((it) => isLive(it, now) && !store.banned.includes(it.userId)).map(publicItem);
+      const items = store.items.filter((it) => isLive(it, now) && !store.banned.includes(it.userId)).map((it) => ({ ...publicItem(it), ...trustOf(store, it.userId) }));
       res.setHeader('Cache-Control', 'public, s-maxage=120, stale-while-revalidate=600');
       return res.status(200).json({ success: true, items });
     }
@@ -333,6 +388,7 @@ export default async function handler(req, res) {
 
     if (action === 'register') return await register(body, res);
     if (action === 'login') return await login(body, res);
+    if (action === 'rate') return await rateSeller(body, req, res);
     if (action === 'admin') {
       if (!(await requireAdmin(req, res))) return;
       return await adminAction(body, res);
