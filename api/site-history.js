@@ -49,10 +49,12 @@ async function runBackup(force) {
   const site = await safe(() => readBlob('site-data.json'));
   const market = await safe(() => readFresh('market/listings.json'));
   const gallery = await safe(() => readFresh('gallery/index.json'));
-  if (!site && !market && !gallery) return { skipped: 'nothing' };
+  const feeds = await safe(() => readFresh('feed-prices.json'));
+  const dealers = await safe(() => readFresh('dealers.json'));
+  if (!site && !market && !gallery && !feeds && !dealers) return { skipped: 'nothing' };
 
   const day = dhakaDay();
-  const payload = { version: 1, createdAt: new Date().toISOString(), site, market, gallery };
+  const payload = { version: 1, createdAt: new Date().toISOString(), site, market, gallery, feeds, dealers };
   const blob = await put(`${BACKUP_PREFIX}${day}.json`, JSON.stringify(payload), {
     access: 'public', addRandomSuffix: true, contentType: 'application/json', cacheControlMaxAge: 60
   });
