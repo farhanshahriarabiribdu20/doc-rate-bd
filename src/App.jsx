@@ -548,7 +548,7 @@ export default function App() {
         {activeTab === 'ready' && (
           <div className="flex flex-col gap-5 sm:gap-6">
             <PageHead
-              title={lang === 'bn' ? 'রেডি মুরগি ও ডিমের মোকাম রেট' : 'Ready Poultry & Egg Market Rates'}
+              title={lang === 'bn' ? 'রেডি মুরগি ও ডিমের রেট' : 'Ready Poultry & Egg Market Rates'}
               sub={lang === 'bn' ? 'দেশের আঞ্চলিক মোকাম অনুযায়ী ব্রয়লার, কালার, সোনালী ও ডিমের পাইকারি দর' : 'Wholesale rates of broiler, color, sonali and eggs across regional hubs'}
               chips={settings.readyDateISO ? [{ text: `📅 ${lang === 'bn' ? formatBn(readyArchive?.date || settings.readyDateISO) : formatEn(readyArchive?.date || settings.readyDateISO)}`, tone: 'ok' }] : []}
             />
