@@ -70,7 +70,7 @@ export default function MarketAdminPanel({ data, loading, error, onReload, onAct
                   </p>
                   {it.details && <p className="text-xs text-slate-600 mt-1 whitespace-pre-line break-words">{it.details}</p>}
                   <p className="text-[11px] text-slate-500 mt-1">
-                    {it.sellerName} ({it.userId}) · {it.phone} · {when(it.createdAt)}
+                    {it.sellerName} · {it.phone} · {when(it.createdAt)}
                   </p>
                   <p className="text-[11px] mt-0.5 flex flex-wrap items-center gap-2">
                     {it.district && <span className="text-slate-500">জেলা: {it.district}</span>}
