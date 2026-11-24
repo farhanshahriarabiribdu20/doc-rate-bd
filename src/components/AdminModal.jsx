@@ -8,6 +8,8 @@ import WhatsAppPastePanel from './WhatsAppPastePanel';
 import VersionHistoryPanel from './VersionHistoryPanel';
 import ExcelImportPanel from './ExcelImportPanel';
 import ReadyExcelPanel from './ReadyExcelPanel';
+import MasterExcelPanel from './MasterExcelPanel';
+import { applyMasterPlan } from '../utils/masterGrades';
 import SubmissionsPanel from './SubmissionsPanel';
 import GalleryAdminPanel from './GalleryAdminPanel';
 import FeedAdminPanel from './FeedAdminPanel';
@@ -502,6 +504,18 @@ function AdminModalContent({
         else showToast('আগের তারিখগুলো সংরক্ষণ করা যায়নি। আবার আপলোড করে দেখুন।', 'error');
       });
     }
+  };
+
+  // Master Grades Excel: every company/breed with A / M / B+ / B rates for the 20 zones (auto-published afterwards).
+  const handleApplyMaster = ({ sheet, plan }) => {
+    forceSnapshotRef.current = true; // the state before the import stays in history, so it can be undone
+    setRates((prev) => applyMasterPlan(prev, plan.rows, {
+      dateISO: sheet.dateISO,
+      previousDateISO: settings.reportDateISO,
+      bookingPhone: settings.whatsapp || settings.hotline || ''
+    }));
+    setSettings((prev) => ({ ...prev, reportDateISO: sheet.dateISO }));
+    showToast(`✅ ${sheet.cells}টি গ্রেড-রেট বসানো হয়েছে। কিছুক্ষণের মধ্যে অটো-প্রকাশ হবে।`);
   };
 
   // Ready broiler/color Excel: the 21 mokam rates (auto-published afterwards).
@@ -1172,6 +1186,7 @@ function AdminModalContent({
             {activeTab === 'excel' && (
               <div className="space-y-5">
                 <ExcelImportPanel rates={rates} reportDateISO={settings.reportDateISO} bookingPhone={settings.whatsapp || settings.hotline || ''} onApply={handleApplyExcel} />
+                <MasterExcelPanel rates={rates} reportDateISO={settings.reportDateISO} onApply={handleApplyMaster} />
                 <ReadyExcelPanel readyRates={readyRates} onApply={handleApplyReadyExcel} />
               </div>
             )}

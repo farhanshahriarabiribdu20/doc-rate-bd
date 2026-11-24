@@ -1,3 +1,5 @@
+import { deriveFromZones, rateForRegion } from './zones.js';
+
 // Quality grade shown as a badge on a chick rate. Missing grade = 'A' (the original behaviour).
 export const GRADES = ['A', 'B', 'C', 'none'];
 
@@ -8,3 +10,19 @@ export const GRADE_STYLE = {
 };
 
 export const normalizeGrade = (g) => (GRADES.includes(g) ? g : 'A');
+
+// ---- grade split from the "Master Grades" Excel: A / M / B+ / B ----------------------------
+// item.gradeRates = { A: { zoneId: rate }, M: {...}, 'B+': {...}, B: {...} }  (only the filled cells)
+export const MASTER_GRADES = ['A', 'M', 'B+', 'B'];
+export const MASTER_GRADE_BN = { A: 'এ', M: 'এম', 'B+': 'বি+', B: 'বি' };
+
+export const hasGradeRates = (item) => Boolean(item?.gradeRates && MASTER_GRADES.some((g) => item.gradeRates[g] && Object.keys(item.gradeRates[g]).length));
+
+/** Rate of one grade for a region ('all', a division id or a zone id); null when the item has no rate for that grade. */
+export function gradeRateFor(item, grade, region) {
+  const zones = item?.gradeRates?.[grade];
+  if (!zones || !Object.keys(zones).length) return null;
+  const { divisionRates, todayRate } = deriveFromZones(zones);
+  if (!todayRate) return null;
+  return rateForRegion({ todayRate, divisionRates, zoneRates: zones }, region);
+}

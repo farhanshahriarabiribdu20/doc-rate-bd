@@ -1,4 +1,5 @@
-import { normalizeGrade, GRADE_STYLE } from '../data/grades';
+import { normalizeGrade, GRADE_STYLE, hasGradeRates } from '../data/grades';
+import GradeRates from './GradeRates';
 import FavStar from './FavStar';
 import React from 'react';
 import { Printer, MapPin, ShieldCheck, AlertTriangle } from 'lucide-react';
@@ -77,9 +78,10 @@ export default function RateTable({ rates, selectedDivision, isStale = false, ra
                   </td>
                   <td className="py-3.5 px-4">
                     <span className="font-bold text-slate-800">{item.breed}</span>
-                    {normalizeGrade(item.grade) !== 'none' && (
+                    {normalizeGrade(item.grade) !== 'none' && !hasGradeRates(item) && (
                       <span className={`ml-1.5 inline-flex items-center gap-0.5 text-[10px] font-black px-2 py-0.5 rounded-full align-middle ${GRADE_STYLE[normalizeGrade(item.grade)]}`}>★ Grade-{normalizeGrade(item.grade)}</span>
                     )}
+                    <GradeRates item={item} region={selectedDivision} lang={lang} compact />
                     <div className="mt-0.5 flex items-center gap-1 text-[11px] text-emerald-800">
                       <MapPin className="w-3 h-3 text-emerald-600 shrink-0" />
                       <span className="font-semibold text-slate-600">{currentRegion}</span>

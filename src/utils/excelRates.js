@@ -6,7 +6,7 @@ const norm = (s) => String(s ?? '').toLowerCase().replace(/[^a-z0-9]/g, '');
 
 // ---- Excel column (category|company|breed) -> existing site item ---------------------------
 // Anything not listed here is added as a new item (the admin can untick it in the preview).
-const ITEM_MAP = {
+export const ITEM_MAP = {
   'broiler|kazi|ross308': 'kazi-broiler',
   'broiler|paragon|ep': 'paragon-broiler',
   'broiler|nourish|ep': 'nourish-broiler',
@@ -37,7 +37,7 @@ const ITEM_MAP = {
   'layer|cp|isabrown': 'cp-layer-brown'
 };
 
-const COMPANY_KEY = (c) => {
+export const COMPANY_KEY = (c) => {
   const k = norm(c);
   if (k.startsWith('kazi')) return 'kazi';
   if (k === 'cp') return 'cp';
@@ -46,7 +46,7 @@ const COMPANY_KEY = (c) => {
 };
 
 // Bangla names for companies that may need a new item
-const COMPANY_BN = {
+export const COMPANY_BN = {
   kazi: 'কাজী ফার্মস', paragon: 'প্যারাগন গ্রুপ', provita: 'প্রভিটা গ্রুপ', advance: 'এডভান্স পোল্ট্রি', planet: 'প্ল্যানেট পোল্ট্রি',
   nahar: 'নাহার এগ্রো', cp: 'সিপি বাংলাদেশ', index: 'ইনডেক্স', nourish: 'নারিশ পোল্ট্রি', aman: 'আমান পোল্ট্রি', rmr: 'আরএমআর পোল্ট্রি',
   astha: 'আস্থা', peoples: 'পিপলস', newhope: 'নিউ হোপ', dg: 'ডিজি', abir: 'আবির', aftab: 'আফতাব বহুমুখী', akij: 'আকিজ পোল্ট্রি',
@@ -186,6 +186,7 @@ export function applyExcelPlan(items, rows, { dateISO, previousDateISO, bookingP
       yesterdayRate: row.prevRate ?? (archive ? row.todayRate : dayChanged ? item.todayRate : item.yesterdayRate),
       divisionRates: row.divisionRates,
       zoneRates: row.column.zones,
+      gradeRates: undefined, // this sheet has no grade split; an older grade table would no longer match
       status: 'available'
     };
   });
