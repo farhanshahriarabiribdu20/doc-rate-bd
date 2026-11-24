@@ -42,7 +42,7 @@ export default function GalleryAdminPanel({ adminKey, gallery, onChange, showToa
     }
     setBusy(false);
     // the caption stays in the box (handy when several pictures share it); change it for the next one
-    if (done) showToast(`✅ ${done}টি ছবি প্রকাশ হয়েছে।`);
+    if (done) showToast(`✅ ${done}টি ছবি প্রকাশ হয়েছে — ${TARGETS.find(([k]) => k === target)?.[1]} দেখাবে।`);
   };
 
   const editsRef = useRef(edits);
@@ -116,6 +116,13 @@ export default function GalleryAdminPanel({ adminKey, gallery, onChange, showToa
         <p className="text-[11px] text-slate-500">ছবি আপলোডের আগে আপনা-আপনি ছোট করা হয় (ফ্রি স্টোরেজ বাঁচাতে)। সর্বোচ্চ ৪০টি ছবি রাখা যায়। একসাথে একাধিক ছবিও দেওয়া যায়।</p>
       </div>
 
+      {images.length > 0 && (
+        <p className="text-xs font-bold text-slate-700 bg-slate-50 border border-slate-200 rounded-xl px-3 py-2">
+          সাইটে এখন: বাচ্চার (DOC) ট্যাবে <span className="text-emerald-700">{images.filter((i) => i.target !== 'ready').length}টি</span> · রেডি মুরগি ট্যাবে <span className="text-emerald-700">{images.filter((i) => i.target !== 'doc').length}টি</span> ছবি দেখাচ্ছে।
+          কোনো ছবি যে ট্যাবে চান সেখানে না দেখালে, ছবির পাশের "দুই ট্যাবেই" বেছে নিন।
+        </p>
+      )}
+
       {images.length === 0 ? (
         <div className="py-10 text-center text-slate-500 text-sm">এখনো কোনো ছবি নেই</div>
       ) : (
@@ -130,7 +137,7 @@ export default function GalleryAdminPanel({ adminKey, gallery, onChange, showToa
                 <img src={img.url} alt="" className="w-24 h-28 object-cover rounded-xl bg-slate-100 shrink-0" />
                 <div className="flex-1 min-w-0 space-y-2">
                   <input className={input} value={cap} maxLength={120} placeholder="ক্যাপশন" onChange={(e) => edit(img, { caption: e.target.value })} onBlur={() => save(img, true)} />
-                  <select className={input} value={tgt} onChange={(e) => edit(img, { target: e.target.value })}>
+                  <select className={`${input} ${tgt === 'all' ? '' : 'border-amber-400 bg-amber-50'}`} value={tgt} onChange={(e) => edit(img, { target: e.target.value })}>
                     {TARGETS.map(([k, t]) => <option key={k} value={k}>{t}</option>)}
                   </select>
                   <div className="flex gap-2">
