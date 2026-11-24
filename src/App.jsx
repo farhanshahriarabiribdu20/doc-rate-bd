@@ -298,6 +298,27 @@ export default function App() {
   const [selectedDivision, setSelectedDivision] = useState('all');
   const [searchQuery, setSearchQuery] = useState('');
   const [sortBy, setSortBy] = useState('default');
+  // phones show the first few company cards and a "show more" button instead of one endless scroll
+  const [showMiniTabs, setShowMiniTabs] = useState(false);
+  useEffect(() => {
+    let raf = 0;
+    const onScroll = () => {
+      cancelAnimationFrame(raf);
+      raf = requestAnimationFrame(() => setShowMiniTabs(window.scrollY > 280));
+    };
+    window.addEventListener('scroll', onScroll, { passive: true });
+    return () => { window.removeEventListener('scroll', onScroll); cancelAnimationFrame(raf); };
+  }, []);
+  const MOBILE_CARDS = 8;
+  const [cardLimit, setCardLimit] = useState(MOBILE_CARDS);
+  const [isPhone, setIsPhone] = useState(() => typeof window !== 'undefined' && window.matchMedia('(max-width: 639px)').matches);
+  useEffect(() => {
+    const mq = window.matchMedia('(max-width: 639px)');
+    const on = () => setIsPhone(mq.matches);
+    mq.addEventListener?.('change', on);
+    return () => mq.removeEventListener?.('change', on);
+  }, []);
+  useEffect(() => { setCardLimit(MOBILE_CARDS); }, [selectedCategory, selectedDivision, searchQuery, sortBy]);
   const [viewMode, setViewMode] = useState('cards');
   // "is this rate correct?" votes for the live report date
   const [voteCounts, setVoteCounts] = useState({});
@@ -418,8 +439,25 @@ export default function App() {
 
   return (
     <div className="min-h-screen flex flex-col bg-slate-50 text-slate-900">
-      {/* Sticky Floating Header (Navbar + Floating Ticker) */}
-      <div className="sticky top-0 z-40 shadow-md">
+      {/* Phones: once the tall header has scrolled away, a slim sticky tab bar keeps the 3 tabs reachable */}
+      {showMiniTabs && (
+        <div className="sm:hidden fixed top-0 inset-x-0 z-40 bg-white/95 backdrop-blur-md border-b border-slate-200 shadow-md px-3 py-1.5">
+          <div className="flex items-center bg-slate-100 p-1 rounded-2xl border border-slate-200/90">
+            {[['doc', '🐣', 'বাচ্চার দর'], ['ready', '🍗', 'রেডি মুরগি'], ['market', '🛒', 'বিক্রির বাজার']].map(([id, icon, label]) => (
+              <button
+                key={id}
+                onClick={() => { setActiveTab(id); window.scrollTo({ top: 0 }); }}
+                className={`flex-1 flex items-center justify-center gap-1 whitespace-nowrap px-1.5 py-2 rounded-xl font-black text-xs cursor-pointer transition ${activeTab === id ? 'bg-emerald-700 text-white shadow-xs' : 'text-slate-600'}`}
+              >
+                <span>{icon}</span><span>{label}</span>
+              </button>
+            ))}
+          </div>
+        </div>
+      )}
+
+      {/* Header (Navbar + Floating Ticker) — sticky on larger screens only; on phones it is too tall to pin */}
+      <div className="sm:sticky sm:top-0 z-40 shadow-md">
         <Navbar
           lang={lang}
           setLang={setLang}
@@ -528,8 +566,9 @@ export default function App() {
                 </button>
               </div>
             ) : viewMode === 'cards' ? (
-              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6">
-                {sortedRates.map((item) => (
+              <>
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 sm:gap-6">
+                {(isPhone ? sortedRates.slice(0, cardLimit) : sortedRates).map((item) => (
                   <RateCard
                     key={item.id}
                     item={item}
@@ -545,6 +584,15 @@ export default function App() {
                   />
                 ))}
               </div>
+              {isPhone && sortedRates.length > cardLimit && (
+                <button
+                  onClick={() => setCardLimit((n) => n + MOBILE_CARDS)}
+                  className="mt-4 w-full py-3.5 rounded-2xl bg-white border-2 border-emerald-600 text-emerald-700 font-black text-sm active:scale-[0.99] cursor-pointer"
+                >
+                  আরও {Math.min(MOBILE_CARDS, sortedRates.length - cardLimit).toLocaleString('bn-BD')}টি কোম্পানি দেখুন ({(sortedRates.length - cardLimit).toLocaleString('bn-BD')}টি বাকি)
+                </button>
+              )}
+              </>
             ) : (
               <RateTable
                 rates={sortedRates}

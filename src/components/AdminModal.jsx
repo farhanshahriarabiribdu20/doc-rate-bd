@@ -614,13 +614,13 @@ function AdminModalContent({
     reader.readAsText(file);
   };
 
-  const tabClass = (id) => `relative px-4 py-2 rounded-xl text-xs font-bold transition flex items-center gap-1.5 cursor-pointer shrink-0 ${
+  const tabClass = (id) => `relative px-3 sm:px-4 py-2 rounded-xl text-xs font-bold transition flex items-center gap-1.5 cursor-pointer shrink-0 ${
     activeTab === id ? 'bg-emerald-600 text-white' : 'bg-slate-100 text-slate-600 hover:bg-slate-200'
   }`;
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/70 backdrop-blur-xs animate-in fade-in duration-200">
-      <div className="bg-white rounded-3xl max-w-4xl w-full max-h-[92vh] overflow-y-auto shadow-2xl border border-slate-200">
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-2 sm:p-4 bg-black/70 backdrop-blur-xs animate-in fade-in duration-200">
+      <div className="bg-white rounded-3xl max-w-4xl w-full max-h-[96dvh] sm:max-h-[92vh] overflow-y-auto shadow-2xl border border-slate-200">
         {/* Header */}
         <div className="p-4 sm:p-5 border-b border-slate-100 flex flex-wrap items-center justify-between gap-3 sticky top-0 bg-white/95 backdrop-blur-xs z-10">
           <div className="flex items-center gap-2.5">
@@ -748,7 +748,7 @@ function AdminModalContent({
             )}
 
             {/* Tabs */}
-            <div className="flex flex-wrap items-center gap-x-2 gap-y-3 border-b border-slate-200 pb-3 pt-2">
+            <div className="flex flex-wrap items-center gap-x-1.5 sm:gap-x-2 gap-y-2.5 sm:gap-y-3 border-b border-slate-200 pb-3 pt-2">
               <button onClick={() => setActiveTab('doc')} className={tabClass('doc')}>
                 <Bird className="w-4 h-4" /> বাচ্চার দর (DOC)
               </button>
