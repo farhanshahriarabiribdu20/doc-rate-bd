@@ -61,7 +61,7 @@ export default function PriceChart({ rates = [], lang }) {
             <button
               key={opt.id}
               onClick={() => setSelectedCat(opt.id)}
-              className={`px-3.5 py-1.5 rounded-xl text-xs font-bold transition cursor-pointer ${
+              className={`px-3.5 py-2.5 sm:py-1.5 rounded-xl text-xs font-bold transition cursor-pointer ${
                 selectedCat === opt.id
                   ? 'bg-white text-emerald-800 shadow-xs border border-slate-200/50'
                   : 'text-slate-600 hover:text-slate-900'

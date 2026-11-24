@@ -50,9 +50,9 @@ export default function FilterBar({
       </div>
 
       {/* Secondary Controls: Search, Division, Sort, View Switcher */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-12 gap-3 items-center pt-1 border-t border-slate-100">
+      <div className="grid grid-cols-[1fr_auto] sm:grid-cols-2 lg:grid-cols-12 gap-3 items-center pt-1 border-t border-slate-100">
         {/* Search */}
-        <div className="lg:col-span-4 relative">
+        <div className="col-span-2 sm:col-span-1 lg:col-span-4 relative">
           <Search className="w-4 h-4 text-slate-400 absolute left-3.5 top-1/2 -translate-y-1/2" />
           <input
             type="text"
@@ -72,13 +72,13 @@ export default function FilterBar({
         </div>
 
         {/* Division Filter */}
-        <div className="lg:col-span-3 relative">
-          <div className="flex items-center bg-slate-50 border border-slate-200 rounded-xl px-3 py-1.5 focus-within:ring-2 focus-within:ring-emerald-500 focus-within:bg-white transition">
+        <div className="col-span-2 sm:col-span-1 lg:col-span-3 relative">
+          <div className="flex items-center bg-slate-50 border border-slate-200 rounded-xl px-3 py-0 sm:py-1.5 focus-within:ring-2 focus-within:ring-emerald-500 focus-within:bg-white transition">
             <MapPin className="w-4 h-4 text-emerald-600 shrink-0 mr-2" />
             <select
               value={selectedDivision}
               onChange={(e) => setSelectedDivision(e.target.value)}
-              className="w-full bg-transparent text-xs sm:text-sm font-semibold text-slate-700 focus:outline-none cursor-pointer"
+              className="w-full bg-transparent text-xs sm:text-sm font-semibold text-slate-700 focus:outline-none cursor-pointer py-3 sm:py-0"
             >
               <option value="all">{lang === 'bn' ? 'সমগ্র বাংলাদেশ (জাতীয় গড়)' : 'All Bangladesh (National Avg)'}</option>
               {ZONE_GROUPS.map((g) => (
@@ -93,13 +93,13 @@ export default function FilterBar({
         </div>
 
         {/* Sort Options */}
-        <div className="lg:col-span-3 relative">
-          <div className="flex items-center bg-slate-50 border border-slate-200 rounded-xl px-3 py-1.5 focus-within:ring-2 focus-within:ring-emerald-500 focus-within:bg-white transition">
+        <div className="sm:col-span-1 lg:col-span-3 relative">
+          <div className="flex items-center bg-slate-50 border border-slate-200 rounded-xl px-3 py-0 sm:py-1.5 focus-within:ring-2 focus-within:ring-emerald-500 focus-within:bg-white transition">
             <ArrowUpDown className="w-4 h-4 text-slate-400 shrink-0 mr-2" />
             <select
               value={sortBy}
               onChange={(e) => setSortBy(e.target.value)}
-              className="w-full bg-transparent text-xs sm:text-sm font-semibold text-slate-700 focus:outline-none cursor-pointer"
+              className="w-full bg-transparent text-xs sm:text-sm font-semibold text-slate-700 focus:outline-none cursor-pointer py-3 sm:py-0"
             >
               <option value="default">{lang === 'bn' ? 'সাধারণ সাজানো (Default)' : 'Default Order'}</option>
               <option value="price_asc">{lang === 'bn' ? 'দাম: কম থেকে বেশি' : 'Price: Low to High'}</option>
@@ -115,7 +115,7 @@ export default function FilterBar({
             <button
               onClick={() => setViewMode('cards')}
               title={lang === 'bn' ? 'কার্ড ভিউ' : 'Card View'}
-              className={`p-1.5 rounded-lg transition cursor-pointer ${
+              className={`p-2.5 sm:p-1.5 rounded-lg transition cursor-pointer ${
                 viewMode === 'cards'
                   ? 'bg-white text-emerald-700 shadow-2xs'
                   : 'text-slate-400 hover:text-slate-700'
@@ -126,7 +126,7 @@ export default function FilterBar({
             <button
               onClick={() => setViewMode('table')}
               title={lang === 'bn' ? 'টেবিল ভিউ' : 'Table View'}
-              className={`p-1.5 rounded-lg transition cursor-pointer ${
+              className={`p-2.5 sm:p-1.5 rounded-lg transition cursor-pointer ${
                 viewMode === 'table'
                   ? 'bg-white text-emerald-700 shadow-2xs'
                   : 'text-slate-400 hover:text-slate-700'

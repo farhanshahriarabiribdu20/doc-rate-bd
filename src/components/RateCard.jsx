@@ -49,8 +49,8 @@ export default function RateCard({ item, selectedDivision, isStale = false, rate
   return (
     <div className="bg-white rounded-3xl border border-slate-200/90 shadow-xs hover:shadow-xl hover:border-emerald-300 transition-all duration-300 flex flex-col justify-between overflow-hidden group">
       {/* Top Header Card */}
-      <div className="p-5 border-b border-slate-100 relative">
-        <div className="flex items-center justify-between gap-2 mb-3">
+      <div className="p-3.5 sm:p-5 border-b border-slate-100 relative">
+        <div className="flex items-center justify-between gap-2 mb-2 sm:mb-3">
           <span className={`inline-flex items-center gap-1.5 text-xs font-bold px-2.5 py-0.5 rounded-full border ${catTag.bg}`}>
             <span className={`w-1.5 h-1.5 rounded-full ${catTag.dot}`}></span>
             <span>{catTag.label}</span>
@@ -71,9 +71,16 @@ export default function RateCard({ item, selectedDivision, isStale = false, rate
 
         {/* Company info */}
         <div>
-          <h3 className="text-base sm:text-lg font-black text-slate-900 group-hover:text-emerald-700 transition leading-snug break-words" title={item.company}>
-            {item.company}
-          </h3>
+          <div className="flex items-start justify-between gap-2">
+            <h3 className="text-base sm:text-lg font-black text-slate-900 group-hover:text-emerald-700 transition leading-snug break-words min-w-0" title={item.company}>
+              {item.company}
+            </h3>
+            {fav && (
+              <span className="sm:hidden -mt-1 -mr-1 shrink-0">
+                <FavStar on={fav.on} onToggle={fav.onToggle} label={lang === 'bn' ? 'পছন্দের তালিকায় যোগ/বাদ' : 'Toggle favourite'} />
+              </span>
+            )}
+          </div>
           <p className="text-xs text-slate-500 font-semibold mt-0.5">
             {lang === 'bn' ? 'জাত:' : 'Breed:'} <span className="text-slate-800 font-bold">{item.breed}</span>
           </p>
@@ -88,17 +95,17 @@ export default function RateCard({ item, selectedDivision, isStale = false, rate
         <GradeRates item={item} region={selectedDivision} lang={lang} />
 
         {/* Region / Zone */}
-        <div className="mt-3 flex items-center gap-1.5 text-xs text-emerald-900 bg-emerald-50/80 border border-emerald-200/70 px-2.5 py-1 rounded-xl w-fit">
+        <div className="mt-2 sm:mt-3 flex items-center gap-1.5 text-xs text-emerald-900 bg-emerald-50/80 border border-emerald-200/70 px-2.5 py-1 rounded-xl w-fit">
           <MapPin className="w-3.5 h-3.5 text-emerald-600 shrink-0" />
           <span className="font-bold text-emerald-900">{lang === 'bn' ? 'অঞ্চল:' : 'Region:'}</span>
-          <span className="font-semibold text-emerald-950 truncate max-w-[210px]" title={currentRegion}>
+          <span className="font-semibold text-emerald-950 truncate max-w-[calc(100vw-9rem)] sm:max-w-[210px]" title={currentRegion}>
             {currentRegion}
           </span>
         </div>
       </div>
 
       {/* Middle Price Section */}
-      <div className="p-5 bg-gradient-to-b from-slate-50/60 to-white flex-1 flex flex-col justify-between">
+      <div className="p-3.5 sm:p-5 bg-gradient-to-b from-slate-50/60 to-white flex-1 flex flex-col justify-between">
         <div className="flex items-end justify-between gap-2">
           <div>
             <span className="text-[11px] font-bold text-slate-500 uppercase tracking-wider block">
@@ -107,7 +114,7 @@ export default function RateCard({ item, selectedDivision, isStale = false, rate
                 : (lang === 'bn' ? 'নির্ধারিত বাজারদর' : 'Official Rate')}
             </span>
             <div className="flex items-baseline gap-1 mt-0.5">
-              <span className="text-3xl sm:text-4xl font-black text-slate-900 tracking-tight">৳{currentRate}</span>
+              <span className="text-[1.7rem] max-sm:leading-none sm:text-4xl font-black text-slate-900 tracking-tight">৳{currentRate}</span>
               <span className="text-xs font-bold text-slate-500">/{lang === 'bn' ? 'পিস' : 'pc'}</span>
             </div>
             {isLowest && (
@@ -133,7 +140,7 @@ export default function RateCard({ item, selectedDivision, isStale = false, rate
         </div>
 
         {fav && (
-          <div className="mt-3 pt-3 border-t border-slate-100 flex items-center justify-between text-xs font-bold text-slate-700">
+          <div className="hidden sm:flex mt-3 pt-3 border-t border-slate-100 items-center justify-between text-xs font-bold text-slate-700">
             <span>{lang === 'bn' ? 'পছন্দের তালিকায়' : 'Favourite'}</span>
             <FavStar on={fav.on} onToggle={fav.onToggle} label={lang === 'bn' ? 'পছন্দের তালিকায় যোগ/বাদ' : 'Toggle favourite'} />
           </div>
@@ -143,7 +150,7 @@ export default function RateCard({ item, selectedDivision, isStale = false, rate
 
         {/* Company note (only when there is one) */}
         {item.notes && (
-          <div className="mt-3 pt-3 border-t border-slate-100 flex items-center justify-end text-xs">
+          <div className="mt-2 pt-2 sm:mt-3 sm:pt-3 border-t border-slate-100 flex items-center justify-end text-xs">
             <span className="text-emerald-700 font-bold bg-emerald-50 px-2 py-0.5 rounded-md border border-emerald-200/60 text-[11px]">
               {item.notes}
             </span>

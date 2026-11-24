@@ -96,40 +96,40 @@ export default function Footer({ lang, isStale = false, settings }) {
           <h4 className="text-white font-extrabold text-xs uppercase tracking-wider mb-4 border-b border-slate-800 pb-2">
             {lang === 'bn' ? 'জরুরি যোগাযোগ ও সোশ্যাল' : 'Helpline & Social'}
           </h4>
-          <div className="space-y-2.5 text-xs">
-            <a href="tel:01619500178" className="flex items-center gap-2 text-slate-300 hover:text-white transition">
+          <div className="space-y-0.5 sm:space-y-2.5 text-xs">
+            <a href="tel:01619500178" className="flex items-center gap-2 py-2 sm:py-0 text-slate-300 hover:text-white transition">
               <Phone className="w-4 h-4 text-emerald-400 shrink-0" />
               <span className="font-bold">01619-500178</span>
               <span className="text-[10px] text-slate-500">(সকাল ৮টা - রাত ১০টা)</span>
             </a>
 
-            <a href="https://wa.me/8801619500178" target="_blank" rel="noreferrer" className="flex items-center gap-2 text-slate-300 hover:text-white transition">
+            <a href="https://wa.me/8801619500178" target="_blank" rel="noreferrer" className="flex items-center gap-2 py-2 sm:py-0 text-slate-300 hover:text-white transition">
               <MessageCircle className="w-4 h-4 text-emerald-400 shrink-0" />
               <span>হোয়াটসঅ্যাপ: 01619-500178</span>
             </a>
 
-            <a href="https://chat.whatsapp.com/B9A22d7rAQ4HfQyaRPwn4o" target="_blank" rel="noreferrer" className="flex items-center gap-2 text-emerald-400 hover:text-emerald-300 font-bold transition">
+            <a href="https://chat.whatsapp.com/B9A22d7rAQ4HfQyaRPwn4o" target="_blank" rel="noreferrer" className="flex items-center gap-2 py-2 sm:py-0 text-emerald-400 hover:text-emerald-300 font-bold transition">
               <MessageCircle className="w-4 h-4 text-emerald-400 shrink-0" />
               <span>হোয়াটসঅ্যাপ গ্রুপে যুক্ত হোন</span>
             </a>
 
-            <a href="https://www.facebook.com/share/g/18vu9Y5cja/" target="_blank" rel="noreferrer" className="flex items-center gap-2 text-blue-300 hover:text-blue-200 font-bold transition">
+            <a href="https://www.facebook.com/share/g/18vu9Y5cja/" target="_blank" rel="noreferrer" className="flex items-center gap-2 py-2 sm:py-0 text-blue-300 hover:text-blue-200 font-bold transition">
               <span className="w-4 h-4 rounded-full bg-[#1877F2] text-white flex items-center justify-center text-[10px] font-black shrink-0">f</span>
               <span>আমাদের ফেসবুক গ্রুপের সাথে যুক্ত হোন</span>
             </a>
 
-            <a href={FB_PAGE_URL} target="_blank" rel="noreferrer" className="flex items-center gap-2 text-blue-400 hover:text-blue-300 font-semibold transition">
+            <a href={FB_PAGE_URL} target="_blank" rel="noreferrer" className="flex items-center gap-2 py-2 sm:py-0 text-blue-400 hover:text-blue-300 font-semibold transition">
               <span className="w-4 h-4 rounded-full bg-[#1877F2] text-white flex items-center justify-center text-[10px] font-black shrink-0">f</span>
               <span>অফিসিয়াল ফেসবুক পেজ</span>
             </a>
 
-            <a href={YOUTUBE_URL} target="_blank" rel="noreferrer" className="flex items-center gap-2 text-red-400 hover:text-red-300 font-semibold transition">
+            <a href={YOUTUBE_URL} target="_blank" rel="noreferrer" className="flex items-center gap-2 py-2 sm:py-0 text-red-400 hover:text-red-300 font-semibold transition">
               <span className="w-4 h-4 rounded bg-[#FF0000] text-white flex items-center justify-center text-[8px] font-black shrink-0">▶</span>
               <span>আমাদের ইউটিউব চ্যানেল</span>
             </a>
 
             {settings?.telegramUrl && (
-              <a href={settings.telegramUrl} target="_blank" rel="noreferrer" className="flex items-center gap-2 text-sky-400 hover:text-sky-300 font-semibold transition">
+              <a href={settings.telegramUrl} target="_blank" rel="noreferrer" className="flex items-center gap-2 py-2 sm:py-0 text-sky-400 hover:text-sky-300 font-semibold transition">
                 <span className="w-4 h-4 text-[12px] leading-none shrink-0">✈️</span>
                 <span>টেলিগ্রামে প্রতিদিনের রেট আপডেট</span>
               </a>
@@ -156,7 +156,7 @@ export default function Footer({ lang, isStale = false, settings }) {
           <a 
             href="#admin" 
             title="Owner Login" 
-            className="text-slate-800 hover:text-slate-500 transition select-none cursor-pointer"
+            className="text-slate-800 hover:text-slate-500 transition select-none cursor-pointer max-sm:p-3 max-sm:-m-3"
           >
             🔒
           </a>

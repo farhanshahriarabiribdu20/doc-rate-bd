@@ -11,7 +11,19 @@ export default function ReadyMarketSection({ readyRates = [], lang = 'bn', setti
   // the master search can fill the box (n changes on every request)
   useEffect(() => { if (presetSearch?.n) setSearch(presetSearch.q || ''); }, [presetSearch?.n]); // eslint-disable-line react-hooks/exhaustive-deps
   const [selectedProduct, setSelectedProduct] = useState('all'); // 'all' | 'broiler' | 'sonali' | 'color' | 'egg' | 'ps'
-  const [viewMode, setViewMode] = useState('table'); // 'table' | 'cards'
+  const [viewMode, setViewMode] = useState(() => (typeof window !== 'undefined' && window.innerWidth < 640 ? 'cards' : 'table')); // 'table' | 'cards' (phones start with cards)
+
+  // phones: show a few hubs first, then a "show more" button
+  const PHONE_CARDS = 8;
+  const [limit, setLimit] = useState(PHONE_CARDS);
+  const [isPhone, setIsPhone] = useState(() => typeof window !== 'undefined' && window.matchMedia('(max-width: 639px)').matches);
+  useEffect(() => {
+    const mq = window.matchMedia('(max-width: 639px)');
+    const on = () => setIsPhone(mq.matches);
+    mq.addEventListener?.('change', on);
+    return () => mq.removeEventListener?.('change', on);
+  }, []);
+  useEffect(() => { setLimit(PHONE_CARDS); }, [search, selectedProduct]);
 
   const stats = getReadyMarketStats(readyRates);
   const dateISO = settings.readyDateISO;
@@ -124,7 +136,7 @@ export default function ReadyMarketSection({ readyRates = [], lang = 'bn', setti
             <button
               key={tab.id}
               onClick={() => setSelectedProduct(tab.id)}
-              className={`px-3 py-1.5 rounded-xl text-xs font-bold transition cursor-pointer ${
+              className={`px-3.5 py-2 sm:px-3 sm:py-1.5 rounded-xl text-xs font-bold transition cursor-pointer ${
                 selectedProduct === tab.id
                   ? 'bg-emerald-600 text-white shadow-xs'
                   : 'bg-slate-100 text-slate-700 hover:bg-slate-200'
@@ -151,7 +163,7 @@ export default function ReadyMarketSection({ readyRates = [], lang = 'bn', setti
           <div className="flex items-center bg-slate-100 p-1 rounded-xl border border-slate-200/80 shrink-0">
             <button
               onClick={() => setViewMode('table')}
-              className={`p-1.5 rounded-lg transition cursor-pointer ${
+              className={`p-2.5 sm:p-1.5 rounded-lg transition cursor-pointer ${
                 viewMode === 'table' ? 'bg-white text-emerald-700 shadow-2xs' : 'text-slate-500 hover:text-slate-900'
               }`}
               title="Table View"
@@ -160,7 +172,7 @@ export default function ReadyMarketSection({ readyRates = [], lang = 'bn', setti
             </button>
             <button
               onClick={() => setViewMode('cards')}
-              className={`p-1.5 rounded-lg transition cursor-pointer ${
+              className={`p-2.5 sm:p-1.5 rounded-lg transition cursor-pointer ${
                 viewMode === 'cards' ? 'bg-white text-emerald-700 shadow-2xs' : 'text-slate-500 hover:text-slate-900'
               }`}
               title="Cards View"
@@ -304,14 +316,15 @@ export default function ReadyMarketSection({ readyRates = [], lang = 'bn', setti
         </div>
       ) : (
         /* Cards View */
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-          {filtered.map((item) => {
+        <>
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 sm:gap-4">
+          {(isPhone ? filtered.slice(0, limit) : filtered).map((item) => {
             const regionDisplay = lang === 'bn' ? item.regionBn : item.regionEn;
 
             return (
               <div
                 key={item.id}
-                className="bg-white rounded-3xl p-5 border border-slate-200/90 shadow-xs hover:shadow-lg hover:border-emerald-300 transition-all flex flex-col justify-between"
+                className="bg-white rounded-3xl p-4 sm:p-5 border border-slate-200/90 shadow-xs hover:shadow-lg hover:border-emerald-300 transition-all flex flex-col justify-between"
               >
                 <div>
                   {/* Card Header */}
@@ -371,6 +384,15 @@ export default function ReadyMarketSection({ readyRates = [], lang = 'bn', setti
             );
           })}
         </div>
+        {isPhone && filtered.length > limit && (
+          <button
+            onClick={() => setLimit((n) => n + PHONE_CARDS)}
+            className="mt-4 w-full py-3.5 rounded-2xl bg-white border-2 border-emerald-600 text-emerald-700 font-black text-sm active:scale-[0.99] cursor-pointer"
+          >
+            আরও {Math.min(PHONE_CARDS, filtered.length - limit).toLocaleString('bn-BD')}টি মোকাম দেখুন ({(filtered.length - limit).toLocaleString('bn-BD')}টি বাকি)
+          </button>
+        )}
+        </>
       )}
     </section>
   );

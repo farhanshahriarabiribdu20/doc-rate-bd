@@ -184,3 +184,16 @@ html .text-\[10px\] { font-size: calc(10px * var(--fs)); }
 html .text-\[11px\] { font-size: calc(11px * var(--fs)); }
 html .text-\[12px\] { font-size: calc(12px * var(--fs)); }
 html .text-\[13px\] { font-size: calc(13px * var(--fs)); }
+
+/* ===== Phones: the tiny fixed-px labels are bumped one step so they stay readable ===== */
+@media (max-width: 639px) {
+  html .text-\[8px\] { font-size: calc(10px * var(--fs)); }
+  html .text-\[9px\] { font-size: calc(10.5px * var(--fs)); }
+  html .text-\[10px\] { font-size: calc(11px * var(--fs)); }
+}
+/* modals: phone browsers' address bar makes 100vh taller than what is visible, so use the dynamic viewport */
+@media (max-width: 639px) {
+  html .max-h-\[92vh\] { max-height: 92dvh; }
+  html .max-h-\[90vh\] { max-height: 90dvh; }
+  html .h-\[92vh\] { height: 92dvh; }
+}

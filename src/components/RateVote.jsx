@@ -30,13 +30,13 @@ export default function RateVote({ item, counts, mine, onVote }) {
   };
   const btn = (v, on, Icon, n, color, label) => (
     <button type="button" onClick={() => choose(v)} disabled={Boolean(mine)} aria-pressed={on} aria-label={label}
-      className={`inline-flex items-center gap-1 px-2.5 py-1 rounded-lg text-xs font-black border transition ${on ? `${color} text-white border-transparent` : 'bg-white dark:bg-slate-800 text-slate-600 dark:text-slate-300 border-slate-200 dark:border-slate-700'} ${mine ? 'cursor-default' : 'cursor-pointer hover:bg-slate-50'}`}>
+      className={`inline-flex items-center gap-1 px-3 py-1.5 sm:px-2.5 sm:py-1 rounded-lg text-xs font-black border transition ${on ? `${color} text-white border-transparent` : 'bg-white dark:bg-slate-800 text-slate-600 dark:text-slate-300 border-slate-200 dark:border-slate-700'} ${mine ? 'cursor-default' : 'cursor-pointer hover:bg-slate-50'}`}>
       <Icon className="w-3.5 h-3.5" /> {bn(n)}
     </button>
   );
 
   return (
-    <div className="mt-3 pt-3 border-t border-slate-100 dark:border-slate-800">
+    <div className="mt-2 pt-2 sm:mt-3 sm:pt-3 border-t border-slate-100 dark:border-slate-800">
       <div className="flex items-center justify-between gap-2">
         <span className="text-xs font-bold text-slate-700 dark:text-slate-300">এই রেট কি ঠিক আছে?</span>
         <div className="flex items-center gap-1.5">

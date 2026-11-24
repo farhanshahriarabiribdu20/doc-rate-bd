@@ -71,7 +71,7 @@ export default function TrendChart({ lang }) {
         </div>
         <div className="flex items-center bg-slate-100/90 p-1 rounded-2xl gap-1 border border-slate-200/60">
           {RANGES.map((r) => (
-            <button key={r} onClick={() => setRange(r)} className={`px-3 py-1.5 rounded-xl text-xs font-bold cursor-pointer transition ${range === r ? 'bg-white text-emerald-800 shadow-xs border border-slate-200/50' : 'text-slate-600 hover:text-slate-900'}`}>
+            <button key={r} onClick={() => setRange(r)} className={`px-3.5 py-2 sm:px-3 sm:py-1.5 rounded-xl text-xs font-bold cursor-pointer transition ${range === r ? 'bg-white text-emerald-800 shadow-xs border border-slate-200/50' : 'text-slate-600 hover:text-slate-900'}`}>
               {bn ? `${r} দিন` : `${r}d`}
             </button>
           ))}

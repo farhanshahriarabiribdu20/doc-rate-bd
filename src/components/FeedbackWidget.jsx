@@ -61,18 +61,18 @@ ${feedback.trim()}
   return (
     <>
       {/* Floating Trigger Button (Bottom Right) */}
-      <aside aria-label="Website Feedback" className="fixed bottom-5 right-5 z-40 flex items-center gap-2 group">
+      <aside aria-label="Website Feedback" className="fixed bottom-4 right-3 sm:bottom-5 sm:right-5 z-40 flex items-center gap-2 group">
         <button
           onClick={() => setIsOpen(true)}
-          className="flex items-center gap-2.5 px-4 py-3 bg-gradient-to-r from-emerald-600 via-teal-600 to-emerald-700 hover:bg-emerald-700 text-white font-extrabold text-xs sm:text-sm rounded-full shadow-2xl shadow-emerald-950/40 border border-emerald-300/40 hover:scale-105 active:scale-95 transition-all duration-300 cursor-pointer"
+          className="flex items-center justify-center gap-2.5 w-12 h-12 sm:w-auto sm:h-auto px-0 sm:px-4 sm:py-3 bg-gradient-to-r from-emerald-600 via-teal-600 to-emerald-700 hover:bg-emerald-700 text-white font-extrabold text-xs sm:text-sm rounded-full shadow-2xl shadow-emerald-950/40 border border-emerald-300/40 hover:scale-105 active:scale-95 transition-all duration-300 cursor-pointer"
           title={lang === 'bn' ? 'ওয়েবসাইট নিয়ে মতামত দিন' : 'Send Website Feedback'}
         >
-          <span className="relative flex h-3 w-3">
+          <span className="relative hidden sm:flex h-3 w-3">
             <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-300 opacity-75"></span>
             <span className="relative inline-flex rounded-full h-3 w-3 bg-white"></span>
           </span>
-          <MessageSquareText className="w-4 h-4 text-emerald-100" />
-          <span className="tracking-wide">
+          <MessageSquareText className="w-5 h-5 sm:w-4 sm:h-4 text-emerald-100" />
+          <span className="tracking-wide hidden sm:inline">
             {lang === 'bn' ? 'মতামত দিন' : 'Feedback'}
           </span>
         </button>
