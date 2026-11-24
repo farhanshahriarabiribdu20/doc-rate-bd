@@ -63,6 +63,16 @@ const READY_FIELDS = [
   { key: 'psCull', label: 'পিএস কাল' }
 ];
 
+/** Red number on the corner of a tab: something is waiting there. Nothing is drawn when there is nothing. */
+function TabBadge({ n }) {
+  if (!n) return null;
+  return (
+    <span aria-label={`${n}টি নতুন`} className="absolute -top-2 -right-1.5 min-w-5 h-5 px-1 grid place-items-center rounded-full bg-red-500 text-white text-[11px] leading-none font-black shadow ring-2 ring-white">
+      {n > 99 ? '99+' : n}
+    </span>
+  );
+}
+
 export default function AdminModal(props) {
   if (!props.isOpen) return null;
   return <AdminModalContent {...props} />;
@@ -265,9 +275,22 @@ function AdminModalContent({
     setFbLoading(false);
   }, [adminKey]);
 
+  // loaded right after login (for the tab badge) and again whenever the tab is opened
   useEffect(() => {
-    if (adminKey && activeTab === 'feedback') loadFeedbacks();
-  }, [adminKey, activeTab, loadFeedbacks]);
+    if (adminKey) loadFeedbacks();
+  }, [adminKey, activeTab === 'feedback', loadFeedbacks]); // eslint-disable-line react-hooks/exhaustive-deps
+
+  // the badge counts only messages not seen yet; opening the tab marks everything as seen
+  const [fbSeen, setFbSeen] = useState(() => {
+    try { return new Set(JSON.parse(localStorage.getItem('fn_admin_fb_seen') || '[]')); } catch { return new Set(); }
+  });
+  const newFeedbacks = feedbacks.filter((f) => !fbSeen.has(f.id)).length;
+  useEffect(() => {
+    if (activeTab !== 'feedback' || !feedbacks.length || !feedbacks.some((f) => !fbSeen.has(f.id))) return;
+    const next = new Set(feedbacks.map((f) => f.id));
+    setFbSeen(next);
+    try { localStorage.setItem('fn_admin_fb_seen', JSON.stringify([...next].slice(-300))); } catch { /* ignore */ }
+  }, [activeTab, feedbacks, fbSeen]);
 
   const filteredFeedbacks = feedbacks.filter((fb) => {
     if (selectedFbCat !== 'all' && fb.category !== selectedFbCat) return false;
@@ -591,7 +614,7 @@ function AdminModalContent({
     reader.readAsText(file);
   };
 
-  const tabClass = (id) => `px-4 py-2 rounded-xl text-xs font-bold transition flex items-center gap-1.5 cursor-pointer shrink-0 ${
+  const tabClass = (id) => `relative px-4 py-2 rounded-xl text-xs font-bold transition flex items-center gap-1.5 cursor-pointer shrink-0 ${
     activeTab === id ? 'bg-emerald-600 text-white' : 'bg-slate-100 text-slate-600 hover:bg-slate-200'
   }`;
 
@@ -725,7 +748,7 @@ function AdminModalContent({
             )}
 
             {/* Tabs */}
-            <div className="flex items-center gap-2 border-b border-slate-200 pb-3 overflow-x-auto">
+            <div className="flex flex-wrap items-center gap-x-2 gap-y-3 border-b border-slate-200 pb-3 pt-2">
               <button onClick={() => setActiveTab('doc')} className={tabClass('doc')}>
                 <Bird className="w-4 h-4" /> বাচ্চার দর (DOC)
               </button>
@@ -734,18 +757,14 @@ function AdminModalContent({
               </button>
               <button onClick={() => setActiveTab('submissions')} className={tabClass('submissions')}>
                 <Inbox className="w-4 h-4" /> ইউজার রেট
-                {subs.length > 0 && (
-                  <span className="ml-1 px-1.5 py-0.5 rounded-full text-[10px] bg-amber-400 text-slate-950 font-black">{subs.length}</span>
-                )}
+                <TabBadge n={subs.length} />
               </button>
               <button onClick={() => setActiveTab('gallery')} className={tabClass('gallery')}>
                 <ImagePlus className="w-4 h-4" /> রেট চার্ট ও ছবি
               </button>
               <button onClick={() => setActiveTab('market')} className={tabClass('market')}>
                 <Store className="w-4 h-4" /> বিক্রেতার বিজ্ঞাপন
-                {(market?.items || []).some((i) => i.status === 'pending') && (
-                  <span className="ml-1 px-1.5 py-0.5 rounded-full text-[10px] bg-amber-400 text-slate-950 font-black">{market.items.filter((i) => i.status === 'pending').length}</span>
-                )}
+                <TabBadge n={(market?.items || []).filter((i) => i.status === 'pending').length} />
               </button>
               <button onClick={() => setActiveTab('feedprices')} className={tabClass('feedprices')}>
                 <Wheat className="w-4 h-4" /> ফিডের দাম
@@ -755,9 +774,7 @@ function AdminModalContent({
               </button>
               <button onClick={() => setActiveTab('feedback')} className={tabClass('feedback')}>
                 <MessageSquareText className="w-4 h-4" /> মতামত ও পরামর্শ
-                {feedbacks.length > 0 && (
-                  <span className="ml-1 px-1.5 py-0.5 rounded-full text-[10px] bg-amber-400 text-slate-950 font-black">{feedbacks.length}</span>
-                )}
+                <TabBadge n={activeTab === 'feedback' ? 0 : newFeedbacks} />
               </button>
               <button onClick={() => setActiveTab('excel')} className={tabClass('excel')}>
                 <FileSpreadsheet className="w-4 h-4" /> এক্সেল আপলোড
