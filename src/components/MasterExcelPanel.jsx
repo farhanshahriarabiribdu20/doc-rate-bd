@@ -55,11 +55,11 @@ export default function MasterExcelPanel({ rates, reportDateISO, onApply }) {
   return (
     <div className="border-2 border-sky-300 bg-sky-50/60 rounded-2xl p-4 space-y-3">
       <h4 className="font-black text-slate-900 text-sm flex items-center gap-1.5">
-        <FileSpreadsheet className="w-4 h-4 text-sky-700" /> মাস্টার গ্রেড এক্সেল আপলোড (A / M / B+ / B — ২০ জোন)
+        <FileSpreadsheet className="w-4 h-4 text-sky-700" /> মাস্টার গ্রেড এক্সেল আপলোড (A / M / B+ — ২০ জোন)
       </h4>
       <p className="text-xs text-slate-600 leading-relaxed">
         "DOC Rate Master Grades" ফাইল (.xlsx) আপলোড করুন। ফাইলের সব ঘর আগে যাচাই হয়। কোনো ভুল থাকলে ঠিক কোন ঘরে ভুল তা দেখানো হবে এবং কিছুই বসবে না।
-        কার্ডের মূল রেট হবে <b>A গ্রেড</b>, আর চারটি গ্রেডের রেটই কার্ডে দেখা যাবে।
+        কার্ডের মূল রেট হবে <b>A গ্রেড</b>, আর A, M ও B+ — এই তিনটি গ্রেডের রেট কার্ডে দেখা যাবে। B গ্রেডের কলাম বাদ যাবে, সেখানে কিছু লেখা থাকলেও নেওয়া হবে না।
       </p>
 
       <input ref={fileRef} type="file" accept=".xlsx" onChange={handleFile} className="hidden" />
@@ -154,7 +154,7 @@ export default function MasterExcelPanel({ rates, reportDateISO, onApply }) {
                   ))}
                 </tbody>
               </table>
-              <p className="p-2 text-[10px] text-slate-500">A/M/B+/B কলামে সংখ্যাটি হলো সেই গ্রেডে কতটি জোনের রেট আছে।</p>
+              <p className="p-2 text-[10px] text-slate-500">A/M/B+ কলামে সংখ্যাটি হলো সেই গ্রেডে কতটি জোনের রেট আছে।</p>
             </div>
           )}
 

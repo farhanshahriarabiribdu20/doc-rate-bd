@@ -4,13 +4,13 @@
 //   row 6  bird type   (Broiler / Layer / Colour Bird / Sonali / Cock)   - written once, at the first column of its block
 //   row 7  company                                                       - once per company block
 //   row 8  breed                                                         - once per breed block
-//   row 9  grade       A / M / B+ / B  (one column each)
+//   row 9  grade       A / M / B+  (one column each; the plain "B" column is skipped)
 //   rows 10..29  one row per zone (name in column B), the cells hold the rate
 // A rate is therefore  type + company + breed + grade + zone.
 //
 // Nothing here changes the site: the admin reviews `errors` / `warnings` and the plan first.
 import { ZONES, zoneIdFromName, deriveFromZones } from '../data/zones.js';
-import { MASTER_GRADES } from '../data/grades.js';
+import { MASTER_GRADES, IGNORED_GRADES } from '../data/grades.js';
 import { ITEM_MAP, COMPANY_KEY, COMPANY_BN } from './excelRates.js';
 
 const norm = (s) => String(s ?? '').toLowerCase().replace(/[^a-z0-9]/g, '');
@@ -131,6 +131,7 @@ export function parseMasterWorkbook(sheets) {
       if (co != null && String(co).trim()) company = clean(co);
       if (b != null && String(b).trim()) breed = clean(b);
       const gRaw = at(9, c);
+      if (IGNORED_GRADES.includes(String(gRaw ?? '').toUpperCase().replace(/\s+/g, ''))) continue; // plain "B" is not used on the site
       const g = gradeKey(gRaw);
       const letter = colLetter(c);
 
@@ -146,7 +147,7 @@ export function parseMasterWorkbook(sheets) {
       }
       if (!any) continue; // an empty column is simply not part of this day
 
-      if (!g) { errors.push({ cell: `${letter}9`, msg: `এই কলামে রেট আছে কিন্তু গ্রেড "${clean(gRaw)}" চেনা যায়নি (A, M, B+, B হতে হবে)` }); continue; }
+      if (!g) { errors.push({ cell: `${letter}9`, msg: `এই কলামে রেট আছে কিন্তু গ্রেড "${clean(gRaw)}" চেনা যায়নি (A, M বা B+ হতে হবে)` }); continue; }
       if (!tKey || !company || !breed) {
         errors.push({ cell: `${letter}6`, msg: `এই কলামে রেট আছে কিন্তু ${!tKey ? 'পাখির ধরন' : !company ? 'কোম্পানির নাম' : 'ব্রিডের নাম'} নেই` });
         continue;
@@ -178,7 +179,7 @@ export function parseMasterWorkbook(sheets) {
       }
     }
 
-    // soft check: a better grade should not be cheaper than a lower one in the same zone (A >= M >= B+ >= B)
+    // soft check: a better grade should not be cheaper than a lower one in the same zone (A >= M >= B+)
     for (const col of columns.values()) {
       for (const { r, id } of zoneRows) {
         let prev = null;

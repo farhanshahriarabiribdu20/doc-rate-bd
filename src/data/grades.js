@@ -11,10 +11,11 @@ export const GRADE_STYLE = {
 
 export const normalizeGrade = (g) => (GRADES.includes(g) ? g : 'A');
 
-// ---- grade split from the "Master Grades" Excel: A / M / B+ / B ----------------------------
-// item.gradeRates = { A: { zoneId: rate }, M: {...}, 'B+': {...}, B: {...} }  (only the filled cells)
-export const MASTER_GRADES = ['A', 'M', 'B+', 'B'];
-export const MASTER_GRADE_BN = { A: 'এ', M: 'এম', 'B+': 'বি+', B: 'বি' };
+// ---- grade split from the "Master Grades" Excel: A / M / B+ ----------------------------
+// item.gradeRates = { A: { zoneId: rate }, M: {...}, 'B+': {...} }  (only the filled cells)
+// The site shows three grades. The plain "B" column of the Excel is not imported or shown.
+export const MASTER_GRADES = ['A', 'M', 'B+'];
+export const IGNORED_GRADES = ['B'];
 
 export const hasGradeRates = (item) => Boolean(item?.gradeRates && MASTER_GRADES.some((g) => item.gradeRates[g] && Object.keys(item.gradeRates[g]).length));
 

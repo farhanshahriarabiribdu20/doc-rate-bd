@@ -87,7 +87,7 @@ const num = (v) => {
 const RATE_CATEGORIES = ['broiler', 'sonali', 'layer_brown', 'layer_white', 'cockerel'];
 const RATE_STATUSES = ['available', 'booking_open', 'limited'];
 const ZONE_IDS = ['narayanganj', 'gazipur', 'narsingdi', 'tangail', 'kishoreganj', 'mymensingh', 'cumilla', 'noakhali', 'chattogram', 'sylhet', 'faridpur', 'gopalgonj', 'jhenaidah', 'khulna', 'barishal', 'bogura', 'rajshahi', 'sirajgonj', 'rangpur', 'dinajpur'];
-const GRADE_KEYS = ['A', 'M', 'B+', 'B'];
+const GRADE_KEYS = ['A', 'M', 'B+']; // plain B is not kept
 const DIVISION_IDS = ['dhaka', 'chittagong', 'rajshahi', 'rangpur', 'khulna', 'sylhet', 'mymensingh', 'barisal'];
 
 const genId = (prefix) => `${prefix}-${Date.now()}-${Math.random().toString(36).slice(2, 7)}`;
@@ -108,7 +108,7 @@ export function sanitizeRates(input) {
         if (item.zoneRates[z] !== undefined) zoneRates[z] = num(item.zoneRates[z]);
       }
     }
-    // grade split (A / M / B+ / B) from the Master Grades Excel: only filled zones are kept
+    // grade split (A / M / B+) from the Master Grades Excel: only filled zones are kept
     const gradeRates = {};
     if (item.gradeRates && typeof item.gradeRates === 'object') {
       for (const g of GRADE_KEYS) {
