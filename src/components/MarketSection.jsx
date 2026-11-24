@@ -111,12 +111,12 @@ export default function MarketSection({ lang, onOpenSeller, refreshKey }) {
           <div>
             <h2 className="font-black text-lg sm:text-xl">{bn ? 'বিক্রির বাজার — সরাসরি বিক্রেতার কাছ থেকে' : 'Marketplace — buy direct from sellers'}</h2>
             <p className="text-xs sm:text-sm text-emerald-100 mt-0.5">
-              {bn ? 'রেডি মুরগি, ডিম বা হাঁস বিক্রি করতে চান? ফ্রি অ্যাকাউন্ট খুলে বিজ্ঞাপন দিন।' : 'Want to sell ready birds or eggs? Open a free account and post an ad.'}
+              {bn ? 'রেডি মুরগি, ডিম বা হাঁস বিক্রি করতে চান? লগইন ছাড়াই নাম, নম্বর ও এলাকা দিয়ে ফ্রি বিজ্ঞাপন দিন।' : 'Want to sell ready birds or eggs? Post a free ad with just your name, number and location — no login.'}
             </p>
           </div>
         </div>
         <button onClick={onOpenSeller} className="px-5 py-3 rounded-xl bg-amber-400 hover:bg-amber-300 text-slate-950 font-black text-sm shadow-sm cursor-pointer shrink-0">
-          🧑‍🌾 {bn ? 'বিক্রি করুন / লগইন' : 'Sell / Login'}
+          🧑‍🌾 {bn ? 'বিজ্ঞাপন দিন (লগইন ছাড়া)' : 'Post an ad (no login)'}
         </button>
       </div>
 

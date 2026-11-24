@@ -1,8 +1,8 @@
 import React, { useEffect, useState, useCallback } from 'react';
 import { DISTRICT_GROUPS } from '../data/districts';
-import { X, LogOut, Loader2, CheckCircle2, AlertTriangle, Trash2, RefreshCw, BadgeCheck, PlusCircle } from 'lucide-react';
+import { X, Loader2, CheckCircle2, AlertTriangle, Trash2, RefreshCw, BadgeCheck, PlusCircle } from 'lucide-react';
 import {
-  getSeller, saveSeller, clearSeller, registerSeller, loginSeller, fetchMine, createListing, updateListing,
+  getMyAds, addMyAd, removeMyAd, getProfile, saveProfile, postListing, fetchMine, updateListing,
   PRODUCT_OPTIONS, PRODUCT_BN, UNIT_OPTIONS, UNIT_BN
 } from '../services/market';
 
@@ -21,66 +21,48 @@ const STATUS = {
 const emptyForm = { product: 'broiler', quantity: '', unit: 'kg', price: '', district: '', location: '', details: '' };
 
 /**
- * Seller area: open a free account (user id + password), log in, post ready-bird / egg ads and
- * manage them (mark sold, renew, delete). Ads wait for the admin's approval unless the admin turned
- * that off.
+ * Post an ad without any account: name, mobile number, location and the product. The ad waits for the
+ * admin's approval unless the admin turned that off. This browser remembers its own ads (with a
+ * private edit key) so the poster can mark them sold, renew or delete them.
  */
 export default function SellerModal({ onClose, onChanged }) {
-  const [session, setSession] = useState(() => getSeller());
-  const [mode, setMode] = useState('login'); // 'login' | 'register'
-  const [auth, setAuth] = useState({ userId: '', password: '', name: '', phone: '', website: '' });
+  const [profile, setProfile] = useState(() => ({ name: '', phone: '', ...getProfile() }));
+  const [website, setWebsite] = useState(''); // honeypot
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState('');
   const [notice, setNotice] = useState('');
   const [form, setForm] = useState(emptyForm);
   const [mine, setMine] = useState(null);
-  const [view, setView] = useState('mine'); // 'mine' | 'new'
-  const [openedAt] = useState(() => Date.now());
+  const [view, setView] = useState(() => (getMyAds().length ? 'mine' : 'new')); // 'mine' | 'new'
+  const [openedAt, setOpenedAt] = useState(() => Date.now());
 
-  const logout = useCallback(() => {
-    clearSeller();
-    setSession(null);
-    setMine(null);
-    setMode('login');
+  const loadMine = useCallback(async () => {
+    const refs = getMyAds();
+    if (!refs.length) { setMine([]); return; }
+    const r = await fetchMine(refs);
+    if (!r.ok) { setMine([]); return; }
+    // ads the server no longer has (deleted / expired away) are forgotten
+    const known = new Set(r.items.map((it) => it.id));
+    refs.forEach((x) => { if (!known.has(x.id)) removeMyAd(x.id); });
+    setMine(r.items);
   }, []);
 
-  const loadMine = useCallback(async (s = session) => {
-    if (!s) return;
-    const r = await fetchMine(s.token);
-    if (r.status === 401) { logout(); setError('আবার লগইন করুন'); return; }
-    if (r.ok) setMine(r.items); else setMine([]);
-  }, [session, logout]);
+  useEffect(() => { loadMine(); }, [loadMine]);
 
-  useEffect(() => { if (session) loadMine(session); /* eslint-disable-next-line */ }, [session?.token]);
-
-  const setA = (k) => (e) => setAuth((a) => ({ ...a, [k]: e.target.value }));
+  const setP = (k) => (e) => setProfile((p) => ({ ...p, [k]: e.target.value }));
   const setF = (k) => (e) => setForm((f) => ({ ...f, [k]: e.target.value }));
-
-  const submitAuth = async (e) => {
-    e.preventDefault();
-    if (busy) return;
-    setBusy(true); setError('');
-    const r = mode === 'register'
-      ? await registerSeller({ ...auth, formMs: Date.now() - openedAt })
-      : await loginSeller(auth.userId, auth.password);
-    setBusy(false);
-    if (!r.ok || !r.token) { setError(r.error || 'সমস্যা হয়েছে, আবার চেষ্টা করুন'); return; }
-    saveSeller(r.token, r.user);
-    setSession({ token: r.token, user: r.user });
-    setAuth({ userId: '', password: '', name: '', phone: '', website: '' });
-    setView(mode === 'register' ? 'new' : 'mine');
-    setNotice(mode === 'register' ? 'অ্যাকাউন্ট খোলা হয়েছে! এবার আপনার প্রথম বিজ্ঞাপন দিন।' : '');
-  };
 
   const submitListing = async (e) => {
     e.preventDefault();
     if (busy) return;
     setBusy(true); setError(''); setNotice('');
-    const r = await createListing(session.token, form);
+    const r = await postListing({ ...form, name: profile.name, phone: profile.phone, website, formMs: Date.now() - openedAt });
     setBusy(false);
-    if (r.status === 401) { logout(); setError('আবার লগইন করুন'); return; }
     if (!r.ok) { setError(r.error || 'বিজ্ঞাপন জমা হয়নি'); return; }
+    if (r.id && r.editKey) addMyAd(r.id, r.editKey);
+    saveProfile({ name: profile.name, phone: profile.phone });
     setForm(emptyForm);
+    setOpenedAt(Date.now());
     setView('mine');
     setNotice(r.status === 'pending' ? 'বিজ্ঞাপন জমা হয়েছে। অ্যাডমিন অনুমোদন দিলে সাইটে দেখা যাবে।' : 'বিজ্ঞাপন সাইটে চালু হয়েছে!');
     await loadMine();
@@ -90,10 +72,11 @@ export default function SellerModal({ onClose, onChanged }) {
   const act = async (id, op) => {
     if (op === 'delete' && !window.confirm('বিজ্ঞাপনটি মুছে ফেলবেন?')) return;
     setBusy(true); setError(''); setNotice('');
-    const r = await updateListing(session.token, id, op);
+    const ad = getMyAds().find((x) => x.id === id);
+    const r = await updateListing(id, ad?.key, op);
     setBusy(false);
-    if (r.status === 401) { logout(); setError('আবার লগইন করুন'); return; }
     if (!r.ok) { setError(r.error || 'সমস্যা হয়েছে'); return; }
+    if (op === 'delete') removeMyAd(id);
     await loadMine();
     onChanged?.();
   };
@@ -103,65 +86,17 @@ export default function SellerModal({ onClose, onChanged }) {
       <div className="w-full sm:max-w-lg max-h-[92vh] overflow-y-auto bg-white rounded-t-3xl sm:rounded-3xl shadow-2xl" onClick={(e) => e.stopPropagation()}>
         <div className="sticky top-0 z-10 flex items-center justify-between gap-3 px-5 py-4 bg-emerald-900 text-white rounded-t-3xl">
           <div>
-            <h3 className="font-black text-base">🧑‍🌾 {session ? `স্বাগতম, ${session.user.name}` : 'বিক্রেতা অ্যাকাউন্ট'}</h3>
-            <p className="text-[11px] text-emerald-100">{session ? `ইউজার আইডি: ${session.user.userId}` : 'ফ্রি অ্যাকাউন্ট খুলে আপনার মুরগি/ডিম বিক্রির বিজ্ঞাপন দিন।'}</p>
+            <h3 className="font-black text-base">🧑‍🌾 বিজ্ঞাপন দিন</h3>
+            <p className="text-[11px] text-emerald-100">কোনো লগইন লাগবে না — নাম, মোবাইল নম্বর ও এলাকা দিলেই হবে।</p>
           </div>
-          <div className="flex items-center gap-1">
-            {session && (
-              <button onClick={logout} className="flex items-center gap-1 px-2.5 py-1.5 rounded-lg text-xs font-bold hover:bg-white/15 cursor-pointer"><LogOut className="w-4 h-4" /> লগআউট</button>
-            )}
-            <button onClick={onClose} aria-label="Close" className="p-1.5 rounded-full hover:bg-white/15 cursor-pointer"><X className="w-5 h-5" /></button>
-          </div>
+          <button onClick={onClose} aria-label="Close" className="p-1.5 rounded-full hover:bg-white/15 cursor-pointer"><X className="w-5 h-5" /></button>
         </div>
 
         <div className="p-5 space-y-4">
           {error && <div className="flex items-start gap-2 p-3 rounded-xl bg-red-50 border border-red-200 text-red-700 text-sm font-bold"><AlertTriangle className="w-4 h-4 mt-0.5 shrink-0" /> {error}</div>}
           {notice && <div className="flex items-start gap-2 p-3 rounded-xl bg-emerald-50 border border-emerald-200 text-emerald-800 text-sm font-bold"><CheckCircle2 className="w-4 h-4 mt-0.5 shrink-0" /> {notice}</div>}
 
-          {!session ? (
-            <form onSubmit={submitAuth} className="space-y-3">
-              <div className="grid grid-cols-2 gap-2">
-                {[['login', 'লগইন'], ['register', 'নতুন অ্যাকাউন্ট']].map(([k, t]) => (
-                  <button key={k} type="button" onClick={() => { setMode(k); setError(''); }} className={`px-3 py-2.5 rounded-xl text-xs font-black border-2 cursor-pointer transition ${mode === k ? 'bg-emerald-600 text-white border-emerald-600' : 'bg-white text-slate-700 border-slate-200 hover:border-emerald-300'}`}>{t}</button>
-                ))}
-              </div>
-
-              {mode === 'register' && (
-                <>
-                  <div>
-                    <label className={label}>আপনার নাম / ফার্মের নাম *</label>
-                    <input className={input} value={auth.name} onChange={setA('name')} maxLength={60} required placeholder="যেমন: রহিম পোল্ট্রি ফার্ম" />
-                  </div>
-                  <div>
-                    <label className={label}>মোবাইল নম্বর * <span className="font-normal text-slate-500">(ক্রেতারা এই নম্বরে যোগাযোগ করবে)</span></label>
-                    <input className={input} value={auth.phone} onChange={setA('phone')} inputMode="tel" maxLength={20} required placeholder="01XXXXXXXXX" />
-                  </div>
-                </>
-              )}
-
-              <div>
-                <label className={label}>ইউজার আইডি *{mode === 'register' && <span className="font-normal text-slate-500"> (ইংরেজি ছোট হাতের অক্ষর, সংখ্যা, _)</span>}</label>
-                <input className={input} value={auth.userId} onChange={setA('userId')} maxLength={20} required autoComplete="username" autoCapitalize="none" placeholder="rahim_farm" />
-              </div>
-              <div>
-                <label className={label}>পাসওয়ার্ড *{mode === 'register' && <span className="font-normal text-slate-500"> (কমপক্ষে ৬ অক্ষর)</span>}</label>
-                <input type="password" className={input} value={auth.password} onChange={setA('password')} maxLength={100} required autoComplete={mode === 'register' ? 'new-password' : 'current-password'} />
-              </div>
-
-              {/* honeypot: real people never see or fill this */}
-              <input tabIndex={-1} autoComplete="off" value={auth.website} onChange={setA('website')} aria-hidden="true" className="hidden" />
-
-              <button disabled={busy} className="w-full flex items-center justify-center gap-2 px-4 py-3 rounded-xl bg-emerald-600 hover:bg-emerald-700 disabled:opacity-60 text-white font-black text-sm cursor-pointer">
-                {busy && <Loader2 className="w-4 h-4 animate-spin" />} {mode === 'register' ? 'অ্যাকাউন্ট খুলুন (ফ্রি)' : 'লগইন করুন'}
-              </button>
-              <p className="text-[11px] text-slate-500 leading-relaxed">
-                {mode === 'register'
-                  ? 'আপনার নাম ও মোবাইল নম্বর আপনার বিজ্ঞাপনের সাথে সবার কাছে দেখানো হবে। পাসওয়ার্ড ভুলে গেলে অ্যাডমিনের সাথে যোগাযোগ করুন।'
-                  : 'নতুন হলে উপরে "নতুন অ্যাকাউন্ট" চাপুন — অ্যাকাউন্ট খোলা সম্পূর্ণ ফ্রি।'}
-              </p>
-            </form>
-          ) : (
-            <>
+          <>
               <div className="grid grid-cols-2 gap-2">
                 <button onClick={() => { setView('mine'); setNotice(''); }} className={`px-3 py-2.5 rounded-xl text-xs font-black border-2 cursor-pointer transition ${view === 'mine' ? 'bg-emerald-600 text-white border-emerald-600' : 'bg-white text-slate-700 border-slate-200 hover:border-emerald-300'}`}>📋 আমার বিজ্ঞাপন</button>
                 <button onClick={() => { setView('new'); setNotice(''); }} className={`flex items-center justify-center gap-1 px-3 py-2.5 rounded-xl text-xs font-black border-2 cursor-pointer transition ${view === 'new' ? 'bg-emerald-600 text-white border-emerald-600' : 'bg-white text-slate-700 border-slate-200 hover:border-emerald-300'}`}><PlusCircle className="w-4 h-4" /> নতুন বিজ্ঞাপন</button>
@@ -169,6 +104,14 @@ export default function SellerModal({ onClose, onChanged }) {
 
               {view === 'new' ? (
                 <form onSubmit={submitListing} className="space-y-3">
+                  <div>
+                    <label className={label}>আপনার নাম / ফার্মের নাম *</label>
+                    <input className={input} value={profile.name} onChange={setP('name')} maxLength={60} required autoComplete="name" placeholder="যেমন: রহিম পোল্ট্রি ফার্ম" />
+                  </div>
+                  <div>
+                    <label className={label}>মোবাইল নম্বর * <span className="font-normal text-slate-500">(ক্রেতারা এই নম্বরে যোগাযোগ করবে)</span></label>
+                    <input className={input} value={profile.phone} onChange={setP('phone')} inputMode="tel" autoComplete="tel" maxLength={20} required placeholder="01XXXXXXXXX" />
+                  </div>
                   <div>
                     <label className={label}>কী বিক্রি করবেন? *</label>
                     <select className={input} value={form.product} onChange={setF('product')}>
@@ -210,10 +153,12 @@ export default function SellerModal({ onClose, onChanged }) {
                     <label className={label}>অন্যান্য তথ্য <span className="font-normal text-slate-500">(ঐচ্ছিক, সর্বোচ্চ ৩০০ অক্ষর)</span></label>
                     <textarea className={input} rows={3} value={form.details} onChange={setF('details')} maxLength={300} placeholder="যেমন: ওজন ১.৮ কেজির মতো, ফার্ম থেকে সরাসরি, ডেলিভারি আছে" />
                   </div>
+                  {/* honeypot: real people never see or fill this */}
+                  <input tabIndex={-1} autoComplete="off" value={website} onChange={(e) => setWebsite(e.target.value)} aria-hidden="true" className="hidden" />
                   <button disabled={busy} className="w-full flex items-center justify-center gap-2 px-4 py-3 rounded-xl bg-emerald-600 hover:bg-emerald-700 disabled:opacity-60 text-white font-black text-sm cursor-pointer">
                     {busy && <Loader2 className="w-4 h-4 animate-spin" />} বিজ্ঞাপন জমা দিন
                   </button>
-                  <p className="text-[11px] text-slate-500">বিজ্ঞাপন ১০ দিন চালু থাকে। অ্যাডমিন যাচাই করে অনুমোদন দিলে সাইটে দেখা যাবে।</p>
+                  <p className="text-[11px] text-slate-500">বিজ্ঞাপন ১০ দিন চালু থাকে। আপনার নাম ও নম্বর বিজ্ঞাপনের সাথে সবাইকে দেখানো হবে। অ্যাডমিন যাচাই করে অনুমোদন দিলে সাইটে দেখা যাবে।</p>
                 </form>
               ) : (
                 <div className="space-y-3">
@@ -222,7 +167,7 @@ export default function SellerModal({ onClose, onChanged }) {
                   ) : mine.length === 0 ? (
                     <div className="py-10 text-center space-y-2">
                       <div className="text-4xl">📭</div>
-                      <p className="font-black text-slate-800">এখনো কোনো বিজ্ঞাপন দেননি</p>
+                      <p className="font-black text-slate-800">এই ফোন/ব্রাউজার থেকে কোনো বিজ্ঞাপন দেওয়া হয়নি</p>
                       <button onClick={() => setView('new')} className="px-4 py-2 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white font-black text-xs cursor-pointer">+ প্রথম বিজ্ঞাপন দিন</button>
                     </div>
                   ) : mine.map((it) => {
@@ -251,8 +196,7 @@ export default function SellerModal({ onClose, onChanged }) {
                   })}
                 </div>
               )}
-            </>
-          )}
+          </>
         </div>
       </div>
     </div>

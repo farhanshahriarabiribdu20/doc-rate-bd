@@ -1,16 +1,17 @@
-import { put, get } from '@vercel/blob';
-import { createHmac, randomBytes, scrypt, timingSafeEqual } from 'node:crypto';
+import { createHmac, randomBytes, timingSafeEqual } from 'node:crypto';
 import { noStore, parseBody, requireAdmin } from './_lib.js';
 import { readFresh, writeFresh } from './_fresh.js';
 import { DISTRICTS } from '../src/data/districts.js';
 
-// Seller marketplace: anyone can open a free seller account (user id + password), log in and post
-// ready-bird / egg listings. Everybody can browse the live listings.
+// Seller marketplace: NO login. Anyone posts a listing with name, mobile number and location. The
+// seller is identified by the mobile number; the browser that posted keeps a private edit key per
+// listing so the poster can mark it sold / renew / delete it later.
 //
 //   GET  ?                         (public) -> live listings (CDN cached)
-//   POST {action:'register'}       (public) -> create a seller account, returns a login token
-//   POST {action:'login'}          (public) -> log in, returns a login token
-//   POST {action:'mine'|'create'|'update'}  (seller token) -> my listings / new listing / sold, renew, delete
+//   POST {action:'post'}           (public) -> new listing, returns {id, editKey}
+//   POST {action:'mine'}           (public) -> status of my listings, given [{id, key}] from this browser
+//   POST {action:'update'}         (public, needs the listing's editKey) -> sold, renew, delete
+//   POST {action:'rate'}           (public) -> buyer star rating
 //   GET  ?admin=1                  (admin)  -> everything incl. pending listings and settings
 //   POST {action:'admin'}          (admin)  -> approve, hide, delete, ban, approval on/off
 //
@@ -19,10 +20,12 @@ import { DISTRICTS } from '../src/data/districts.js';
 // costs one write; browsing costs nothing (CDN cache).
 const LISTINGS_PATH = 'market/listings.json';
 const USER_PREFIX = 'market/u/';
-const TOKEN_TTL_MS = 30 * 24 * 3600 * 1000;
 const LISTING_TTL_MS = 10 * 24 * 3600 * 1000;
 const KEEP_MS = 30 * 24 * 3600 * 1000; // old listings are dropped after this
-const MAX_ACTIVE_PER_SELLER = 5;
+const MAX_ACTIVE_PER_SELLER = 5; // per phone number
+const MAX_ACTIVE_PER_IP = 8;
+const MAX_POSTS_PER_IP_DAY = 10;
+const MAX_MINE = 20;
 const MAX_ITEMS = 600;
 const MAX_RATED_SELLERS = 500;
 const MAX_VOTERS = 100; // per seller
@@ -39,49 +42,7 @@ const secret = () => process.env.MARKET_SECRET || process.env.ADMIN_PASSWORD || 
 const hmac = (data) => createHmac('sha256', secret()).update(data).digest();
 const b64 = (buf) => Buffer.from(buf).toString('base64url');
 
-const userPath = (userId) => `${USER_PREFIX}${hmac(`user:${userId}`).toString('hex').slice(0, 40)}.json`;
-
-const scryptAsync = (password, salt) =>
-  new Promise((resolve, reject) => scrypt(password, salt, 32, (err, key) => (err ? reject(err) : resolve(key))));
-
-// ---------- tokens ----------
-function makeToken(user) {
-  const payload = b64(JSON.stringify({ u: user.userId, n: user.name, p: user.phone, exp: Date.now() + TOKEN_TTL_MS }));
-  return `${payload}.${b64(hmac(`token:${payload}`))}`;
-}
-
-function readToken(token) {
-  if (typeof token !== 'string' || token.length > 600) return null;
-  const [payload, sig] = token.split('.');
-  if (!payload || !sig) return null;
-  const expected = hmac(`token:${payload}`);
-  let given;
-  try { given = Buffer.from(sig, 'base64url'); } catch { return null; }
-  if (given.length !== expected.length || !timingSafeEqual(given, expected)) return null;
-  try {
-    const data = JSON.parse(Buffer.from(payload, 'base64url').toString('utf8'));
-    if (!data || typeof data.u !== 'string' || !(data.exp > Date.now())) return null;
-    return { userId: data.u, name: str(data.n, 80), phone: str(data.p, 20) };
-  } catch { return null; }
-}
-
-// ---------- blob helpers ----------
-async function readJson(path) {
-  try {
-    const r = await get(path, { access: 'public', useCache: false });
-    if (!r || r.statusCode !== 200) return null;
-    return JSON.parse(await new Response(r.stream).text());
-  } catch { return null; }
-}
-
-const writeJson = (path, data) =>
-  put(path, JSON.stringify(data), {
-    access: 'public',
-    addRandomSuffix: false,
-    allowOverwrite: true,
-    contentType: 'application/json',
-    cacheControlMaxAge: 60
-  });
+const hashKey = (key) => hmac(`edit:${key}`).toString('hex').slice(0, 32);
 
 const emptyStore = () => ({ settings: { requireApproval: true }, banned: [], verified: [], ratings: {}, items: [] });
 
@@ -163,108 +124,92 @@ function validateListing(body) {
   return { value: { product, unit, quantity, price, location, district, details } };
 }
 
-// ---------- accounts ----------
+// ---------- posting (no account) ----------
 const USER_RE = /^[a-z0-9_]{3,20}$/;
 const PHONE_RE = /^(?:\+?88)?(01[3-9]\d{8})$/;
-
 const bnDigits = (s) => String(s || '').replace(/[০-৯]/g, (d) => '০১২৩৪৫৬৭৮৯'.indexOf(d));
+const clientIp = (req) => String(req.headers?.['x-forwarded-for'] || req.headers?.['x-real-ip'] || '').split(',')[0].trim() || 'unknown';
 
-async function register(body, res) {
-  if (body.website) return res.status(200).json({ success: true, token: '' }); // honeypot: pretend it worked
+async function postListing(body, req, res) {
+  if (body.website) return res.status(200).json({ success: true, id: '', editKey: '', status: 'pending' }); // honeypot: pretend it worked
   const elapsed = Number(body.formMs);
   if (Number.isFinite(elapsed) && elapsed < MIN_FORM_MS) return res.status(429).json({ success: false, error: 'একটু ধীরে, আবার চেষ্টা করুন' });
 
-  const userId = str(body.userId, 30).toLowerCase();
-  if (!USER_RE.test(userId)) return res.status(400).json({ success: false, error: 'ইউজার আইডি ৩–২০ অক্ষরের হতে হবে (a-z, 0-9, _)' });
-  const password = typeof body.password === 'string' ? body.password : '';
-  if (password.length < 6 || password.length > 100) return res.status(400).json({ success: false, error: 'পাসওয়ার্ড কমপক্ষে ৬ অক্ষরের দিন' });
   const name = str(body.name, 60);
   if (name.length < 2) return res.status(400).json({ success: false, error: 'আপনার নাম / ফার্মের নাম দিন' });
   const phoneMatch = PHONE_RE.exec(bnDigits(str(body.phone, 20)).replace(/[\s-]/g, ''));
   if (!phoneMatch) return res.status(400).json({ success: false, error: 'সঠিক মোবাইল নম্বর দিন (01XXXXXXXXX)' });
+  const phone = phoneMatch[1];
+  const parsed = validateListing(body);
+  if (parsed.error) return res.status(400).json({ success: false, error: parsed.error });
 
-  const path = userPath(userId);
-  if (await readJson(path)) return res.status(409).json({ success: false, error: 'এই ইউজার আইডি আগেই নেওয়া হয়েছে, অন্য একটি দিন' });
-
-  const salt = randomBytes(16);
-  const hash = await scryptAsync(password, salt);
-  const user = { userId, name, phone: phoneMatch[1], salt: salt.toString('hex'), hash: hash.toString('hex'), createdAt: Date.now() };
-  await writeJson(path, user);
-  return res.status(200).json({ success: true, token: makeToken(user), user: { userId, name, phone: user.phone } });
-}
-
-async function login(body, res) {
-  const userId = str(body.userId, 30).toLowerCase();
-  const password = typeof body.password === 'string' ? body.password.slice(0, 100) : '';
-  const fail = async () => {
-    await wait(700);
-    return res.status(401).json({ success: false, error: 'ইউজার আইডি বা পাসওয়ার্ড ভুল' });
-  };
-  if (!USER_RE.test(userId) || !password) return fail();
-  const user = await readJson(userPath(userId));
-  if (!user || !user.salt || !user.hash) return fail();
-  const hash = await scryptAsync(password, Buffer.from(user.salt, 'hex'));
-  const stored = Buffer.from(user.hash, 'hex');
-  if (hash.length !== stored.length || !timingSafeEqual(hash, stored)) return fail();
-  return res.status(200).json({ success: true, token: makeToken(user), user: { userId, name: user.name, phone: user.phone } });
-}
-
-// ---------- seller actions ----------
-async function sellerAction(action, body, me, res) {
   const now = Date.now();
+  const userId = phone; // seller identity = mobile number (also the key for ban / verified / rating)
+  const ih = hmac(`ip:${clientIp(req)}`).toString('hex').slice(0, 16);
+  const id = `ml-${now.toString(36)}-${randomBytes(3).toString('hex')}`;
+  const editKey = randomBytes(12).toString('base64url');
 
-  if (action === 'mine') {
-    const store = await readStore();
-    const items = store.items.filter((it) => it.userId === me.userId).map((it) => mineItem(it, now));
-    return res.status(200).json({ success: true, items, banned: store.banned.includes(me.userId), requireApproval: store.settings.requireApproval });
-  }
-
-  if (action === 'create') {
-    const parsed = validateListing(body);
-    if (parsed.error) return res.status(400).json({ success: false, error: parsed.error });
-    const id = `ml-${now.toString(36)}-${randomBytes(3).toString('hex')}`;
-    const outcome = await mutateStore((store) => {
-      if (store.banned.includes(me.userId)) return { error: 'আপনার অ্যাকাউন্টটি বন্ধ করা আছে', status: 403 };
-      const active = store.items.filter((it) => it.userId === me.userId && isActive(it) && it.expiresAt > now).length;
-      if (active >= MAX_ACTIVE_PER_SELLER) return { error: `একসাথে সর্বোচ্চ ${MAX_ACTIVE_PER_SELLER}টি বিজ্ঞাপন চালু রাখা যায়। আগেরটি বিক্রি/মুছে নতুন দিন`, status: 400 };
-      const status = store.settings.requireApproval ? 'pending' : 'live';
-      store.items.unshift({
-        id, userId: me.userId, sellerName: me.name, phone: me.phone, ...parsed.value,
-        status, createdAt: now, expiresAt: now + LISTING_TTL_MS
-      });
-      prune(store, now);
-      return { status };
-    }, (check) => check.items.some((it) => it.id === id));
-    if (outcome.error) return res.status(outcome.status || 400).json({ success: false, error: outcome.error });
-    return res.status(200).json({ success: true, id, status: outcome.status });
-  }
-
-  if (action === 'update') {
-    const id = str(body.id, 40);
-    const op = body.op;
-    if (!['sold', 'delete', 'renew'].includes(op) || !id) return res.status(400).json({ success: false, error: 'অনুরোধ সঠিক নয়' });
-    const outcome = await mutateStore((store) => {
-      const idx = store.items.findIndex((it) => it.id === id && it.userId === me.userId);
-      if (idx < 0) return { error: 'বিজ্ঞাপনটি পাওয়া যায়নি', status: 404 };
-      const it = store.items[idx];
-      if (op === 'delete') store.items.splice(idx, 1);
-      else if (op === 'sold') it.status = 'sold';
-      else if (op === 'renew') {
-        if (it.status === 'sold' || it.status === 'hidden') return { error: 'এই বিজ্ঞাপন নবায়ন করা যাবে না', status: 400 };
-        it.expiresAt = now + LISTING_TTL_MS;
-      }
-      return {};
-    }, (check) => {
-      const it = check.items.find((x) => x.id === id);
-      if (op === 'delete') return !it;
-      if (op === 'sold') return !it || it.status === 'sold';
-      return !it || it.expiresAt >= now + LISTING_TTL_MS - 1000;
+  const outcome = await mutateStore((store) => {
+    if (store.banned.includes(userId)) return { error: 'এই নম্বর থেকে বিজ্ঞাপন দেওয়া বন্ধ করা আছে', status: 403 };
+    const activeOf = (fn) => store.items.filter((it) => fn(it) && isActive(it) && it.expiresAt > now).length;
+    if (activeOf((it) => it.userId === userId) >= MAX_ACTIVE_PER_SELLER) return { error: `এই নম্বরে একসাথে সর্বোচ্চ ${MAX_ACTIVE_PER_SELLER}টি বিজ্ঞাপন চালু রাখা যায়। আগেরটি বিক্রি/মুছে নতুন দিন`, status: 400 };
+    if (activeOf((it) => it.ih === ih) >= MAX_ACTIVE_PER_IP) return { error: 'আপনার ডিভাইস থেকে অনেক বিজ্ঞাপন চালু আছে। আগেরগুলো বিক্রি/মুছে নতুন দিন', status: 429 };
+    if (store.items.filter((it) => it.ih === ih && now - it.createdAt < 24 * 3600 * 1000).length >= MAX_POSTS_PER_IP_DAY) return { error: 'আজকের জন্য বিজ্ঞাপন দেওয়ার সীমা শেষ, কাল আবার চেষ্টা করুন', status: 429 };
+    const status = store.settings.requireApproval ? 'pending' : 'live';
+    store.items.unshift({
+      id, userId, sellerName: name, phone, ...parsed.value, status, ih, mk: hashKey(editKey), createdAt: now, expiresAt: now + LISTING_TTL_MS
     });
-    if (outcome.error) return res.status(outcome.status || 400).json({ success: false, error: outcome.error });
-    return res.status(200).json({ success: true });
-  }
+    prune(store, now);
+    return { status };
+  }, (check) => check.items.some((it) => it.id === id));
+  if (outcome.error) return res.status(outcome.status || 400).json({ success: false, error: outcome.error });
+  return res.status(200).json({ success: true, id, editKey, status: outcome.status });
+}
 
-  return res.status(400).json({ success: false, error: 'unknown action' });
+const keyOk = (it, key) => {
+  if (!it.mk || typeof key !== 'string' || key.length > 60) return false;
+  const a = Buffer.from(it.mk);
+  const b = Buffer.from(hashKey(key));
+  return a.length === b.length && timingSafeEqual(a, b);
+};
+
+async function mineAction(body, res) {
+  const now = Date.now();
+  const refs = Array.isArray(body.refs) ? body.refs.slice(0, MAX_MINE) : [];
+  const store = await readStore();
+  const items = [];
+  for (const r of refs) {
+    const it = store.items.find((x) => x.id === str(r?.id, 40));
+    if (it && keyOk(it, r.key)) items.push(mineItem(it, now));
+  }
+  return res.status(200).json({ success: true, items, requireApproval: store.settings.requireApproval });
+}
+
+async function updateAction(body, res) {
+  const now = Date.now();
+  const id = str(body.id, 40);
+  const op = body.op;
+  const key = body.key;
+  if (!['sold', 'delete', 'renew'].includes(op) || !id) return res.status(400).json({ success: false, error: 'অনুরোধ সঠিক নয়' });
+  const outcome = await mutateStore((store) => {
+    const idx = store.items.findIndex((it) => it.id === id);
+    if (idx < 0 || !keyOk(store.items[idx], key)) return { error: 'বিজ্ঞাপনটি পাওয়া যায়নি', status: 404 };
+    const it = store.items[idx];
+    if (op === 'delete') store.items.splice(idx, 1);
+    else if (op === 'sold') it.status = 'sold';
+    else if (op === 'renew') {
+      if (it.status === 'sold' || it.status === 'hidden') return { error: 'এই বিজ্ঞাপন নবায়ন করা যাবে না', status: 400 };
+      it.expiresAt = now + LISTING_TTL_MS;
+    }
+    return {};
+  }, (check) => {
+    const it = check.items.find((x) => x.id === id);
+    if (op === 'delete') return !it;
+    if (op === 'sold') return !it || it.status === 'sold';
+    return !it || it.expiresAt >= now + LISTING_TTL_MS - 1000;
+  });
+  if (outcome.error) return res.status(outcome.status || 400).json({ success: false, error: outcome.error });
+  return res.status(200).json({ success: true });
 }
 
 // ---------- admin ----------
@@ -337,8 +282,6 @@ async function adminAction(body, res) {
 // ---------- buyer rating ----------
 // Buyers have no accounts, so one vote per person is approximated by a hash of (IP + seller). It is not
 // fraud-proof, which is why the admin can reset a seller's rating. One rating costs one blob write.
-const clientIp = (req) => String(req.headers?.['x-forwarded-for'] || req.headers?.['x-real-ip'] || '').split(',')[0].trim() || 'unknown';
-
 async function rateSeller(body, req, res) {
   const id = str(body.id, 40);
   const stars = Math.round(Number(body.stars));
@@ -386,17 +329,13 @@ export default async function handler(req, res) {
     if (!body || typeof body !== 'object') return res.status(400).json({ success: false, error: 'Invalid JSON body' });
     const action = body.action;
 
-    if (action === 'register') return await register(body, res);
-    if (action === 'login') return await login(body, res);
+    if (action === 'post') return await postListing(body, req, res);
+    if (action === 'mine') return await mineAction(body, res);
+    if (action === 'update') return await updateAction(body, res);
     if (action === 'rate') return await rateSeller(body, req, res);
     if (action === 'admin') {
       if (!(await requireAdmin(req, res))) return;
       return await adminAction(body, res);
-    }
-    if (action === 'mine' || action === 'create' || action === 'update') {
-      const me = readToken(body.token);
-      if (!me) return res.status(401).json({ success: false, code: 'LOGIN_REQUIRED', error: 'আবার লগইন করুন' });
-      return await sellerAction(action, body, me, res);
     }
     return res.status(400).json({ success: false, error: 'unknown action' });
   } catch (err) {
