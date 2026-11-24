@@ -87,13 +87,14 @@ const num = (v) => {
 const RATE_CATEGORIES = ['broiler', 'sonali', 'layer_brown', 'layer_white', 'cockerel'];
 const RATE_STATUSES = ['available', 'booking_open', 'limited'];
 const ZONE_IDS = ['narayanganj', 'gazipur', 'narsingdi', 'tangail', 'kishoreganj', 'mymensingh', 'cumilla', 'noakhali', 'chattogram', 'sylhet', 'faridpur', 'gopalgonj', 'jhenaidah', 'khulna', 'barishal', 'bogura', 'rajshahi', 'sirajgonj', 'rangpur', 'dinajpur'];
+const GRADE_KEYS = ['A', 'M', 'B+', 'B'];
 const DIVISION_IDS = ['dhaka', 'chittagong', 'rajshahi', 'rangpur', 'khulna', 'sylhet', 'mymensingh', 'barisal'];
 
 const genId = (prefix) => `${prefix}-${Date.now()}-${Math.random().toString(36).slice(2, 7)}`;
 
 export function sanitizeRates(input) {
   if (!Array.isArray(input)) return null;
-  return input.slice(0, 300).map((r) => {
+  return input.slice(0, 500).map((r) => {
     const item = r && typeof r === 'object' ? r : {};
     const divisionRates = {};
     if (item.divisionRates && typeof item.divisionRates === 'object') {
@@ -105,6 +106,20 @@ export function sanitizeRates(input) {
     if (item.zoneRates && typeof item.zoneRates === 'object') {
       for (const z of ZONE_IDS) {
         if (item.zoneRates[z] !== undefined) zoneRates[z] = num(item.zoneRates[z]);
+      }
+    }
+    // grade split (A / M / B+ / B) from the Master Grades Excel: only filled zones are kept
+    const gradeRates = {};
+    if (item.gradeRates && typeof item.gradeRates === 'object') {
+      for (const g of GRADE_KEYS) {
+        const src = item.gradeRates[g];
+        if (!src || typeof src !== 'object') continue;
+        const one = {};
+        for (const z of ZONE_IDS) {
+          const v = num(src[z]);
+          if (v > 0) one[z] = v;
+        }
+        if (Object.keys(one).length) gradeRates[g] = one;
       }
     }
     return {
@@ -122,6 +137,7 @@ export function sanitizeRates(input) {
       grade: ['A', 'B', 'C', 'none'].includes(item.grade) ? item.grade : 'A',
       divisionRates,
       zoneRates,
+      ...(Object.keys(gradeRates).length ? { gradeRates } : {}),
       rateDate: /^\d{4}-\d{2}-\d{2}$/.test(String(item.rateDate || '')) ? String(item.rateDate) : '',
       regionBn: str(item.regionBn, 120),
       regionEn: str(item.regionEn, 120),

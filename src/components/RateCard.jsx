@@ -1,4 +1,5 @@
-import { normalizeGrade, GRADE_STYLE } from '../data/grades';
+import { normalizeGrade, GRADE_STYLE, hasGradeRates } from '../data/grades';
+import GradeRates from './GradeRates';
 import React from 'react';
 import { AlertTriangle, MapPin } from 'lucide-react';
 import PriceChange from './PriceChange';
@@ -76,13 +77,15 @@ export default function RateCard({ item, selectedDivision, isStale = false, rate
           <p className="text-xs text-slate-500 font-semibold mt-0.5">
             {lang === 'bn' ? 'জাত:' : 'Breed:'} <span className="text-slate-800 font-bold">{item.breed}</span>
           </p>
-          {normalizeGrade(item.grade) !== 'none' && (
+          {normalizeGrade(item.grade) !== 'none' && !hasGradeRates(item) && (
             <span className={`inline-flex items-center gap-1 mt-2 text-[11px] font-black px-2.5 py-0.5 rounded-full shadow-xs ${GRADE_STYLE[normalizeGrade(item.grade)]}`}>
               <span>★</span>
               <span>{lang === 'bn' ? `গ্রেড-${{ A: 'এ', B: 'বি', C: 'সি' }[normalizeGrade(item.grade)]} (Grade-${normalizeGrade(item.grade)})` : `Grade-${normalizeGrade(item.grade)}`}</span>
             </span>
           )}
         </div>
+
+        <GradeRates item={item} region={selectedDivision} lang={lang} />
 
         {/* Region / Zone */}
         <div className="mt-3 flex items-center gap-1.5 text-xs text-emerald-900 bg-emerald-50/80 border border-emerald-200/70 px-2.5 py-1 rounded-xl w-fit">
