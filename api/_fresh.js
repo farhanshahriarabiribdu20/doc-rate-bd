@@ -15,7 +15,13 @@ async function readBlob(path) {
     const r = await get(path, { access: 'public', useCache: false });
     if (!r || r.statusCode !== 200) return null;
     return JSON.parse(await new Response(r.stream).text());
-  } catch { return null; }
+  } catch (err) {
+    // "Not found" is a normal empty result. Anything else (store blocked, rate limit, network) must NOT look like an
+    // empty file: callers would write an empty list back over the real data (e.g. wipe all marketplace ads).
+    if (err && err.name === 'BlobNotFoundError') return null;
+    console.error('blob read failed:', path, err);
+    throw err;
+  }
 }
 
 /** Newest known copy of the JSON at `path` (a fresh object every call), or null. */

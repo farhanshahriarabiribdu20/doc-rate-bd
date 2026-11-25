@@ -54,10 +54,16 @@ export default async function handler(req, res) {
       // Cached at the Vercel edge: visitors never hit Blob storage on every page view.
       res.setHeader('Cache-Control', 'public, s-maxage=30, stale-while-revalidate=300');
       let data = null;
+      let readError = '';
       try {
         data = await readPublished();
       } catch (err) {
         console.error('site-data read failed:', err);
+        readError = `${err?.name || 'Error'}: ${String(err?.message || '').slice(0, 160)}`;
+      }
+      if (readError) { // a failed read must not be cached at the edge, or every visitor keeps seeing "no data"
+        res.setHeader('Cache-Control', 'no-store');
+        return res.status(200).json({ success: true, data: null, readError });
       }
       return res.status(200).json({ success: true, data });
     }
