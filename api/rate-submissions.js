@@ -159,7 +159,7 @@ export default async function handler(req, res) {
 
     if (req.method === 'GET' && req.query?.live) {
       // public, cached for a short while at the edge
-      res.setHeader('Cache-Control', 'public, s-maxage=20, stale-while-revalidate=60');
+      res.setHeader('Cache-Control', 'public, s-maxage=120, stale-while-revalidate=600');
       const today = dhakaToday();
       const recent = (await listAll(PREFIX)).filter((b) => Date.now() - tsOf(b.pathname) < 2 * DAY_MS).slice(0, 600);
       const settled = await Promise.allSettled(recent.map(async (b) => {
