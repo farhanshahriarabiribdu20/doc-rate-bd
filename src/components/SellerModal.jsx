@@ -19,7 +19,7 @@ const STATUS = {
   expired: { text: 'মেয়াদ শেষ', cls: 'bg-slate-200 text-slate-700' }
 };
 
-const MAX_PHOTOS = 2;
+const MAX_PHOTOS = 1;
 const emptyForm = { product: 'broiler', quantity: '', unit: 'kg', price: '', district: '', location: '', details: '' };
 
 /**
@@ -178,7 +178,7 @@ export default function SellerModal({ onClose, onChanged }) {
                     <textarea className={input} rows={3} value={form.details} onChange={setF('details')} maxLength={300} placeholder="যেমন: ওজন ১.৮ কেজির মতো, ফার্ম থেকে সরাসরি, ডেলিভারি আছে" />
                   </div>
                   <div>
-                    <label className={label}>ছবি <span className="font-normal text-slate-500">(ঐচ্ছিক, সর্বোচ্চ ২টি — ছবি থাকলে ক্রেতা বেশি আগ্রহ দেখায়)</span></label>
+                    <label className={label}>ছবি <span className="font-normal text-slate-500">(ঐচ্ছিক, ১টি — ছবি থাকলে ক্রেতা বেশি আগ্রহ দেখায়)</span></label>
                     <div className="flex flex-wrap gap-2">
                       {photos.map((src, i) => (
                         <div key={i} className="relative w-24 h-24 rounded-xl overflow-hidden border border-slate-200">
@@ -190,7 +190,7 @@ export default function SellerModal({ onClose, onChanged }) {
                         <label className="w-24 h-24 rounded-xl border-2 border-dashed border-emerald-300 bg-emerald-50/60 text-emerald-700 flex flex-col items-center justify-center gap-1 text-[11px] font-black cursor-pointer hover:bg-emerald-50">
                           <ImagePlus className="w-6 h-6" />
                           ছবি দিন
-                          <input type="file" accept="image/*" multiple className="hidden" onChange={addPhotos} />
+                          <input type="file" accept="image/*" className="hidden" onChange={addPhotos} />
                         </label>
                       )}
                     </div>
