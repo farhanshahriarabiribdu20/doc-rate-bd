@@ -1,6 +1,6 @@
 // Shared helpers for the serverless API.
 // Files that start with "_" are NOT exposed as routes by Vercel.
-import { createHash, timingSafeEqual } from 'node:crypto';
+import { createHash, createHmac, randomBytes, timingSafeEqual } from 'node:crypto';
 
 // ---------- request / response helpers ----------
 
@@ -39,6 +39,95 @@ function lockedOut(ip) {
 }
 const noteFail = (ip) => { const now = Date.now(); fails.set(ip, [...recentFails(ip, now), now]); };
 
+// ---------- optional 2-step verification (TOTP: Google Authenticator, Authy, Microsoft Authenticator...) ----------
+// Turned on by setting ADMIN_TOTP_SECRET (base32) in the server environment. Then the password alone is not
+// enough: the login also needs the 6-digit code, and the browser gets a signed 12-hour session token that it
+// sends in the same `x-admin-key` header. Without the variable everything works as before.
+
+const B32 = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ234567';
+const b32decode = (s) => {
+  let bits = 0; let value = 0; const out = [];
+  for (const ch of s) {
+    const i = B32.indexOf(ch);
+    if (i < 0) return null;
+    value = (value << 5) | i; bits += 5;
+    if (bits >= 8) { out.push((value >>> (bits - 8)) & 255); bits -= 8; }
+  }
+  return Buffer.from(out);
+};
+export const b32encode = (buf) => {
+  let bits = 0; let value = 0; let out = '';
+  for (const b of buf) {
+    value = (value << 8) | b; bits += 8;
+    while (bits >= 5) { out += B32[(value >>> (bits - 5)) & 31]; bits -= 5; }
+  }
+  if (bits > 0) out += B32[(value << (5 - bits)) & 31];
+  return out;
+};
+
+const twoFaSecret = () => {
+  const raw = String(process.env.ADMIN_TOTP_SECRET || '').replace(/[\s-]/g, '').toUpperCase();
+  const key = raw ? b32decode(raw) : null;
+  return key && key.length >= 10 ? { raw, key } : null;
+};
+export const isTwoFactorOn = () => Boolean(twoFaSecret());
+
+const totpAt = (key, step) => {
+  const msg = Buffer.alloc(8);
+  msg.writeBigUInt64BE(BigInt(step));
+  const h = createHmac('sha1', key).update(msg).digest();
+  const o = h[h.length - 1] & 15;
+  const n = ((h[o] & 127) << 24) | (h[o + 1] << 16) | (h[o + 2] << 8) | h[o + 3];
+  return String(n % 1000000).padStart(6, '0');
+};
+let lastStep = 0; // a code can be used once (best effort, in memory)
+function verifyTotp(code) {
+  const sec = twoFaSecret();
+  const given = String(code || '').replace(/\s/g, '');
+  if (!sec || !/^\d{6}$/.test(given)) return false;
+  const now = Math.floor(Date.now() / 30000);
+  for (const step of [now, now - 1, now + 1]) {
+    if (step > lastStep && timingSafeEqual(Buffer.from(totpAt(sec.key, step)), Buffer.from(given))) { lastStep = step; return true; }
+  }
+  return false;
+}
+
+const SESSION_MS = 12 * 3600 * 1000;
+const tokenKey = () => createHash('sha256').update(`${process.env.ADMIN_PASSWORD}|${twoFaSecret()?.raw || ''}`).digest();
+const issueToken = () => {
+  const exp = Date.now() + SESSION_MS;
+  return `t1.${exp}.${createHmac('sha256', tokenKey()).update(`adm:${exp}`).digest('hex')}`;
+};
+const tokenValid = (t) => {
+  const m = /^t1\.(\d{10,15})\.([a-f0-9]{64})$/.exec(typeof t === 'string' ? t : '');
+  if (!m || Number(m[1]) < Date.now()) return false;
+  return timingSafeEqual(Buffer.from(m[2]), Buffer.from(createHmac('sha256', tokenKey()).update(`adm:${m[1]}`).digest('hex')));
+};
+const passwordOk = (p) => typeof p === 'string' && p.length > 0 && timingSafeEqual(digest(p), digest(process.env.ADMIN_PASSWORD));
+
+/** Admin login (POST /api/admin-login). Sends the response itself. */
+export async function handleAdminLogin(req, res, body) {
+  if (!isAdminConfigured()) return res.status(503).json({ success: false, code: 'ADMIN_NOT_CONFIGURED', error: 'ADMIN_PASSWORD environment variable is not set on the server' });
+  const ip = ipOf(req);
+  if (lockedOut(ip)) return res.status(429).json({ success: false, code: 'TOO_MANY_ATTEMPTS', error: 'অনেকবার ভুল দেওয়া হয়েছে। ১৫ মিনিট পরে আবার চেষ্টা করুন।' });
+  const provided = req.headers['x-admin-key'];
+  const on = isTwoFactorOn();
+
+  if (on && tokenValid(provided)) return res.status(200).json({ success: true, twofa: true, token: provided }); // session check
+  if (!passwordOk(provided)) { noteFail(ip); await wait(700); return res.status(401).json({ success: false, code: 'UNAUTHORIZED', error: 'Wrong admin password' }); }
+
+  if (body?.action === 'setup') { // stateless: makes a new key; it only takes effect once the owner adds it to the server environment
+    if (on) return res.status(409).json({ success: false, error: '২-ধাপ যাচাই ইতিমধ্যে চালু আছে' });
+    const secret = b32encode(randomBytes(20));
+    const uri = `otpauth://totp/FosholNexa%20Admin?secret=${secret}&issuer=FosholNexa&algorithm=SHA1&digits=6&period=30`;
+    return res.status(200).json({ success: true, secret, uri });
+  }
+  if (!on) return res.status(200).json({ success: true, twofa: false });
+  if (!body?.code) return res.status(401).json({ success: false, code: 'CODE_REQUIRED', error: 'অথেনটিকেটর অ্যাপের ৬ সংখ্যার কোড দিন' });
+  if (!verifyTotp(body.code)) { noteFail(ip); await wait(700); return res.status(401).json({ success: false, code: 'BAD_CODE', error: 'কোড ভুল বা মেয়াদ শেষ' }); }
+  return res.status(200).json({ success: true, twofa: true, token: issueToken() });
+}
+
 /**
  * Returns true when the request carries the correct admin key.
  * Otherwise sends the error response itself and returns false.
@@ -60,10 +149,8 @@ export async function requireAdmin(req, res) {
   }
 
   const provided = req.headers['x-admin-key'];
-  const ok =
-    typeof provided === 'string' &&
-    provided.length > 0 &&
-    timingSafeEqual(digest(provided), digest(process.env.ADMIN_PASSWORD));
+  // With 2-step verification on, only a session token (issued after password + code) is accepted.
+  const ok = isTwoFactorOn() ? tokenValid(provided) : passwordOk(provided);
 
   if (!ok) {
     noteFail(ip);
