@@ -1,4 +1,4 @@
-import { get } from '@vercel/blob';
+import { getDoc } from './_store.js';
 import { createHash, randomBytes } from 'node:crypto';
 import { noStore, parseBody, requireAdmin } from './_lib.js';
 import { readFresh, writeFresh } from './_fresh.js';
@@ -47,9 +47,7 @@ const median = (nums) => {
 // The rates the admin published (only used to catch typos; any failure just skips the check).
 async function readPublishedSafe() {
   try {
-    const r = await get(SITE_DATA_PATH, { access: 'public', useCache: false });
-    if (!r || r.statusCode !== 200) return null;
-    return JSON.parse(await new Response(r.stream).text());
+    return await getDoc(SITE_DATA_PATH);
   } catch { return null; }
 }
 

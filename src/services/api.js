@@ -28,6 +28,32 @@ export async function fetchBlobUsage(key) {
   } catch { return null; }
 }
 
+/** Admin: which store the site data lives in, and whether it can be read. Null on failure. */
+export async function fetchStoreStatus(key) {
+  try {
+    const res = await fetch('/api/site-history?store=1', { headers: adminHeaders(key), cache: 'no-store' });
+    const b = await json(res);
+    return res.ok && b?.success ? b : null;
+  } catch { return null; }
+}
+
+/** Admin: copy the JSON data from Vercel Blob into Supabase. Returns { ok, found, copied, failed } or { ok:false, error }. */
+export async function migrateBlobToSupabase(key) {
+  try {
+    const res = await fetch('/api/site-history?migrate=1', { headers: adminHeaders(key), cache: 'no-store' });
+    const b = await json(res);
+    return res.ok && b?.success ? { ok: true, ...b } : { ok: false, error: b?.error || `HTTP ${res.status}` };
+  } catch (err) { return { ok: false, error: String(err?.message || err) }; }
+}
+
+/** Admin: every data file of the site as one JSON object (the browser saves it as a backup file). */
+export async function exportEverything(key) {
+  const res = await fetch('/api/site-history?export=1', { headers: adminHeaders(key), cache: 'no-store' });
+  const b = await json(res);
+  if (!res.ok || !b?.success) throw new Error(b?.error || `HTTP ${res.status}`);
+  return b;
+}
+
 /** Is 2-step verification on? (public flag) */
 export async function fetchTwoFactorStatus() {
   try { const b = await json(await fetch('/api/admin-login')); return Boolean(b?.twofa); } catch { return false; }

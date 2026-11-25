@@ -8,7 +8,7 @@
 //
 // The meter is an estimate (a recycled function instance can lose a few pending counts), so the stop line is kept
 // well under 2,000. Admin actions are counted but never blocked.
-import { put, get } from '@vercel/blob';
+import { getDoc, putDoc, isSupabase } from './_store.js';
 
 export const MONTH_LIMIT = 2000;
 export const STOP_VISITORS_AT = Number(process.env.BLOB_STOP_AT) || 1500; // visitor-triggered writes pause here until the next month
@@ -39,14 +39,7 @@ let pend = { n: 0, by: {} };
 let lastFlush = 0;
 
 async function readMeter() {
-  try {
-    const r = await get(METER_PATH, { access: 'public', useCache: false });
-    if (!r || r.statusCode !== 200) return blank();
-    return normalize(JSON.parse(await new Response(r.stream).text()));
-  } catch (err) {
-    if (err && err.name === 'BlobNotFoundError') return blank();
-    throw err;
-  }
+  return normalize(await getDoc(METER_PATH));
 }
 
 async function load() {
@@ -78,11 +71,17 @@ async function flush() {
   lastFlush = Date.now();
   mem = next;
   memAt = Date.now();
-  await put(METER_PATH, JSON.stringify(next), { access: 'public', addRandomSuffix: false, allowOverwrite: true, contentType: 'application/json', cacheControlMaxAge: 60 });
+  await putDoc(METER_PATH, next);
 }
 
-/** Note n advanced operations of this kind. Never throws. */
+/** Note n advanced Blob operations of this kind. Never throws. With STORE=supabase the text data is not in Blob, so this does nothing. */
 export async function count(kind, n = 1) {
+  if (isSupabase()) return;
+  return countBlob(kind, n);
+}
+
+/** Always counts: use it for real Blob writes (pictures), whichever store the text data lives in. */
+export async function countBlob(kind, n = 1) {
   try {
     pend.n += n;
     pend.by[kind] = (pend.by[kind] || 0) + n;
@@ -109,5 +108,5 @@ export async function getMeter() {
   const m = normalize(await load());
   for (const [k, n] of Object.entries(pend.by)) { m.by[k] = (m.by[k] || 0) + n; m.dayBy[k] = (m.dayBy[k] || 0) + n; }
   m.total += pend.n;
-  return { month: m.m, day: m.d, total: m.total, limit: MONTH_LIMIT, stopAt: STOP_VISITORS_AT, by: m.by, dayBy: m.dayBy, caps: DAILY_CAPS };
+  return { store: isSupabase() ? 'supabase' : 'blob', month: m.m, day: m.d, total: m.total, limit: MONTH_LIMIT, stopAt: STOP_VISITORS_AT, by: m.by, dayBy: m.dayBy, caps: DAILY_CAPS };
 }

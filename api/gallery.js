@@ -1,6 +1,6 @@
 import { put, del } from '@vercel/blob';
 import { readFresh, writeFresh } from './_fresh.js';
-import { count } from './_budget.js';
+import { countBlob } from './_budget.js';
 import { randomBytes } from 'node:crypto';
 import { noStore, parseBody, requireAdmin, sanitizeFeeds } from './_lib.js';
 
@@ -96,7 +96,7 @@ export default async function handler(req, res) {
       if (!matchesMagic(buf, m[1])) return res.status(400).json({ success: false, error: 'ছবির ফাইলটি সঠিক নয়' });
       if (images.length >= MAX_IMAGES) return res.status(400).json({ success: false, error: `সর্বোচ্চ ${MAX_IMAGES}টি ছবি রাখা যায়, পুরনো কিছু মুছুন` });
 
-      await count('gallery', 1);
+      await countBlob('gallery', 1);
       const blob = await put(`gallery/img.${TYPES[m[1]]}`, buf, {
         access: 'public', addRandomSuffix: true, contentType: m[1], cacheControlMaxAge: 31536000
       });
