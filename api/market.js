@@ -1,4 +1,5 @@
 import { createHmac, randomBytes, timingSafeEqual } from 'node:crypto';
+import { put, del } from '@vercel/blob';
 import { noStore, parseBody, requireAdmin } from './_lib.js';
 import { readFresh, writeFresh } from './_fresh.js';
 import { DISTRICTS } from '../src/data/districts.js';
@@ -26,6 +27,9 @@ const MAX_ACTIVE_PER_SELLER = 5; // per phone number
 const MAX_ACTIVE_PER_IP = 8;
 const MAX_POSTS_PER_IP_DAY = 10;
 const MAX_MINE = 20;
+const MAX_IMAGES = 1; // pictures per listing (phone photos are shrunk in the browser first)
+const MAX_IMAGE_BYTES = 450 * 1024;
+const IMG_TYPES = { 'image/jpeg': 'jpg', 'image/png': 'png', 'image/webp': 'webp' };
 const MAX_ITEMS = 600;
 const MAX_RATED_SELLERS = 500;
 const MAX_VOTERS = 100; // per seller
@@ -83,15 +87,44 @@ const isActive = (it) => it.status === 'pending' || it.status === 'live';
 const isLive = (it, now) => it.status === 'live' && it.expiresAt > now;
 
 function prune(store, now) {
-  store.items = store.items
+  const before = store.items;
+  store.items = before
     .filter((it) => now - (it.createdAt || 0) < KEEP_MS)
     .sort((a, b) => b.createdAt - a.createdAt)
     .slice(0, MAX_ITEMS);
+  const kept = new Set(store.items);
+  return before.filter((it) => !kept.has(it)).flatMap((it) => it.imgs || []);
+}
+
+// Pictures live in their own blobs; they are removed when their listing goes away. A leftover blob is harmless.
+const dropImages = async (urls) => {
+  await Promise.all((urls || []).filter((u) => typeof u === 'string' && /^https?:\/\//.test(u)).map((u) => del(u).catch(() => {})));
+};
+
+function magicOk(buf, type) {
+  if (type === 'image/jpeg') return buf[0] === 0xff && buf[1] === 0xd8;
+  if (type === 'image/png') return buf[0] === 0x89 && buf[1] === 0x50 && buf[2] === 0x4e && buf[3] === 0x47;
+  return buf.length > 12 && buf.toString('ascii', 0, 4) === 'RIFF' && buf.toString('ascii', 8, 12) === 'WEBP';
+}
+
+/** Checks the pictures (data URLs) sent with a listing; returns decoded buffers or an error. */
+function decodeImages(raw) {
+  const list = Array.isArray(raw) ? raw.slice(0, MAX_IMAGES) : [];
+  const out = [];
+  for (const d of list) {
+    const m = /^data:(image\/(?:jpeg|png|webp));base64,([A-Za-z0-9+/=]+)$/.exec(typeof d === 'string' ? d : '');
+    if (!m) return { error: 'শুধু JPG, PNG বা WebP ছবি দিন' };
+    const buf = Buffer.from(m[2], 'base64');
+    if (buf.length > MAX_IMAGE_BYTES) return { error: 'ছবি খুব বড়, ছোট ছবি দিন' };
+    if (!magicOk(buf, m[1])) return { error: 'ছবির ফাইলটি সঠিক নয়' };
+    out.push({ buf, type: m[1] });
+  }
+  return { images: out };
 }
 
 const publicItem = (it) => ({
   id: it.id, sellerName: it.sellerName, phone: it.phone, product: it.product, quantity: it.quantity, unit: it.unit,
-  price: it.price, location: it.location, district: it.district || '', details: it.details, createdAt: it.createdAt, expiresAt: it.expiresAt
+  price: it.price, location: it.location, district: it.district || '', details: it.details, imgs: it.imgs || [], createdAt: it.createdAt, expiresAt: it.expiresAt
 });
 
 // Seller trust info shown next to a listing: admin-granted "verified" tick and buyers' star rating.
@@ -142,6 +175,8 @@ async function postListing(body, req, res) {
   const phone = phoneMatch[1];
   const parsed = validateListing(body);
   if (parsed.error) return res.status(400).json({ success: false, error: parsed.error });
+  const pics = decodeImages(body.images);
+  if (pics.error) return res.status(400).json({ success: false, error: pics.error });
 
   const now = Date.now();
   const userId = phone; // seller identity = mobile number (also the key for ban / verified / rating)
@@ -149,6 +184,19 @@ async function postListing(body, req, res) {
   const id = `ml-${now.toString(36)}-${randomBytes(3).toString('hex')}`;
   const editKey = randomBytes(12).toString('base64url');
 
+  // Upload the pictures first (one blob write each); they are removed again if the listing is refused.
+  let imgs = [];
+  if (pics.images.length) {
+    try {
+      imgs = await Promise.all(pics.images.map((p, i) => put(`market/img/${id}-${i}.${IMG_TYPES[p.type]}`, p.buf, {
+        access: 'public', addRandomSuffix: true, contentType: p.type, cacheControlMaxAge: 31536000
+      }).then((b) => b.url)));
+    } catch {
+      await dropImages(imgs);
+      return res.status(503).json({ success: false, error: 'ছবি আপলোড হয়নি, আবার চেষ্টা করুন' });
+    }
+  }
+  let dropped = [];
   const outcome = await mutateStore((store) => {
     if (store.banned.includes(userId)) return { error: 'এই নম্বর থেকে বিজ্ঞাপন দেওয়া বন্ধ করা আছে', status: 403 };
     const activeOf = (fn) => store.items.filter((it) => fn(it) && isActive(it) && it.expiresAt > now).length;
@@ -157,12 +205,16 @@ async function postListing(body, req, res) {
     if (store.items.filter((it) => it.ih === ih && now - it.createdAt < 24 * 3600 * 1000).length >= MAX_POSTS_PER_IP_DAY) return { error: 'আজকের জন্য বিজ্ঞাপন দেওয়ার সীমা শেষ, কাল আবার চেষ্টা করুন', status: 429 };
     const status = store.settings.requireApproval ? 'pending' : 'live';
     store.items.unshift({
-      id, userId, sellerName: name, phone, ...parsed.value, status, ih, mk: hashKey(editKey), createdAt: now, expiresAt: now + LISTING_TTL_MS
+      id, userId, sellerName: name, phone, ...parsed.value, imgs, status, ih, mk: hashKey(editKey), createdAt: now, expiresAt: now + LISTING_TTL_MS
     });
-    prune(store, now);
+    dropped = prune(store, now);
     return { status };
   }, (check) => check.items.some((it) => it.id === id));
-  if (outcome.error) return res.status(outcome.status || 400).json({ success: false, error: outcome.error });
+  if (dropped.length) await dropImages(dropped);
+  if (outcome.error) {
+    await dropImages(imgs);
+    return res.status(outcome.status || 400).json({ success: false, error: outcome.error });
+  }
   return res.status(200).json({ success: true, id, editKey, status: outcome.status });
 }
 
@@ -191,11 +243,12 @@ async function updateAction(body, res) {
   const op = body.op;
   const key = body.key;
   if (!['sold', 'delete', 'renew'].includes(op) || !id) return res.status(400).json({ success: false, error: 'অনুরোধ সঠিক নয়' });
+  let removedImgs = [];
   const outcome = await mutateStore((store) => {
     const idx = store.items.findIndex((it) => it.id === id);
     if (idx < 0 || !keyOk(store.items[idx], key)) return { error: 'বিজ্ঞাপনটি পাওয়া যায়নি', status: 404 };
     const it = store.items[idx];
-    if (op === 'delete') store.items.splice(idx, 1);
+    if (op === 'delete') { removedImgs = it.imgs || []; store.items.splice(idx, 1); }
     else if (op === 'sold') it.status = 'sold';
     else if (op === 'renew') {
       if (it.status === 'sold' || it.status === 'hidden') return { error: 'এই বিজ্ঞাপন নবায়ন করা যাবে না', status: 400 };
@@ -209,6 +262,7 @@ async function updateAction(body, res) {
     return !it || it.expiresAt >= now + LISTING_TTL_MS - 1000;
   });
   if (outcome.error) return res.status(outcome.status || 400).json({ success: false, error: outcome.error });
+  if (removedImgs.length) await dropImages(removedImgs);
   return res.status(200).json({ success: true });
 }
 
@@ -218,12 +272,13 @@ async function adminAction(body, res) {
   const op = body.op;
   const id = str(body.id, 40);
   const userId = str(body.userId, 30).toLowerCase();
+  let removedImgs = [];
 
   const outcome = await mutateStore((store) => {
     if (op === 'approve' || op === 'hide' || op === 'delete') {
       const idx = store.items.findIndex((it) => it.id === id);
       if (idx < 0) return { error: 'বিজ্ঞাপনটি পাওয়া যায়নি', status: 404 };
-      if (op === 'delete') store.items.splice(idx, 1);
+      if (op === 'delete') { removedImgs = store.items[idx].imgs || []; store.items.splice(idx, 1); }
       else {
         store.items[idx].status = op === 'approve' ? 'live' : 'hidden';
         if (op === 'approve' && store.items[idx].expiresAt <= now) store.items[idx].expiresAt = now + LISTING_TTL_MS;
@@ -275,6 +330,7 @@ async function adminAction(body, res) {
     return true;
   });
   if (outcome.error) return res.status(outcome.status || 400).json({ success: false, error: outcome.error });
+  if (removedImgs.length) await dropImages(removedImgs);
   const s = outcome.store;
   return res.status(200).json({ success: true, items: s.items.map((it) => adminItem(it, now, s)), banned: s.banned, requireApproval: s.settings.requireApproval });
 }

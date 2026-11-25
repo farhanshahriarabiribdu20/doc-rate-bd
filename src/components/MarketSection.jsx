@@ -58,6 +58,7 @@ function Rating({ rating, onRate, rated, busy }) {
 export default function MarketSection({ lang, onOpenSeller, refreshKey }) {
   const bn = lang === 'bn';
   const [items, setItems] = useState(null); // null = loading
+  const [viewer, setViewer] = useState(null); // { imgs, i } picture being viewed full screen
   const [failed, setFailed] = useState(false);
   const [filter, setFilter] = useState('all');
   const [query, setQuery] = useState('');
@@ -180,6 +181,15 @@ export default function MarketSection({ lang, onOpenSeller, refreshKey }) {
             const msg = `আসসালামু আলাইকুম, ফসলনেক্সা সাইটে আপনার "${prod.bn}" বিক্রির বিজ্ঞাপন দেখলাম। বিস্তারিত জানতে চাই।`;
             return (
               <article key={it.id} className="bg-white border border-slate-200 rounded-2xl p-4 shadow-xs flex flex-col gap-3">
+                {it.imgs?.length > 0 && (
+                  <div className={`grid gap-1.5 -mx-1 ${it.imgs.length > 1 ? 'grid-cols-2' : 'grid-cols-1'}`}>
+                    {it.imgs.map((src, i) => (
+                      <button key={src} type="button" onClick={() => setViewer({ imgs: it.imgs, i })} aria-label={`ছবি ${i + 1} বড় করে দেখুন`} className="block overflow-hidden rounded-xl bg-slate-100 cursor-zoom-in">
+                        <img src={src} alt={`${prod.bn} — ${it.location}`} loading="lazy" className={`w-full object-cover ${it.imgs.length > 1 ? 'h-32' : 'h-44'}`} />
+                      </button>
+                    ))}
+                  </div>
+                )}
                 <div className="flex items-start justify-between gap-3">
                   <div className="flex items-center gap-2.5">
                     <div className="w-10 h-10 rounded-xl bg-emerald-50 flex items-center justify-center text-xl">{prod.emoji}</div>
@@ -234,6 +244,19 @@ export default function MarketSection({ lang, onOpenSeller, refreshKey }) {
           ? '⚠️ বিজ্ঞাপন বিক্রেতারা নিজেরা দেন। লেনদেনের আগে পণ্য ও বিক্রেতা যাচাই করে নিন — দাম, ডেলিভারি ও পেমেন্ট ক্রেতা-বিক্রেতার নিজস্ব বিষয়, ফসলনেক্সা এর দায় নেয় না।'
           : 'Ads are posted by sellers. Verify before you pay — price, delivery and payment are between buyer and seller.'}
       </p>
+      {viewer && (
+        <div className="fixed inset-0 z-[60] bg-black/90 flex flex-col items-center justify-center p-3" onClick={() => setViewer(null)} role="dialog" aria-label="ছবি">
+          <img src={viewer.imgs[viewer.i]} alt="" className="max-w-full max-h-[80dvh] rounded-xl object-contain" onClick={(e) => e.stopPropagation()} />
+          {viewer.imgs.length > 1 && (
+            <div className="flex gap-2 mt-3" onClick={(e) => e.stopPropagation()}>
+              {viewer.imgs.map((_, j) => (
+                <button key={j} onClick={() => setViewer({ ...viewer, i: j })} className={`w-11 h-11 rounded-full text-sm font-black cursor-pointer ${j === viewer.i ? 'bg-white text-slate-900' : 'bg-white/20 text-white'}`}>{j + 1}</button>
+              ))}
+            </div>
+          )}
+          <button onClick={() => setViewer(null)} aria-label="বন্ধ করুন" className="absolute top-3 right-3 w-11 h-11 rounded-full bg-white/20 text-white text-xl cursor-pointer">✕</button>
+        </div>
+      )}
     </section>
   );
 }

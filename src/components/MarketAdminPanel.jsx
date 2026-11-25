@@ -69,6 +69,11 @@ export default function MarketAdminPanel({ data, loading, error, onReload, onAct
                     {it.price > 0 ? `৳${bnNum(it.price)} ${UNIT_BN[it.unit]?.per}` : 'দর আলোচনা সাপেক্ষে'} · {it.location}
                   </p>
                   {it.details && <p className="text-xs text-slate-600 mt-1 whitespace-pre-line break-words">{it.details}</p>}
+                  {it.imgs?.length > 0 && (
+                    <div className="flex gap-2 mt-2">
+                      {it.imgs.map((src) => <a key={src} href={src} target="_blank" rel="noreferrer"><img src={src} alt="" loading="lazy" className="w-20 h-20 rounded-lg object-cover border border-slate-200" /></a>)}
+                    </div>
+                  )}
                   <p className="text-[11px] text-slate-500 mt-1">
                     {it.sellerName} · {it.phone} · {when(it.createdAt)}
                   </p>
