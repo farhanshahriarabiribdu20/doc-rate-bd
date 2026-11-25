@@ -262,7 +262,10 @@ function AdminModalContent({
     if (r.ok) {
       setMarket({ items: r.items, banned: r.banned, requireApproval: r.requireApproval });
       showToast('✅ হয়েছে।');
-    } else showToast(r.error || 'করা যায়নি। আবার চেষ্টা করুন।', 'error');
+      return true;
+    }
+    showToast(r.error || 'করা যায়নি। আবার চেষ্টা করুন।', 'error');
+    return false;
   };
 
   // ---- feedback inbox ----
