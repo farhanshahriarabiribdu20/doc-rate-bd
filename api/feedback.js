@@ -1,4 +1,5 @@
-import { put, list, del } from '@vercel/blob';
+import { list, del } from '@vercel/blob';
+import { putDoc, listDocs, readDocs, delDocs, isSupabase } from './_store.js';
 import { randomBytes, createHash } from 'node:crypto';
 import { DISTRICTS as DISTRICTS_BN } from '../src/data/districts.js';
 import { noStore, parseBody, requireAdmin } from './_lib.js';
@@ -142,30 +143,16 @@ const ID_RE = /^fb-\d+-[a-z0-9]{3,12}$/;
 
 const newId = () => `fb-${Date.now()}-${randomBytes(3).toString('hex')}`;
 
-async function listAll(prefix) {
-  const out = [];
-  let cursor;
-  do {
-    const page = await list({ prefix, limit: 1000, cursor });
-    out.push(...page.blobs);
-    cursor = page.hasMore ? page.cursor : undefined;
-  } while (cursor && out.length < 5000);
-  return out;
-}
-
 let inboxCache = { at: 0, list: null }; // admin list, kept 5 minutes: every list() is a counted storage operation
 async function saveEntry(entry) {
   inboxCache = { at: 0, list: null };
   await count('feedback', 1);
-  await put(`${PREFIX}${entry.id}.json`, JSON.stringify(entry), {
-    access: 'public', // store is public; the random suffix keeps the URL secret
-    addRandomSuffix: true,
-    contentType: 'application/json'
-  });
+  await putDoc(`${PREFIX}${entry.id}.json`, entry, { suffix: true }); // random suffix: unguessable / unique
 }
 
 // Move entries from the old public feedbacks.json into per-item blobs, then delete it.
 async function migrateLegacy() {
+  if (isSupabase()) return; // the old single file only ever existed in Blob
   try {
     const { blobs } = await list({ prefix: LEGACY_PATH });
     const legacy = blobs.find((b) => b.pathname === LEGACY_PATH);
@@ -188,14 +175,8 @@ async function migrateLegacy() {
 }
 
 async function readAll() {
-  const blobs = await listAll(PREFIX);
-  const settled = await Promise.allSettled(
-    blobs.slice(0, 500).map(async (b) => {
-      const r = await fetch(b.url, { cache: 'no-store' });
-      if (!r.ok) throw new Error(`HTTP ${r.status}`);
-      return r.json();
-    })
-  );
+  const docs = await readDocs(PREFIX, 500);
+  const settled = docs.map((d) => ({ status: 'fulfilled', value: d.data }));
   const seen = new Set();
   return settled
     .filter((s) => s.status === 'fulfilled' && s.value && typeof s.value.feedback === 'string')
@@ -279,18 +260,14 @@ export default async function handler(req, res) {
       if (all === true) {
         inboxCache = { at: 0, list: null };
         await count('admin', 1);
-        const blobs = await listAll(PREFIX);
-        for (let i = 0; i < blobs.length; i += 100) {
-          await del(blobs.slice(i, i + 100).map((b) => b.url));
-        }
+        await delDocs(await listDocs(PREFIX));
         return res.status(200).json({ success: true, message: 'All feedbacks cleared' });
       }
 
       if (typeof id === 'string' && ID_RE.test(id)) {
         inboxCache = { at: 0, list: null };
         await count('admin', 1);
-        const { blobs } = await list({ prefix: `${PREFIX}${id}-` });
-        if (blobs.length) await del(blobs.map((b) => b.url));
+        await delDocs(await listDocs(`${PREFIX}${id}-`));
         return res.status(200).json({ success: true, message: 'Feedback deleted' });
       }
 

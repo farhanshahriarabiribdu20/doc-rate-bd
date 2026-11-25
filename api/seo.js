@@ -1,4 +1,4 @@
-import { get } from '@vercel/blob';
+import { getDoc } from './_store.js';
 import { INITIAL_RATES, SITE_SETTINGS, DIVISIONS } from '../src/data/initialData.js';
 import { rateForRegion } from '../src/data/zones.js';
 import { formatBn, toBnDigits } from '../src/utils/date.js';
@@ -25,9 +25,7 @@ export const slugify = (s) =>
 
 async function readPublished() {
   try {
-    const result = await get('site-data.json', { access: 'public', useCache: false });
-    if (!result || result.statusCode !== 200) return null;
-    const data = JSON.parse(await new Response(result.stream).text());
+    const data = await getDoc('site-data.json');
     return data && typeof data === 'object' ? data : null;
   } catch {
     return null;

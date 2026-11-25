@@ -48,6 +48,7 @@ export default function BlobMeter({ adminKey }) {
               {rows.map(([k, n]) => <div key={k} className="flex justify-between gap-2"><span>{LABELS[k] || k}</span><b>{bnNum(n)}</b></div>)}
             </div>
           )}
+          {m.store === 'supabase' && <p className="text-[10px] text-emerald-700 font-bold">টেক্সট ডেটা এখন Supabase-এ; এখানে শুধু ছবির লেখা গোনা হয়।</p>}
           <p className="text-[10px] text-slate-500">এটি অনুমান, Vercel-এর আসল সংখ্যা Vercel → Usage-এ দেখুন।</p>
         </>
       )}

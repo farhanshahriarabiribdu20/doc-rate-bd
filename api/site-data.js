@@ -1,4 +1,4 @@
-import { put, get, list, del } from '@vercel/blob';
+import { getDoc, putDoc, listDocs, delDocs } from './_store.js';
 import {
   parseBody,
   requireAdmin,
@@ -19,10 +19,7 @@ const SNAPSHOT_MIN_GAP_MS = Number(process.env.SNAPSHOT_MIN_GAP_MS ?? 3 * 3600 *
 
 
 async function readPublished() {
-  const result = await get(BLOB_PATH, { access: 'public', useCache: false });
-  if (!result || result.statusCode !== 200) return null;
-  const text = await new Response(result.stream).text();
-  const data = JSON.parse(text);
+  const data = await getDoc(BLOB_PATH);
   return data && typeof data === 'object' ? data : null;
 }
 
@@ -34,17 +31,13 @@ async function snapshotPrevious(prev, force) {
     // No list() just to decide: the age of the version being replaced tells whether a new editing session started.
     const prevAt = Date.parse(prev.updatedAt || '');
     if (!force && Number.isFinite(prevAt) && Date.now() - prevAt < SNAPSHOT_MIN_GAP_MS) return;
-    const { blobs } = await list({ prefix: HISTORY_PREFIX });
-    const sorted = [...blobs].sort((a, b) => snapshotTime(b.pathname) - snapshotTime(a.pathname));
+    const docs = await listDocs(HISTORY_PREFIX);
+    const sorted = [...docs].sort((a, b) => snapshotTime(b.path) - snapshotTime(a.path));
     const stamp = new Date().toISOString().replace(/[:.]/g, '-');
-    await put(`${HISTORY_PREFIX}${stamp}.json`, JSON.stringify(prev), {
-      access: 'public',
-      addRandomSuffix: true,
-      contentType: 'application/json'
-    });
+    await putDoc(`${HISTORY_PREFIX}${stamp}.json`, prev, { suffix: true });
     await count('snapshot', 2); // list + put
     const extra = sorted.slice(HISTORY_KEEP - 1);
-    if (extra.length) await del(extra.map((b) => b.url));
+    if (extra.length) await delDocs(extra);
   } catch (err) {
     console.error('history snapshot failed:', err);
   }
@@ -104,13 +97,7 @@ export default async function handler(req, res) {
 
       await snapshotPrevious(prev, body.snapshot === 'force');
 
-      await put(BLOB_PATH, JSON.stringify(payload), {
-        access: 'public',
-        addRandomSuffix: false,
-        allowOverwrite: true,
-        contentType: 'application/json',
-        cacheControlMaxAge: 60
-      });
+      await putDoc(BLOB_PATH, payload);
 
       await count('publish', 1);
 

@@ -1,4 +1,4 @@
-import { put, get } from '@vercel/blob';
+import { getDoc, putDoc } from './_store.js';
 import { count } from './_budget.js';
 
 // Read-modify-write helper for small JSON blobs that get overwritten (gallery list, market listings).
@@ -13,14 +13,11 @@ const memo = new Map(); // path -> { v, json }
 
 async function readBlob(path) {
   try {
-    const r = await get(path, { access: 'public', useCache: false });
-    if (!r || r.statusCode !== 200) return null;
-    return JSON.parse(await new Response(r.stream).text());
+    return await getDoc(path);
   } catch (err) {
-    // "Not found" is a normal empty result. Anything else (store blocked, rate limit, network) must NOT look like an
-    // empty file: callers would write an empty list back over the real data (e.g. wipe all marketplace ads).
-    if (err && err.name === 'BlobNotFoundError') return null;
-    console.error('blob read failed:', path, err);
+    // A failed read (store blocked, rate limit, network) must NOT look like an empty file: callers would write an
+    // empty list back over the real data (e.g. wipe all marketplace ads).
+    console.error('store read failed:', path, err);
     throw err;
   }
 }
@@ -42,11 +39,9 @@ const kindOfPath = (p) => (/^market\//.test(p) ? 'ad' : /^gallery\//.test(p) ? '
 export async function writeFresh(path, data, prevV = 0, kind = '') {
   const m = memo.get(path);
   const v = Math.max(Date.now(), Number(prevV) + 1, (m ? m.v : 0) + 1);
-  const json = JSON.stringify({ ...data, v });
-  await put(path, json, {
-    access: 'public', addRandomSuffix: false, allowOverwrite: true, contentType: 'application/json', cacheControlMaxAge: 60
-  });
-  memo.set(path, { v, json });
+  const doc = { ...data, v };
+  await putDoc(path, doc);
+  memo.set(path, { v, json: JSON.stringify(doc) });
   await count(kind || kindOfPath(path));
   return v;
 }

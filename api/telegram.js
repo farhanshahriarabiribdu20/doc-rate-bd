@@ -1,5 +1,5 @@
 import { timingSafeEqual } from 'node:crypto';
-import { get } from '@vercel/blob';
+import { getDoc } from './_store.js';
 import { parseBody, requireAdmin } from './_lib.js';
 import { readTrend } from './_days.js';
 import { readFresh, writeFresh } from './_fresh.js';
@@ -28,8 +28,7 @@ async function sendToChannel(text) {
 // Weekly summary: only when the admin turned on "auto post" (settings.telegramAuto), at most once per last-rate date.
 async function weeklyCron(res) {
   if (!process.env.TELEGRAM_BOT_TOKEN || !process.env.TELEGRAM_CHAT_ID) return res.status(200).json({ success: true, skipped: 'not_configured' });
-  const site = await get('site-data.json', { access: 'public', useCache: false }).catch(() => null);
-  const data = site && site.statusCode === 200 ? JSON.parse(await new Response(site.stream).text()) : null;
+  const data = await getDoc('site-data.json').catch(() => null);
   if (data?.settings?.telegramAuto !== true) return res.status(200).json({ success: true, skipped: 'auto_off' });
   const summary = weeklySummary(await readTrend());
   if (!summary) return res.status(200).json({ success: true, skipped: 'not_enough_data' });

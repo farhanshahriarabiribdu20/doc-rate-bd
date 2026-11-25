@@ -2,7 +2,7 @@ import { createHmac, randomBytes, timingSafeEqual } from 'node:crypto';
 import { put, del } from '@vercel/blob';
 import { noStore, parseBody, requireAdmin } from './_lib.js';
 import { readFresh, writeFresh } from './_fresh.js';
-import { allow, count } from './_budget.js';
+import { allow, countBlob } from './_budget.js';
 import { DISTRICTS } from '../src/data/districts.js';
 
 // Seller marketplace: NO login. Anyone posts a listing with name, mobile number and location. The
@@ -196,7 +196,7 @@ async function postListing(body, req, res) {
   let imgs = [];
   if (pics.images.length) {
     try {
-      await count('ad', pics.images.length);
+      await countBlob('ad', pics.images.length);
       imgs = await Promise.all(pics.images.map((p, i) => put(`market/img/${id}-${i}.${IMG_TYPES[p.type]}`, p.buf, {
         access: 'public', addRandomSuffix: true, contentType: p.type, cacheControlMaxAge: 31536000
       }).then((b) => b.url)));

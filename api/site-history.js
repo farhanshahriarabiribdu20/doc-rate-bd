@@ -1,4 +1,4 @@
-import { get, list, put, del } from '@vercel/blob';
+import { getDoc, putDoc, listDocs, delDocs, exportAll, migrateFromBlob, storeStatus } from './_store.js';
 import { count, getMeter } from './_budget.js';
 import { timingSafeEqual } from 'node:crypto';
 import { requireAdmin, snapshotTime } from './_lib.js';
@@ -8,9 +8,7 @@ const HISTORY_PREFIX = 'history/';
 const ID_RE = /^history\/[0-9TZ-]+-[A-Za-z0-9]+\.json$/;
 
 async function readBlob(pathname) {
-  const result = await get(pathname, { access: 'public', useCache: false });
-  if (!result || result.statusCode !== 200) return null;
-  const data = JSON.parse(await new Response(result.stream).text());
+  const data = await getDoc(pathname);
   return data && typeof data === 'object' ? data : null;
 }
 
@@ -31,10 +29,9 @@ const dhakaDay = (ms = Date.now()) => new Date(ms + 6 * 3600 * 1000).toISOString
 const backupDay = (pathname) => pathname.slice(BACKUP_PREFIX.length, BACKUP_PREFIX.length + 10);
 
 async function listBackups() {
-  const { blobs } = await list({ prefix: BACKUP_PREFIX });
-  return blobs
-    .filter((b) => BACKUP_ID_RE.test(b.pathname))
-    .sort((a, b) => new Date(b.uploadedAt) - new Date(a.uploadedAt));
+  return (await listDocs(BACKUP_PREFIX))
+    .filter((b) => BACKUP_ID_RE.test(b.path))
+    .sort((a, b) => new Date(b.updatedAt) - new Date(a.updatedAt));
 }
 
 async function safe(fn) {
@@ -45,7 +42,7 @@ async function safe(fn) {
 async function runBackup(force) {
   const existing = await listBackups();
   await count('backup', 1);
-  const newest = existing[0] ? new Date(existing[0].uploadedAt).getTime() : 0;
+  const newest = existing[0] ? new Date(existing[0].updatedAt).getTime() : 0;
   if (!force && Date.now() - newest < BACKUP_MIN_GAP_MS) return { skipped: 'recent' };
 
   const site = await safe(() => readBlob('site-data.json'));
@@ -58,21 +55,19 @@ async function runBackup(force) {
   const day = dhakaDay();
   const payload = { version: 1, createdAt: new Date().toISOString(), site, market, gallery, feeds, dealers };
   await count('backup', 1);
-  const blob = await put(`${BACKUP_PREFIX}${day}.json`, JSON.stringify(payload), {
-    access: 'public', addRandomSuffix: true, contentType: 'application/json', cacheControlMaxAge: 60
-  });
+  const created = await putDoc(`${BACKUP_PREFIX}${day}.json`, payload, { suffix: true });
 
   // retention: one file per day (the newest), at most 14 days
-  const all = [{ pathname: blob.pathname, url: blob.url, uploadedAt: new Date().toISOString() }, ...existing.filter((b) => b.pathname !== blob.pathname)];
+  const all = [{ path: created, updatedAt: new Date().toISOString() }, ...existing.filter((b) => b.path !== created)];
   const seen = new Set();
   const drop = [];
   all.forEach((b) => {
-    const d = backupDay(b.pathname);
-    if (seen.has(d) || seen.size >= BACKUP_KEEP_DAYS) drop.push(b.url);
+    const d = backupDay(b.path);
+    if (seen.has(d) || seen.size >= BACKUP_KEEP_DAYS) drop.push(b);
     else seen.add(d);
   });
-  if (drop.length) await safe(() => del(drop));
-  return { created: blob.pathname, removed: drop.length };
+  if (drop.length) await safe(() => delDocs(drop));
+  return { created, removed: drop.length };
 }
 
 const cronAllowed = (req) => {
@@ -109,6 +104,16 @@ export default async function handler(req, res) {
 
     if (req.method === 'POST') return res.status(200).json({ success: true, ...(await runBackup(true)) });
 
+    if (q.store) return res.status(200).json({ success: true, ...(await storeStatus()) });
+    if (q.export) {
+      const files = await exportAll();
+      return res.status(200).json({ success: true, version: 1, exportedAt: new Date().toISOString(), count: Object.keys(files).length, files });
+    }
+    if (q.migrate) {
+      try { return res.status(200).json({ success: true, ...(await migrateFromBlob()) }); }
+      catch (err) { return res.status(502).json({ success: false, error: String(err?.message || err).slice(0, 200) }); }
+    }
+
     if (q.usage) return res.status(200).json({ success: true, ...(await getMeter()) });
 
     if (q.backups) {
@@ -116,7 +121,7 @@ export default async function handler(req, res) {
       const files = await listBackups();
       return res.status(200).json({
         success: true,
-        backups: files.map((b) => ({ id: b.pathname, day: backupDay(b.pathname), uploadedAt: b.uploadedAt, size: b.size }))
+        backups: files.map((b) => ({ id: b.path, day: backupDay(b.path), uploadedAt: b.updatedAt, size: b.size }))
       });
     }
     if (typeof q.backup === 'string') {
@@ -135,18 +140,17 @@ export default async function handler(req, res) {
     }
 
     await count('admin', 1);
-    const { blobs } = await list({ prefix: HISTORY_PREFIX });
-    const sorted = [...blobs].sort((a, b) => snapshotTime(b.pathname) - snapshotTime(a.pathname));
+    const sorted = [...(await listDocs(HISTORY_PREFIX))].sort((a, b) => snapshotTime(b.path) - snapshotTime(a.path));
     const versions = (
       await Promise.all(
         sorted.map(async (b) => {
           try {
-            const d = await readBlob(b.pathname);
+            const d = await readBlob(b.path);
             if (!d) return null;
             const rates = Array.isArray(d.rates) ? d.rates : [];
             return {
-              id: b.pathname,
-              replacedAt: new Date(snapshotTime(b.pathname)).toISOString(),
+              id: b.path,
+              replacedAt: new Date(snapshotTime(b.path)).toISOString(),
               publishedAt: d.updatedAt || null,
               reportDateISO: d.settings?.reportDateISO || null,
               companies: rates.length,
