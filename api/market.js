@@ -98,7 +98,7 @@ function prune(store, now) {
 
 // Pictures live in their own blobs; they are removed when their listing goes away. A leftover blob is harmless.
 const dropImages = async (urls) => {
-  await Promise.all((urls || []).filter((u) => typeof u === 'string' && u.startsWith('https://')).map((u) => del(u).catch(() => {})));
+  await Promise.all((urls || []).filter((u) => typeof u === 'string' && /^https?:\/\//.test(u)).map((u) => del(u).catch(() => {})));
 };
 
 function magicOk(buf, type) {
