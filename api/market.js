@@ -13,8 +13,8 @@ import { DISTRICTS } from '../src/data/districts.js';
 //   POST {action:'mine'}           (public) -> status of my listings, given [{id, key}] from this browser
 //   POST {action:'update'}         (public, needs the listing's editKey) -> sold, renew, delete
 //   POST {action:'rate'}           (public) -> buyer star rating
-//   GET  ?admin=1                  (admin)  -> everything incl. pending listings and settings
-//   POST {action:'admin'}          (admin)  -> approve, hide, delete, ban, approval on/off
+//   GET  ?admin=1                  (admin)  -> every listing
+//   POST {action:'admin'}          (admin)  -> delete, ban, verified tick, rating reset (no approval: ads go live at once)
 //
 // Storage is Vercel Blob. The free plan has only ~2,000 write/list operations a month shared with the
 // whole site, so there is exactly ONE blob for all listings and ONE small blob per account. A listing
@@ -48,7 +48,7 @@ const b64 = (buf) => Buffer.from(buf).toString('base64url');
 
 const hashKey = (key) => hmac(`edit:${key}`).toString('hex').slice(0, 32);
 
-const emptyStore = () => ({ settings: { requireApproval: true }, banned: [], verified: [], ratings: {}, items: [] });
+const emptyStore = () => ({ settings: { requireApproval: false }, banned: [], verified: [], ratings: {}, items: [] });
 
 async function readStore() {
   const data = await readFresh(LISTINGS_PATH);
@@ -56,11 +56,11 @@ async function readStore() {
   if (!data || typeof data !== 'object') return base;
   return {
     v: Number(data.v) || 0,
-    settings: { requireApproval: data.settings?.requireApproval !== false },
+    settings: { requireApproval: false }, // ads are published at once; the admin can only delete / block
     banned: Array.isArray(data.banned) ? data.banned.filter((x) => typeof x === 'string').slice(0, 500) : [],
     verified: Array.isArray(data.verified) ? data.verified.filter((x) => typeof x === 'string').slice(0, 500) : [],
     ratings: data.ratings && typeof data.ratings === 'object' && !Array.isArray(data.ratings) ? data.ratings : {},
-    items: Array.isArray(data.items) ? data.items : []
+    items: (Array.isArray(data.items) ? data.items : []).map((it) => (it && it.status === 'pending' ? { ...it, status: 'live' } : it))
   };
 }
 
@@ -164,7 +164,7 @@ const bnDigits = (s) => String(s || '').replace(/[০-৯]/g, (d) => '০১২�
 const clientIp = (req) => String(req.headers?.['x-forwarded-for'] || req.headers?.['x-real-ip'] || '').split(',')[0].trim() || 'unknown';
 
 async function postListing(body, req, res) {
-  if (body.website) return res.status(200).json({ success: true, id: '', editKey: '', status: 'pending' }); // honeypot: pretend it worked
+  if (body.website) return res.status(200).json({ success: true, id: '', editKey: '', status: 'live' }); // honeypot: pretend it worked
   const elapsed = Number(body.formMs);
   if (Number.isFinite(elapsed) && elapsed < MIN_FORM_MS) return res.status(429).json({ success: false, error: 'একটু ধীরে, আবার চেষ্টা করুন' });
 
@@ -203,7 +203,7 @@ async function postListing(body, req, res) {
     if (activeOf((it) => it.userId === userId) >= MAX_ACTIVE_PER_SELLER) return { error: `এই নম্বরে একসাথে সর্বোচ্চ ${MAX_ACTIVE_PER_SELLER}টি বিজ্ঞাপন চালু রাখা যায়। আগেরটি বিক্রি/মুছে নতুন দিন`, status: 400 };
     if (activeOf((it) => it.ih === ih) >= MAX_ACTIVE_PER_IP) return { error: 'আপনার ডিভাইস থেকে অনেক বিজ্ঞাপন চালু আছে। আগেরগুলো বিক্রি/মুছে নতুন দিন', status: 429 };
     if (store.items.filter((it) => it.ih === ih && now - it.createdAt < 24 * 3600 * 1000).length >= MAX_POSTS_PER_IP_DAY) return { error: 'আজকের জন্য বিজ্ঞাপন দেওয়ার সীমা শেষ, কাল আবার চেষ্টা করুন', status: 429 };
-    const status = store.settings.requireApproval ? 'pending' : 'live';
+    const status = 'live';
     store.items.unshift({
       id, userId, sellerName: name, phone, ...parsed.value, imgs, status, ih, mk: hashKey(editKey), createdAt: now, expiresAt: now + LISTING_TTL_MS
     });
@@ -275,14 +275,11 @@ async function adminAction(body, res) {
   let removedImgs = [];
 
   const outcome = await mutateStore((store) => {
-    if (op === 'approve' || op === 'hide' || op === 'delete') {
+    if (op === 'delete') {
       const idx = store.items.findIndex((it) => it.id === id);
       if (idx < 0) return { error: 'বিজ্ঞাপনটি পাওয়া যায়নি', status: 404 };
-      if (op === 'delete') { removedImgs = store.items[idx].imgs || []; store.items.splice(idx, 1); }
-      else {
-        store.items[idx].status = op === 'approve' ? 'live' : 'hidden';
-        if (op === 'approve' && store.items[idx].expiresAt <= now) store.items[idx].expiresAt = now + LISTING_TTL_MS;
-      }
+      removedImgs = store.items[idx].imgs || [];
+      store.items.splice(idx, 1);
       return {};
     }
     if (op === 'ban' || op === 'unban') {
@@ -307,26 +304,14 @@ async function adminAction(body, res) {
       delete store.ratings[userId];
       return {};
     }
-    if (op === 'settings') {
-      store.settings.requireApproval = body.requireApproval !== false;
-      return {};
-    }
-    if (op === 'approveAll') {
-      store.items.forEach((it) => { if (it.status === 'pending') it.status = 'live'; });
-      return {};
-    }
     return { error: 'unknown op', status: 400 };
   }, (check) => {
     if (op === 'delete') return !check.items.some((it) => it.id === id);
-    if (op === 'approve') return check.items.every((it) => it.id !== id || it.status === 'live');
-    if (op === 'hide') return check.items.every((it) => it.id !== id || it.status === 'hidden');
     if (op === 'ban') return check.banned.includes(userId);
     if (op === 'unban') return !check.banned.includes(userId);
     if (op === 'verify') return check.verified.includes(userId);
     if (op === 'unverify') return !check.verified.includes(userId);
     if (op === 'resetRating') return !check.ratings[userId];
-    if (op === 'settings') return check.settings.requireApproval === (body.requireApproval !== false);
-    if (op === 'approveAll') return !check.items.some((it) => it.status === 'pending');
     return true;
   });
   if (outcome.error) return res.status(outcome.status || 400).json({ success: false, error: outcome.error });

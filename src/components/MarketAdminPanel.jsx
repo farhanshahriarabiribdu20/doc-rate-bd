@@ -15,11 +15,10 @@ const STATUS = {
   expired: ['মেয়াদ শেষ', 'bg-slate-200 text-slate-700']
 };
 
-/** Admin: approve / hide / delete seller ads, block a seller, switch "approval needed" on or off. */
+/** Admin: delete seller ads, block a seller, verified tick, rating reset (ads need no approval). */
 export default function MarketAdminPanel({ data, loading, error, onReload, onAction }) {
   const items = data?.items || [];
   const banned = data?.banned || [];
-  const pending = items.filter((i) => i.status === 'pending');
 
   return (
     <div className="space-y-4">
@@ -32,24 +31,9 @@ export default function MarketAdminPanel({ data, loading, error, onReload, onAct
 
       {error && <div className="p-3 rounded-xl bg-red-50 border border-red-200 text-red-700 text-sm font-bold">{error}</div>}
 
-      <label className="flex items-start gap-3 p-3 rounded-xl border border-slate-200 bg-slate-50/60 cursor-pointer">
-        <input
-          type="checkbox"
-          className="mt-1 w-4 h-4 accent-emerald-600"
-          checked={data ? data.requireApproval : true}
-          onChange={(e) => onAction({ op: 'settings', requireApproval: e.target.checked })}
-        />
-        <span className="text-sm">
-          <span className="font-black text-slate-900">নতুন বিজ্ঞাপন অনুমোদন লাগবে</span>
-          <span className="block text-xs text-slate-500">চালু থাকলে বিক্রেতার বিজ্ঞাপন আপনি Approve না করা পর্যন্ত সাইটে আসবে না (স্প্যাম ঠেকাতে চালু রাখাই ভালো)।</span>
-        </span>
-      </label>
-
-      {pending.length > 1 && (
-        <button onClick={() => onAction({ op: 'approveAll' })} className="flex items-center gap-1.5 px-3 py-2 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white font-black text-xs cursor-pointer">
-          <Check className="w-4 h-4" /> সবগুলো ({bnNum(pending.length)}টি) Approve করুন
-        </button>
-      )}
+      <p className="text-xs text-slate-600 bg-emerald-50 border border-emerald-200 rounded-xl p-3">
+        নতুন বিজ্ঞাপন সরাসরি সাইটে চালু হয়ে যায়, অনুমোদন লাগে না। আপনি শুধু আপত্তিকর বিজ্ঞাপন <b>মুছতে</b> বা বিক্রেতাকে <b>ব্লক</b> করতে পারবেন।
+      </p>
 
       {items.length === 0 && !loading && (
         <div className="py-10 text-center text-slate-500 text-sm">এখনো কোনো বিজ্ঞাপন নেই</div>
@@ -57,7 +41,7 @@ export default function MarketAdminPanel({ data, loading, error, onReload, onAct
 
       <div className="space-y-3">
         {items.map((it) => {
-          const [stText, stCls] = STATUS[it.status] || STATUS.pending;
+          const [stText, stCls] = STATUS[it.status] || STATUS.live;
           const prod = PRODUCT_BN[it.product] || PRODUCT_BN.other;
           const isBanned = banned.includes(it.userId);
           return (
@@ -86,12 +70,6 @@ export default function MarketAdminPanel({ data, loading, error, onReload, onAct
                 <span className={`shrink-0 px-2 py-0.5 rounded-full text-[10px] font-black ${stCls}`}>{stText}</span>
               </div>
               <div className="flex flex-wrap gap-2">
-                {it.status !== 'live' && it.status !== 'sold' && (
-                  <button onClick={() => onAction({ op: 'approve', id: it.id })} className="flex items-center gap-1 px-2.5 py-1.5 rounded-lg bg-emerald-600 hover:bg-emerald-700 text-white font-black text-xs cursor-pointer"><Check className="w-3.5 h-3.5" /> Approve</button>
-                )}
-                {it.status === 'live' && (
-                  <button onClick={() => onAction({ op: 'hide', id: it.id })} className="flex items-center gap-1 px-2.5 py-1.5 rounded-lg bg-amber-50 hover:bg-amber-100 text-amber-800 font-black text-xs cursor-pointer"><EyeOff className="w-3.5 h-3.5" /> লুকান</button>
-                )}
                 <button onClick={() => { if (window.confirm('বিজ্ঞাপনটি মুছে ফেলবেন?')) onAction({ op: 'delete', id: it.id }); }} className="flex items-center gap-1 px-2.5 py-1.5 rounded-lg bg-red-50 hover:bg-red-100 text-red-700 font-black text-xs cursor-pointer"><Trash2 className="w-3.5 h-3.5" /> মুছুন</button>
                 <button onClick={() => onAction({ op: it.verified ? 'unverify' : 'verify', userId: it.userId })} className={`flex items-center gap-1 px-2.5 py-1.5 rounded-lg font-black text-xs cursor-pointer ${it.verified ? 'bg-emerald-100 text-emerald-800 hover:bg-emerald-200' : 'bg-emerald-50 text-emerald-700 hover:bg-emerald-100'}`}><BadgeCheck className="w-3.5 h-3.5" /> {it.verified ? 'যাচাই বাতিল' : 'যাচাইকৃত করুন'}</button>
                 {it.rating && (
