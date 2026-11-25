@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { Check, X, Ban, EyeOff, Trash2, Pencil, RefreshCw, Loader2, Store, UserCheck, BadgeCheck, Star } from 'lucide-react';
-import { prodOf, PRODUCT_OPTIONS, UNIT_OPTIONS, UNIT_BN } from '../services/market';
+import { prodOf, PRODUCT_OPTIONS, UNIT_OPTIONS, AGE_UNITS, ageUnitBn, UNIT_BN } from '../services/market';
 import { DISTRICT_GROUPS } from '../data/districts';
 
 const bnNum = (n) => new Intl.NumberFormat('bn-BD', { maximumFractionDigits: 2 }).format(n);
@@ -22,7 +22,7 @@ const lbl = 'block text-[11px] font-bold text-slate-600 mb-0.5';
 /** Inline edit form for one ad (admin can fix any field except the seller's phone). */
 function EditForm({ it, onSave, onCancel }) {
   const [f, setF] = useState({
-    sellerName: it.sellerName || '', product: it.product, customName: it.customName || '', quantity: it.quantity,
+    sellerName: it.sellerName || '', product: it.product, customName: it.customName || '', quantity: it.quantity, age: it.age || '', ageUnit: it.ageUnit || 'day',
     unit: it.unit, price: it.price || '', district: it.district || '', location: it.location || '', details: it.details || ''
   });
   const [busy, setBusy] = useState(false);
@@ -43,6 +43,11 @@ function EditForm({ it, onSave, onCancel }) {
         <div>
           <label className={lbl}>একক</label>
           <select className={fld} value={f.unit} onChange={set('unit')}>{UNIT_OPTIONS.map((u) => <option key={u.key} value={u.key}>{u.bn}</option>)}</select>
+        </div>
+        <div><label className={lbl}>বয়স</label><input type="number" min="0" step="1" className={fld} value={f.age} onChange={set('age')} /></div>
+        <div>
+          <label className={lbl}>বয়সের একক</label>
+          <select className={fld} value={f.ageUnit} onChange={set('ageUnit')}>{AGE_UNITS.map((u) => <option key={u.key} value={u.key}>{u.bn}</option>)}</select>
         </div>
         <div className="col-span-2"><label className={lbl}>দাম (৳) — ফাঁকা বা ০ হলে "দর আলোচনা সাপেক্ষে"</label><input type="number" min="0" step="any" className={fld} value={f.price} onChange={set('price')} /></div>
         <div>
@@ -97,7 +102,7 @@ export default function MarketAdminPanel({ data, loading, error, onReload, onAct
             <div key={it.id} className={`border rounded-2xl p-3 space-y-2 ${it.status === 'pending' ? 'border-amber-300 bg-amber-50/60' : 'border-slate-200'}`}>
               <div className="flex items-start justify-between gap-2">
                 <div>
-                  <p className="font-black text-slate-900">{prod.emoji} {prod.bn} — {bnNum(it.quantity)} {UNIT_BN[it.unit]?.bn}</p>
+                  <p className="font-black text-slate-900">{prod.emoji} {prod.bn} — {bnNum(it.quantity)} {UNIT_BN[it.unit]?.bn}{it.age > 0 ? ` · বয়স ${bnNum(it.age)} ${ageUnitBn(it.ageUnit)}` : ''}</p>
                   <p className="text-xs text-slate-600">
                     {it.price > 0 ? `৳${bnNum(it.price)} ${UNIT_BN[it.unit]?.per}` : 'দর আলোচনা সাপেক্ষে'} · {it.location}
                   </p>

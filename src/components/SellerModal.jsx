@@ -4,7 +4,7 @@ import { compressImage } from '../utils/compressImage';
 import { X, Loader2, ImagePlus, CheckCircle2, AlertTriangle, Trash2, RefreshCw, BadgeCheck, PlusCircle } from 'lucide-react';
 import {
   getMyAds, addMyAd, removeMyAd, getProfile, saveProfile, postListing, fetchMine, updateListing,
-  PRODUCT_OPTIONS, prodOf, UNIT_OPTIONS, UNIT_BN
+  PRODUCT_OPTIONS, prodOf, AGE_UNITS, ageUnitBn, UNIT_OPTIONS, UNIT_BN
 } from '../services/market';
 
 const input = 'w-full px-3 py-2 border border-slate-300 rounded-xl text-sm bg-white focus:outline-none focus:ring-2 focus:ring-emerald-500';
@@ -19,7 +19,7 @@ const STATUS = {
 };
 
 const MAX_PHOTOS = 1;
-const emptyForm = { product: 'broiler', customName: '', quantity: '', unit: 'kg', price: '', district: '', location: '', details: '' };
+const emptyForm = { product: 'broiler', customName: '', quantity: '', unit: 'kg', age: '', ageUnit: 'day', price: '', district: '', location: '', details: '' };
 
 /**
  * Post an ad without any account: name, mobile number, location and the product. The ad waits for the
@@ -156,6 +156,18 @@ export default function SellerModal({ onClose, onChanged }) {
                       </select>
                     </div>
                   </div>
+                  <div className="grid grid-cols-2 gap-3">
+                    <div>
+                      <label className={label}>বয়স <span className="font-normal text-slate-500">(ঐচ্ছিক)</span></label>
+                      <input type="number" min="0" step="1" className={input} value={form.age} onChange={setF('age')} placeholder="যেমন: 25" />
+                    </div>
+                    <div>
+                      <label className={label}>বয়সের একক</label>
+                      <select className={input} value={form.ageUnit} onChange={setF('ageUnit')}>
+                        {AGE_UNITS.map((u) => <option key={u.key} value={u.key}>{u.bn}</option>)}
+                      </select>
+                    </div>
+                  </div>
                   <div>
                     <label className={label}>{UNIT_BN[form.unit].per} দাম (৳) <span className="font-normal text-slate-500">— ফাঁকা রাখলে "দর আলোচনা সাপেক্ষে"</span></label>
                     <input type="number" min="0" step="any" className={input} value={form.price} onChange={setF('price')} placeholder="যেমন: 145" />
@@ -222,7 +234,7 @@ export default function SellerModal({ onClose, onChanged }) {
                         <div className="flex items-start justify-between gap-2">
                           <div>
                             <p className="font-black text-slate-900">{prodOf(it).emoji} {prodOf(it).bn}</p>
-                            <p className="text-xs text-slate-600">{bnNum(it.quantity)} {UNIT_BN[it.unit]?.bn} · {it.price > 0 ? `৳${bnNum(it.price)} ${UNIT_BN[it.unit]?.per}` : 'দর আলোচনা সাপেক্ষে'} · {it.location}</p>
+                            <p className="text-xs text-slate-600">{bnNum(it.quantity)} {UNIT_BN[it.unit]?.bn}{it.age > 0 ? ` · বয়স ${bnNum(it.age)} ${ageUnitBn(it.ageUnit)}` : ''} · {it.price > 0 ? `৳${bnNum(it.price)} ${UNIT_BN[it.unit]?.per}` : 'দর আলোচনা সাপেক্ষে'} · {it.location}</p>
                           </div>
                           <span className={`shrink-0 px-2 py-0.5 rounded-full text-[10px] font-black ${st.cls}`}>{st.text}</span>
                         </div>
