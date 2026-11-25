@@ -109,7 +109,7 @@ async function votesHandler(req, res) {
     res.setHeader('Cache-Control', 'public, s-maxage=60, stale-while-revalidate=300');
     const stored = await readFresh(VOTES_PATH);
     const date = typeof req.query?.d === 'string' ? req.query.d : stored?.date;
-    let c = stored?.date === date ? stored.c || {} : {};
+    let c = stored && stored.date === date ? stored.c || {} : {};
     if (pend.date === date) c = mergeInto(c, pend.c);
     return res.status(200).json({ success: true, date, c });
   }
