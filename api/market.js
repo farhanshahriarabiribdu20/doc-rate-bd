@@ -123,7 +123,7 @@ function decodeImages(raw) {
 }
 
 const publicItem = (it) => ({
-  id: it.id, sellerName: it.sellerName, phone: it.phone, product: it.product, quantity: it.quantity, unit: it.unit,
+  id: it.id, sellerName: it.sellerName, phone: it.phone, product: it.product, customName: it.customName || '', quantity: it.quantity, unit: it.unit,
   price: it.price, location: it.location, district: it.district || '', details: it.details, imgs: it.imgs || [], createdAt: it.createdAt, expiresAt: it.expiresAt
 });
 
@@ -153,8 +153,9 @@ function validateListing(body) {
   if (location.length < 2) return { error: 'এলাকা/ঠিকানা লিখুন' };
   const district = DISTRICTS.includes(body.district) ? body.district : '';
   if (!district) return { error: 'জেলা বাছাই করুন' };
+  const customName = product === 'other' ? str(body.customName, 40) : '';
   const details = strMulti(body.details, 300);
-  return { value: { product, unit, quantity, price, location, district, details } };
+  return { value: { product, customName, unit, quantity, price, location, district, details } };
 }
 
 // ---------- posting (no account) ----------

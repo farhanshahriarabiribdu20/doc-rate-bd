@@ -1,6 +1,6 @@
 import React from 'react';
 import { Check, X, Ban, EyeOff, Trash2, RefreshCw, Loader2, Store, UserCheck, BadgeCheck, Star } from 'lucide-react';
-import { PRODUCT_BN, UNIT_BN } from '../services/market';
+import { prodOf, UNIT_BN } from '../services/market';
 
 const bnNum = (n) => new Intl.NumberFormat('bn-BD', { maximumFractionDigits: 2 }).format(n);
 const when = (ms) => {
@@ -42,7 +42,7 @@ export default function MarketAdminPanel({ data, loading, error, onReload, onAct
       <div className="space-y-3">
         {items.map((it) => {
           const [stText, stCls] = STATUS[it.status] || STATUS.live;
-          const prod = PRODUCT_BN[it.product] || PRODUCT_BN.other;
+          const prod = prodOf(it);
           const isBanned = banned.includes(it.userId);
           return (
             <div key={it.id} className={`border rounded-2xl p-3 space-y-2 ${it.status === 'pending' ? 'border-amber-300 bg-amber-50/60' : 'border-slate-200'}`}>

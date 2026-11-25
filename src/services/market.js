@@ -82,6 +82,11 @@ export const PRODUCT_OPTIONS = [
 ];
 
 export const PRODUCT_BN = Object.fromEntries(PRODUCT_OPTIONS.map((p) => [p.key, p]));
+/** Product info for a listing; a custom name typed under "অন্যান্য" replaces the label. */
+export const prodOf = (it) => {
+  const base = PRODUCT_BN[it.product] || PRODUCT_BN.other;
+  return it.customName ? { ...base, bn: it.customName } : base;
+};
 
 export const UNIT_OPTIONS = [
   { key: 'kg', bn: 'কেজি', per: 'প্রতি কেজি' },

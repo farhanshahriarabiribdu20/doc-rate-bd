@@ -4,7 +4,7 @@ import { compressImage } from '../utils/compressImage';
 import { X, Loader2, ImagePlus, CheckCircle2, AlertTriangle, Trash2, RefreshCw, BadgeCheck, PlusCircle } from 'lucide-react';
 import {
   getMyAds, addMyAd, removeMyAd, getProfile, saveProfile, postListing, fetchMine, updateListing,
-  PRODUCT_OPTIONS, PRODUCT_BN, UNIT_OPTIONS, UNIT_BN
+  PRODUCT_OPTIONS, prodOf, UNIT_OPTIONS, UNIT_BN
 } from '../services/market';
 
 const input = 'w-full px-3 py-2 border border-slate-300 rounded-xl text-sm bg-white focus:outline-none focus:ring-2 focus:ring-emerald-500';
@@ -19,7 +19,7 @@ const STATUS = {
 };
 
 const MAX_PHOTOS = 1;
-const emptyForm = { product: 'broiler', quantity: '', unit: 'kg', price: '', district: '', location: '', details: '' };
+const emptyForm = { product: 'broiler', customName: '', quantity: '', unit: 'kg', price: '', district: '', location: '', details: '' };
 
 /**
  * Post an ad without any account: name, mobile number, location and the product. The ad waits for the
@@ -140,6 +140,9 @@ export default function SellerModal({ onClose, onChanged }) {
                     <select className={input} value={form.product} onChange={setF('product')}>
                       {PRODUCT_OPTIONS.map((p) => <option key={p.key} value={p.key}>{p.emoji} {p.bn}</option>)}
                     </select>
+                    {form.product === 'other' && (
+                      <input className={`${input} mt-2`} value={form.customName} onChange={setF('customName')} maxLength={40} placeholder="পণ্যের নাম লিখুন (যেমন: কবুতর, কোয়েল, খরগোশ)" />
+                    )}
                   </div>
                   <div className="grid grid-cols-2 gap-3">
                     <div>
@@ -218,7 +221,7 @@ export default function SellerModal({ onClose, onChanged }) {
                       <div key={it.id} className="border border-slate-200 rounded-2xl p-3 space-y-2">
                         <div className="flex items-start justify-between gap-2">
                           <div>
-                            <p className="font-black text-slate-900">{(PRODUCT_BN[it.product] || PRODUCT_BN.other).emoji} {(PRODUCT_BN[it.product] || PRODUCT_BN.other).bn}</p>
+                            <p className="font-black text-slate-900">{prodOf(it).emoji} {prodOf(it).bn}</p>
                             <p className="text-xs text-slate-600">{bnNum(it.quantity)} {UNIT_BN[it.unit]?.bn} · {it.price > 0 ? `৳${bnNum(it.price)} ${UNIT_BN[it.unit]?.per}` : 'দর আলোচনা সাপেক্ষে'} · {it.location}</p>
                           </div>
                           <span className={`shrink-0 px-2 py-0.5 rounded-full text-[10px] font-black ${st.cls}`}>{st.text}</span>
