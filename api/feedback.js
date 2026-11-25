@@ -3,6 +3,7 @@ import { randomBytes, createHash } from 'node:crypto';
 import { DISTRICTS as DISTRICTS_BN } from '../src/data/districts.js';
 import { noStore, parseBody, requireAdmin } from './_lib.js';
 import { readFresh, writeFresh } from './_fresh.js';
+import { allow, count } from './_budget.js';
 
 // ---- "is this rate correct?" votes (?votes=1) ----
 // One small blob holds today's counts: { date, c: { 'Company|Breed': [up, down] }, flushedAt }.
@@ -91,6 +92,8 @@ async function reportsHandler(req, res, districts) {
   if (used >= REPORT_IP_DAILY) return res.status(429).json({ success: false, error: 'আজকের জন্য আর রেট পাঠানো যাবে না। কাল আবার চেষ্টা করুন।' });
   ipDay.n.set(h, used + 1);
   const name = typeof body.name === 'string' ? body.name.replace(/\s+/g, ' ').trim().slice(0, 40) : '';
+  const gate = await allow('report');
+  if (!gate.ok) return res.status(429).json({ success: false, error: gate.error });
   const stored = await readFresh(REPORTS_PATH);
   const d = stored?.date === today ? { ...(stored.d || {}) } : {};
   const list = (d[district] || []).filter((r) => r.h !== h);
@@ -134,7 +137,6 @@ const LEGACY_PATH = 'feedbacks.json'; // old single public file, migrated automa
 const MAX_FEEDBACK_LEN = 2000;
 const MAX_NAME_LEN = 80;
 const MAX_PHONE_LEN = 20;
-const MAX_STORED = 1000;
 const ALLOWED_CATEGORIES = ['পরামর্শ', 'তথ্য আপডেট', 'সমস্যা', 'সাধারণ'];
 const ID_RE = /^fb-\d+-[a-z0-9]{3,12}$/;
 
@@ -151,7 +153,10 @@ async function listAll(prefix) {
   return out;
 }
 
+let inboxCache = { at: 0, list: null }; // admin list, kept 5 minutes: every list() is a counted storage operation
 async function saveEntry(entry) {
+  inboxCache = { at: 0, list: null };
+  await count('feedback', 1);
   await put(`${PREFIX}${entry.id}.json`, JSON.stringify(entry), {
     access: 'public', // store is public; the random suffix keeps the URL secret
     addRandomSuffix: true,
@@ -229,10 +234,8 @@ export default async function handler(req, res) {
         return res.status(400).json({ success: false, error: 'Feedback is too long' });
       }
 
-      const existing = await listAll(PREFIX);
-      if (existing.length >= MAX_STORED) {
-        return res.status(429).json({ success: false, error: 'Feedback inbox is full' });
-      }
+      const gate = await allow('feedback');
+      if (!gate.ok) return res.status(429).json({ success: false, error: gate.error });
 
       const entry = {
         id: newId(),
@@ -256,8 +259,11 @@ export default async function handler(req, res) {
     // GET (admin): list all feedbacks
     if (req.method === 'GET') {
       if (!(await requireAdmin(req, res))) return;
-      await migrateLegacy();
+      if (req.query?.migrate) await migrateLegacy(); // old single-file inbox: only on request (it costs a list)
+      if (!req.query?.fresh && inboxCache.list && Date.now() - inboxCache.at < 5 * 60 * 1000) return res.status(200).json({ success: true, feedbacks: inboxCache.list });
+      await count('admin', 1);
       const feedbacks = await readAll();
+      inboxCache = { at: Date.now(), list: feedbacks };
       return res.status(200).json({ success: true, feedbacks });
     }
 
@@ -271,6 +277,8 @@ export default async function handler(req, res) {
       const { id, all } = body;
 
       if (all === true) {
+        inboxCache = { at: 0, list: null };
+        await count('admin', 1);
         const blobs = await listAll(PREFIX);
         for (let i = 0; i < blobs.length; i += 100) {
           await del(blobs.slice(i, i + 100).map((b) => b.url));
@@ -279,6 +287,8 @@ export default async function handler(req, res) {
       }
 
       if (typeof id === 'string' && ID_RE.test(id)) {
+        inboxCache = { at: 0, list: null };
+        await count('admin', 1);
         const { blobs } = await list({ prefix: `${PREFIX}${id}-` });
         if (blobs.length) await del(blobs.map((b) => b.url));
         return res.status(200).json({ success: true, message: 'Feedback deleted' });

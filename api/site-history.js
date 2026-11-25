@@ -1,4 +1,5 @@
 import { get, list, put, del } from '@vercel/blob';
+import { count, getMeter } from './_budget.js';
 import { timingSafeEqual } from 'node:crypto';
 import { requireAdmin, snapshotTime } from './_lib.js';
 import { readFresh } from './_fresh.js';
@@ -43,6 +44,7 @@ async function safe(fn) {
 /** Writes today's backup; returns { skipped } when it is not needed. `force` ignores the 20 h gap. */
 async function runBackup(force) {
   const existing = await listBackups();
+  await count('backup', 1);
   const newest = existing[0] ? new Date(existing[0].uploadedAt).getTime() : 0;
   if (!force && Date.now() - newest < BACKUP_MIN_GAP_MS) return { skipped: 'recent' };
 
@@ -55,6 +57,7 @@ async function runBackup(force) {
 
   const day = dhakaDay();
   const payload = { version: 1, createdAt: new Date().toISOString(), site, market, gallery, feeds, dealers };
+  await count('backup', 1);
   const blob = await put(`${BACKUP_PREFIX}${day}.json`, JSON.stringify(payload), {
     access: 'public', addRandomSuffix: true, contentType: 'application/json', cacheControlMaxAge: 60
   });
@@ -106,7 +109,10 @@ export default async function handler(req, res) {
 
     if (req.method === 'POST') return res.status(200).json({ success: true, ...(await runBackup(true)) });
 
+    if (q.usage) return res.status(200).json({ success: true, ...(await getMeter()) });
+
     if (q.backups) {
+      await count('admin', 1);
       const files = await listBackups();
       return res.status(200).json({
         success: true,
@@ -128,6 +134,7 @@ export default async function handler(req, res) {
       return res.status(200).json({ success: true, data });
     }
 
+    await count('admin', 1);
     const { blobs } = await list({ prefix: HISTORY_PREFIX });
     const sorted = [...blobs].sort((a, b) => snapshotTime(b.pathname) - snapshotTime(a.pathname));
     const versions = (

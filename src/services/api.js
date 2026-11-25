@@ -19,6 +19,15 @@ export async function fetchSiteData() {
   }
 }
 
+/** Admin: this month's estimated Blob write count (free plan: 2,000 a month). Null on failure. */
+export async function fetchBlobUsage(key) {
+  try {
+    const res = await fetch('/api/site-history?usage=1', { headers: adminHeaders(key), cache: 'no-store' });
+    const b = await json(res);
+    return res.ok && b?.success ? b : null;
+  } catch { return null; }
+}
+
 /** Is 2-step verification on? (public flag) */
 export async function fetchTwoFactorStatus() {
   try { const b = await json(await fetch('/api/admin-login')); return Boolean(b?.twofa); } catch { return false; }

@@ -1,6 +1,7 @@
 // Daily rate archive: one blob per date (rate-days/YYYY-MM-DD.json) so visitors can look at an earlier day.
 import { put, get, list } from '@vercel/blob';
 import { readFresh, writeFresh } from './_fresh.js';
+import { count } from './_budget.js';
 
 const prefixOf = (kind) => (kind === 'ready' ? 'ready-days/' : 'rate-days/');
 
@@ -14,6 +15,7 @@ export async function saveRateDay(date, rates, kind = 'doc') {
     contentType: 'application/json',
     cacheControlMaxAge: 60
   });
+  await count('archive', 1);
   await addToIndex(date, kind);
   if (kind === 'doc') {
     try { await updateTrend(date, rates); } catch (err) { console.error('trend update failed:', err); }

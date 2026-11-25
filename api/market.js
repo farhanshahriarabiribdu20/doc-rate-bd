@@ -2,6 +2,7 @@ import { createHmac, randomBytes, timingSafeEqual } from 'node:crypto';
 import { put, del } from '@vercel/blob';
 import { noStore, parseBody, requireAdmin } from './_lib.js';
 import { readFresh, writeFresh } from './_fresh.js';
+import { allow, count } from './_budget.js';
 import { DISTRICTS } from '../src/data/districts.js';
 
 // Seller marketplace: NO login. Anyone posts a listing with name, mobile number and location. The
@@ -68,13 +69,13 @@ async function readStore() {
  * Read -> change -> write -> read back. If another request overwrote ours in between (blob has no
  * transactions) the change is applied again, up to 3 tries.
  */
-async function mutateStore(change, verify) {
+async function mutateStore(change, verify, kind = 'ad') {
   for (let attempt = 0; attempt < 3; attempt += 1) {
     const store = await readStore();
     const outcome = change(store);
     if (outcome && outcome.error) return outcome;
     const { v: prevV, ...data } = store;
-    await writeFresh(LISTINGS_PATH, data, prevV);
+    await writeFresh(LISTINGS_PATH, data, prevV, kind);
     const check = await readStore();
     if (verify(check)) return { ...(outcome || {}), store: check };
     await wait(150 + Math.random() * 250);
@@ -182,6 +183,9 @@ async function postListing(body, req, res) {
   const pics = decodeImages(body.images);
   if (pics.error) return res.status(400).json({ success: false, error: pics.error });
 
+  const gate = await allow('ad');
+  if (!gate.ok) return res.status(429).json({ success: false, error: gate.error });
+
   const now = Date.now();
   const userId = phone; // seller identity = mobile number (also the key for ban / verified / rating)
   const ih = hmac(`ip:${clientIp(req)}`).toString('hex').slice(0, 16);
@@ -192,6 +196,7 @@ async function postListing(body, req, res) {
   let imgs = [];
   if (pics.images.length) {
     try {
+      await count('ad', pics.images.length);
       imgs = await Promise.all(pics.images.map((p, i) => put(`market/img/${id}-${i}.${IMG_TYPES[p.type]}`, p.buf, {
         access: 'public', addRandomSuffix: true, contentType: p.type, cacheControlMaxAge: 31536000
       }).then((b) => b.url)));
@@ -247,6 +252,8 @@ async function updateAction(body, res) {
   const op = body.op;
   const key = body.key;
   if (!['sold', 'delete', 'renew'].includes(op) || !id) return res.status(400).json({ success: false, error: 'অনুরোধ সঠিক নয়' });
+  const gate = await allow('adedit');
+  if (!gate.ok) return res.status(429).json({ success: false, error: gate.error });
   let removedImgs = [];
   const outcome = await mutateStore((store) => {
     const idx = store.items.findIndex((it) => it.id === id);
@@ -264,7 +271,7 @@ async function updateAction(body, res) {
     if (op === 'delete') return !it;
     if (op === 'sold') return !it || it.status === 'sold';
     return !it || it.expiresAt >= now + LISTING_TTL_MS - 1000;
-  });
+  }, 'adedit');
   if (outcome.error) return res.status(outcome.status || 400).json({ success: false, error: outcome.error });
   if (removedImgs.length) await dropImages(removedImgs);
   return res.status(200).json({ success: true });
@@ -329,7 +336,7 @@ async function adminAction(body, res) {
     if (op === 'unverify') return !check.verified.includes(userId);
     if (op === 'resetRating') return !check.ratings[userId];
     return true;
-  });
+  }, 'admin');
   if (outcome.error) return res.status(outcome.status || 400).json({ success: false, error: outcome.error });
   if (removedImgs.length) await dropImages(removedImgs);
   const s = outcome.store;
@@ -345,6 +352,8 @@ async function rateSeller(body, req, res) {
   if (!id || !(stars >= 1 && stars <= 5)) return res.status(400).json({ success: false, error: 'রেটিং ১ থেকে ৫ এর মধ্যে দিন' });
   const now = Date.now();
   const ip = clientIp(req);
+  const gate = await allow('adrate');
+  if (!gate.ok) return res.status(429).json({ success: false, error: gate.error });
   let voter = '';
   const outcome = await mutateStore((store) => {
     const it = store.items.find((x) => x.id === id && isLive(x, now));
@@ -356,7 +365,7 @@ async function rateSeller(body, req, res) {
     if (!store.ratings[it.userId] && Object.keys(store.ratings).length >= MAX_RATED_SELLERS) return { error: 'এখন রেটিং নেওয়া যাচ্ছে না', status: 503 };
     store.ratings[it.userId] = { sum: r.sum + stars, count: r.count + 1, voters: [...r.voters, voter] };
     return { userId: it.userId };
-  }, (check) => Object.values(check.ratings).some((r) => r.voters.includes(voter)));
+  }, (check) => Object.values(check.ratings).some((r) => r.voters.includes(voter)), 'adrate');
   if (outcome.error) return res.status(outcome.status || 400).json({ success: false, error: outcome.error });
   return res.status(200).json({ success: true, ...trustOf(outcome.store, outcome.userId) });
 }
