@@ -1,6 +1,6 @@
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import { Phone, MessageCircle, MapPin, Loader2, RefreshCw, Store, Search, Share2, Star, BadgeCheck } from 'lucide-react';
-import { fetchListings, rateSeller, PRODUCT_OPTIONS, PRODUCT_BN, UNIT_BN } from '../services/market';
+import { fetchListings, rateSeller, PRODUCT_OPTIONS, prodOf, UNIT_BN } from '../services/market';
 import { DISTRICT_GROUPS, districtOf } from '../data/districts';
 
 const bnNum = (n) => new Intl.NumberFormat('bn-BD', { maximumFractionDigits: 2 }).format(n);
@@ -179,7 +179,7 @@ export default function MarketSection({ lang, onOpenSeller, refreshKey }) {
       ) : (
         <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-4">
           {shown.map((it) => {
-            const prod = PRODUCT_BN[it.product] || PRODUCT_BN.other;
+            const prod = prodOf(it);
             const unit = UNIT_BN[it.unit] || UNIT_BN.kg;
             const msg = `আসসালামু আলাইকুম, ফসলনেক্সা সাইটে আপনার "${prod.bn}" বিক্রির বিজ্ঞাপন দেখলাম। বিস্তারিত জানতে চাই।`;
             return (
