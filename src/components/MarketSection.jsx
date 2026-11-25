@@ -171,7 +171,7 @@ export default function MarketSection({ lang, onOpenSeller, refreshKey }) {
           <p className="font-black text-slate-800">
             {failed ? (bn ? 'বিজ্ঞাপন লোড করা যায়নি' : 'Could not load listings') : (bn ? 'এখনো কোনো বিজ্ঞাপন নেই' : 'No listings yet')}
           </p>
-          <p className="text-sm text-slate-500">{bn ? 'প্রথম বিজ্ঞাপনটি আপনিই দিন!' : 'Be the first to post one!'}</p>
+          <p className="text-sm text-slate-500">{bn ? 'এখানে বিজ্ঞাপন দিন' : 'Post your ad here'}</p>
         </div>
       ) : (
         <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-4">
