@@ -27,10 +27,10 @@ export default function DataStoreCard({ adminKey }) {
   };
 
   const migrate = async () => {
-    if (!window.confirm('Vercel Blob-এর সব ডেটা Supabase-এ কপি হবে (Blob অক্ষত থাকবে)। এগোবেন?')) return;
+    if (!window.confirm('Vercel Blob-এর সব ডেটা Supabase-এ কপি হবে (Blob অক্ষত থাকবে; Supabase-এ থাকা নতুন ডেটা মুছবে না)। এগোবেন?')) return;
     setBusy('migrate'); setMsg('');
     const r = await migrateBlobToSupabase(adminKey);
-    setMsg(r.ok ? `✅ ${r.found}টির মধ্যে ${r.copied}টি কপি হয়েছে${r.failed?.length ? `, ${r.failed.length}টি পড়া যায়নি` : ''}।` : `❌ কপি হয়নি: ${r.error}`);
+    setMsg(r.ok ? `✅ ${r.found}টির মধ্যে ${r.copied}টি কপি হয়েছে${r.keptNewer?.length ? `, ${r.keptNewer.length}টি Supabase-এর নতুন কপি রাখা হয়েছে` : ''}${r.failed?.length ? `, ${r.failed.length}টি পড়া যায়নি` : ''}।` : `❌ কপি হয়নি: ${r.error}`);
     setBusy('');
   };
 
@@ -56,7 +56,7 @@ export default function DataStoreCard({ adminKey }) {
         <button onClick={backup} disabled={!!busy} className="flex items-center gap-1.5 px-3 py-2 rounded-xl bg-emerald-700 text-white text-xs font-bold disabled:opacity-60 cursor-pointer">
           {busy === 'export' ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <HardDriveDownload className="w-3.5 h-3.5" />} সব ডেটার ব্যাকআপ নামান
         </button>
-        {st && !isSb && st.supabaseKeys && (
+        {st && st.supabaseKeys && (
           <button onClick={migrate} disabled={!!busy} className="flex items-center gap-1.5 px-3 py-2 rounded-xl border border-slate-300 text-slate-800 text-xs font-bold hover:bg-slate-50 disabled:opacity-60 cursor-pointer">
             {busy === 'migrate' ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Server className="w-3.5 h-3.5" />} Blob → Supabase কপি
           </button>

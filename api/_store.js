@@ -135,7 +135,24 @@ export async function exportAll() {
   return out;
 }
 
-/** Copies the JSON documents of the Vercel Blob store into Supabase (needs the Supabase keys, not the STORE switch). Safe to repeat. */
+// Marketplace list: when both stores have one, keep every ad / ban / verification / rating from both (newer copy of an ad wins).
+export function mergeListings(blob, sb) {
+  const byId = new Map();
+  [...(blob.items || []), ...(sb.items || [])].forEach((it) => {
+    if (!it || !it.id) return;
+    const old = byId.get(it.id);
+    if (!old || Number(it.updatedAt || it.createdAt || 0) >= Number(old.updatedAt || old.createdAt || 0)) byId.set(it.id, it);
+  });
+  const uniq = (a, b) => [...new Set([...(a || []), ...(b || [])])];
+  return { ...blob, ...sb, items: [...byId.values()], banned: uniq(blob.banned, sb.banned), verified: uniq(blob.verified, sb.verified), ratings: { ...(blob.ratings || {}), ...(sb.ratings || {}) }, v: Date.now() };
+}
+const MERGE_ONLY = 'market/listings.json';
+
+/**
+ * Copies the JSON documents of the Vercel Blob store into Supabase (needs the Supabase keys, not the STORE switch).
+ * NEVER overwrites a document Supabase already has (it may hold newer rates): only missing ones are added,
+ * except the marketplace list, which is merged. Safe to repeat.
+ */
 export async function migrateFromBlob() {
   if (!supabaseReady()) throw new Error('SUPABASE_URL / SUPABASE_SERVICE_KEY are not set');
   const items = [];
@@ -147,6 +164,7 @@ export async function migrateFromBlob() {
   } while (cursor && items.length < 20000);
   let copied = 0;
   const failed = [];
+  const keptNewer = [];
   for (let i = 0; i < items.length; i += 20) {
     const rows = [];
     await Promise.all(items.slice(i, i + 20).map(async (b) => {
@@ -156,9 +174,21 @@ export async function migrateFromBlob() {
         rows.push({ key: b.pathname, data: JSON.parse(await new Response(r.stream).text()), updated_at: new Date(b.uploadedAt).toISOString() });
       } catch { failed.push(b.pathname); }
     }));
-    if (rows.length) { await rest('POST', '?on_conflict=key', rows, { Prefer: 'resolution=merge-duplicates,return=minimal' }); copied += rows.length; }
+    for (const row of rows) {
+      const existing = await rest('GET', `?key=eq.${enc(row.key)}&select=data`);
+      const there = Array.isArray(existing) && existing[0] ? existing[0].data : null;
+      if (there && row.key === MERGE_ONLY) {
+        await rest('POST', '?on_conflict=key', [{ key: row.key, data: mergeListings(row.data, there), updated_at: new Date().toISOString() }], { Prefer: 'resolution=merge-duplicates,return=minimal' });
+        copied += 1;
+      } else if (there) {
+        keptNewer.push(row.key);
+      } else {
+        await rest('POST', '?on_conflict=key', [row], { Prefer: 'resolution=ignore-duplicates,return=minimal' });
+        copied += 1;
+      }
+    }
   }
-  return { found: items.length, copied, failed };
+  return { found: items.length, copied, keptNewer, failed };
 }
 
 /** A quick health check for the admin card: can we read the main document from the active store? */
