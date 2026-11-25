@@ -546,7 +546,7 @@ export default function App() {
             {/* Real Top Hatcheries Live Price Comparison Chart */}
             <PriceChart rates={shownRates} lang={lang} />
             <WeeklySummary lang={lang} />
-            <TrendChart lang={lang} />
+            <TrendChart lang={lang} liveRates={officialRates} liveDate={settings.reportDateISO} />
 
             <FeedPrices feeds={feedPrices} />
 

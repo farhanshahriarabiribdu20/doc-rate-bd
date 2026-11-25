@@ -14,7 +14,7 @@ const getQuery = (req, name) => {
 export default async function handler(req, res) {
   try {
     if (req.method === 'GET') {
-      res.setHeader('Cache-Control', 'public, s-maxage=60, stale-while-revalidate=300');
+      res.setHeader('Cache-Control', 'public, s-maxage=600, stale-while-revalidate=3600');
       const requested = getQuery(req, 'date');
       const kind = getQuery(req, 'kind') === 'ready' ? 'ready' : 'doc';
       const dates = await listRateDays(kind);

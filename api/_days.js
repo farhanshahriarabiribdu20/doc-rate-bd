@@ -14,9 +14,25 @@ export async function saveRateDay(date, rates, kind = 'doc') {
     contentType: 'application/json',
     cacheControlMaxAge: 60
   });
+  await addToIndex(date, kind);
   if (kind === 'doc') {
     try { await updateTrend(date, rates); } catch (err) { console.error('trend update failed:', err); }
   }
+}
+
+// The list of archived dates lives in one small blob that is READ (a cheap operation). A list() call is an
+// "advanced" operation and the free plan only has 2,000 of them a month, so list() runs only to build the index once.
+const indexPath = (kind) => `${prefixOf(kind)}index.json`;
+
+async function addToIndex(date, kind) {
+  try {
+    const cur = await readFresh(indexPath(kind));
+    if (cur && Array.isArray(cur.dates)) {
+      if (cur.dates.includes(date)) return; // already known: no write
+      await writeFresh(indexPath(kind), { dates: [...cur.dates, date].sort().reverse() }, cur.v);
+    }
+    // no index yet: the next listRateDays() builds it from the real files
+  } catch (err) { console.error('date index update failed:', err); }
 }
 
 // ---- Rate trend: one small rolling blob (last 31 days) so the trend chart needs a single read, no list() ----
@@ -70,13 +86,17 @@ export async function readTrend() {
 
 /** All archived dates, newest first. */
 export async function listRateDays(kind = 'doc') {
+  const cur = await readFresh(indexPath(kind));
+  if (cur && Array.isArray(cur.dates) && cur.dates.every(isDate)) return cur.dates;
   const PREFIX = prefixOf(kind);
   const { blobs } = await list({ prefix: PREFIX });
-  return blobs
+  const dates = blobs
     .map((b) => b.pathname.slice(PREFIX.length).replace(/\.json$/, ''))
     .filter(isDate)
     .sort()
     .reverse();
+  if (dates.length) { try { await writeFresh(indexPath(kind), { dates }, cur?.v || 0); } catch (err) { console.error('date index build failed:', err); } }
+  return dates;
 }
 
 export async function readRateDay(date, kind = 'doc') {

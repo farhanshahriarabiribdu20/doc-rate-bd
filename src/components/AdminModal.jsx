@@ -306,7 +306,7 @@ function AdminModalContent({
   // ---- publish (automatic) ----
   // Every admin edit is published on its own a few seconds after the last change,
   // so there is no separate "publish" step. The button stays as a manual retry.
-  const AUTO_PUBLISH_DELAY_MS = 2500;
+  const AUTO_PUBLISH_DELAY_MS = 20000; // one publish per burst of edits: every publish costs storage writes on the free plan
   const [autoError, setAutoError] = useState('');
   const [historyToken, setHistoryToken] = useState(0);
   const forceSnapshotRef = useRef(false);

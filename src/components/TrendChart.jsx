@@ -12,14 +12,32 @@ const shortDate = (iso, bn) => {
 };
 
 /** Day-by-day rate history of one company, from the daily archive. */
-export default function TrendChart({ lang }) {
+export default function TrendChart({ lang, liveRates, liveDate }) {
   const bn = lang === 'bn';
-  const [trend, setTrend] = useState(undefined); // undefined = loading, null = failed
+  const [fetched, setFetched] = useState(undefined); // undefined = loading, null = failed
   const [key, setKey] = useState('');
   const [range, setRange] = useState(14);
   const [hover, setHover] = useState(null);
 
-  useEffect(() => { let on = true; fetchRateTrend().then((t) => on && setTrend(t)); return () => { on = false; }; }, []);
+  useEffect(() => { let on = true; fetchRateTrend().then((t) => on && setFetched(t)); return () => { on = false; }; }, []);
+
+  // The server archives a day only once it is over (saves storage writes), so today's point comes from the live rates.
+  const trend = useMemo(() => {
+    if (!fetched) return fetched;
+    if (!/^\d{4}-\d{2}-\d{2}$/.test(liveDate || '') || !Array.isArray(liveRates)) return fetched;
+    const day = {};
+    const names = { ...fetched.names };
+    for (const r of liveRates) {
+      const rate = Number(r?.todayRate);
+      if (!r || !r.company || !Number.isFinite(rate) || rate <= 0) continue;
+      if (r.rateDate && r.rateDate !== liveDate) continue;
+      const k = `${r.company}|${r.breed}`;
+      day[k] = rate;
+      names[k] = { company: r.company, breed: r.breed || '', category: r.category || '' };
+    }
+    if (!Object.keys(day).length) return fetched;
+    return { days: { ...fetched.days, [liveDate]: day }, names };
+  }, [fetched, liveRates, liveDate]);
 
   const dates = useMemo(() => (trend ? Object.keys(trend.days).sort() : []), [trend]);
   const options = useMemo(() => {

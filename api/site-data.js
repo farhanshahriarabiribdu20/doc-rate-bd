@@ -12,7 +12,9 @@ import { isDate, saveRateDay } from './_days.js';
 const BLOB_PATH = 'site-data.json';
 const HISTORY_PREFIX = 'history/';
 const HISTORY_KEEP = 40; // versions kept for "undo"
-const SNAPSHOT_MIN_GAP_MS = Number(process.env.SNAPSHOT_MIN_GAP_MS ?? 2 * 60 * 1000); // one burst of edits = one undo step
+// Free Blob plan = 2,000 "advanced" operations (put / list / copy) a month, so a publish must stay cheap:
+// the undo copy is made once per editing session (not per publish) and the day archive only when the date changes.
+const SNAPSHOT_MIN_GAP_MS = Number(process.env.SNAPSHOT_MIN_GAP_MS ?? 3 * 3600 * 1000);
 
 
 async function readPublished() {
@@ -25,14 +27,14 @@ async function readPublished() {
 
 // Keep the previous published version so the admin can undo a bad publish.
 // Never blocks publishing: any error here is only logged.
-async function snapshotPrevious(force) {
+async function snapshotPrevious(prev, force) {
   try {
-    const prev = await readPublished();
     if (!prev) return;
+    // No list() just to decide: the age of the version being replaced tells whether a new editing session started.
+    const prevAt = Date.parse(prev.updatedAt || '');
+    if (!force && Number.isFinite(prevAt) && Date.now() - prevAt < SNAPSHOT_MIN_GAP_MS) return;
     const { blobs } = await list({ prefix: HISTORY_PREFIX });
     const sorted = [...blobs].sort((a, b) => snapshotTime(b.pathname) - snapshotTime(a.pathname));
-    const newest = sorted[0] ? snapshotTime(sorted[0].pathname) : 0;
-    if (!force && Date.now() - newest < SNAPSHOT_MIN_GAP_MS) return;
     const stamp = new Date().toISOString().replace(/[:.]/g, '-');
     await put(`${HISTORY_PREFIX}${stamp}.json`, JSON.stringify(prev), {
       access: 'public',
@@ -52,7 +54,7 @@ export default async function handler(req, res) {
   try {
     if (req.method === 'GET') {
       // Cached at the Vercel edge: visitors never hit Blob storage on every page view.
-      res.setHeader('Cache-Control', 'public, s-maxage=30, stale-while-revalidate=300');
+      res.setHeader('Cache-Control', 'public, s-maxage=60, stale-while-revalidate=600');
       let data = null;
       let readError = '';
       try {
@@ -91,7 +93,14 @@ export default async function handler(req, res) {
         updatedAt: new Date().toISOString()
       };
 
-      await snapshotPrevious(body.snapshot === 'force');
+      let prev = null;
+      try { prev = await readPublished(); } catch (err) { console.error('previous version read failed:', err); }
+
+      // Nothing changed (e.g. the "publish" button pressed again): no writes at all.
+      const same = (a, b) => JSON.stringify([a.rates, a.readyRates, a.notice, a.settings]) === JSON.stringify([b.rates, b.readyRates, b.notice, b.settings]);
+      if (prev && body.snapshot !== 'force' && same(prev, payload)) return res.status(200).json({ success: true, updatedAt: prev.updatedAt || payload.updatedAt, unchanged: true });
+
+      await snapshotPrevious(prev, body.snapshot === 'force');
 
       await put(BLOB_PATH, JSON.stringify(payload), {
         access: 'public',
@@ -101,15 +110,21 @@ export default async function handler(req, res) {
         cacheControlMaxAge: 60
       });
 
-      // Remember what the site showed on this date, for the visitors' "date-wise rate" view. Never blocks publishing.
+      // Day archive for the visitors' "date-wise rate" view and the trend chart. Written ONCE per day: when the
+      // report date moves on, the version being replaced holds that day's final rates. (Today's rates are the live
+      // ones, and the trend chart adds them in the browser.) Never blocks publishing.
       try {
-        if (isDate(payload.settings?.reportDateISO) && rates.some((r) => !r.rateDate || r.rateDate === payload.settings.reportDateISO)) await saveRateDay(payload.settings.reportDateISO, rates.filter((r) => !r.rateDate || r.rateDate === payload.settings.reportDateISO));
+        const oldDate = prev?.settings?.reportDateISO;
+        if (isDate(oldDate) && isDate(payload.settings?.reportDateISO) && oldDate !== payload.settings.reportDateISO) {
+          const finalRates = (prev.rates || []).filter((r) => !r.rateDate || r.rateDate === oldDate);
+          if (finalRates.length) await saveRateDay(oldDate, finalRates);
+        }
       } catch (err) {
         console.error('rate day archive failed:', err);
       }
-      // Same for the ready-market (mokam) rates, under the date they are for.
       try {
-        if (isDate(payload.settings?.readyDateISO) && readyRates.length) await saveRateDay(payload.settings.readyDateISO, readyRates, 'ready');
+        const oldReady = prev?.settings?.readyDateISO;
+        if (isDate(oldReady) && isDate(payload.settings?.readyDateISO) && oldReady !== payload.settings.readyDateISO && (prev.readyRates || []).length) await saveRateDay(oldReady, prev.readyRates, 'ready');
       } catch (err) {
         console.error('ready day archive failed:', err);
       }
