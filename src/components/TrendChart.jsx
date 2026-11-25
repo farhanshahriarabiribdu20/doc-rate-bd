@@ -31,7 +31,10 @@ export default function TrendChart({ lang }) {
       .sort((a, b) => a.company.localeCompare(b.company));
   }, [trend, dates]);
 
-  const selected = key && options.some((o) => o.k === key) ? key : options[0]?.k;
+  // Default company is always Kazi Farms (Ross-308 first); falls back to the first option if it has no data today
+  const isKazi = (o) => /kazi|কাজী/i.test(o.company || '');
+  const defaultOption = options.find((o) => isKazi(o) && /ross/i.test(o.k + (o.breed || ''))) || options.find(isKazi) || options[0];
+  const selected = key && options.some((o) => o.k === key) ? key : defaultOption?.k;
 
   const points = useMemo(() => {
     if (!trend || !selected) return [];
