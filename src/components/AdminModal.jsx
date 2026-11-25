@@ -17,6 +17,7 @@ import { fetchFeeds } from '../services/feed';
 import AnalyticsPanel from './AnalyticsPanel';
 import MarketAdminPanel from './MarketAdminPanel';
 import { fetchMarketAdmin, marketAdminAction } from '../services/market';
+import TwoFactorSetup from './TwoFactorSetup';
 import { applyReadyPlan } from '../utils/readyExcel';
 
 // Region label shown on a rate card (what the company's rate covers). Free text; these are the usual choices.
@@ -100,6 +101,8 @@ function AdminModalContent({
   const [loginBusy, setLoginBusy] = useState(false);
   const [loginError, setLoginError] = useState('');
   const [notConfigured, setNotConfigured] = useState(false);
+  const [code, setCode] = useState('');
+  const [needCode, setNeedCode] = useState(false);
 
   const [activeTab, setActiveTab] = useState('doc'); // 'doc' | 'ready' | 'submissions' | 'feedback' | 'settings'
   const [toast, setToast] = useState({ msg: '', type: 'ok' });
@@ -137,6 +140,8 @@ function AdminModalContent({
     saveKey('');
     setAdminKey('');
     setPassword('');
+    setCode('');
+    setNeedCode(false);
   }, []);
 
   // Re-use a password verified earlier in this browser tab.
@@ -158,12 +163,23 @@ function AdminModalContent({
     if (!password) return;
     setLoginBusy(true);
     setLoginError('');
-    const r = await adminLogin(password);
+    const r = await adminLogin(password, needCode ? code : '');
     setLoginBusy(false);
     if (r.ok) {
-      saveKey(password);
-      setAdminKey(password);
+      const k = r.token || password; // with 2-step verification the server hands back a session token
+      saveKey(k);
+      setAdminKey(k);
       setNotConfigured(false);
+      setNeedCode(false);
+      setCode('');
+    } else if (r.reason === 'code_required') {
+      setNeedCode(true);
+    } else if (r.reason === 'bad_code') {
+      setNeedCode(true);
+      setCode('');
+      setLoginError('কোড ভুল বা মেয়াদ শেষ। অ্যাপের নতুন ৬ সংখ্যার কোড দিন।');
+    } else if (r.reason === 'locked') {
+      setLoginError('অনেকবার ভুল দেওয়া হয়েছে। ১৫ মিনিট পরে আবার চেষ্টা করুন।');
     } else if (r.reason === 'not_configured') {
       setNotConfigured(true);
     } else if (r.reason === 'wrong') {
@@ -697,6 +713,19 @@ function AdminModalContent({
                   onChange={(e) => setPassword(e.target.value)}
                   className="w-full text-center text-lg font-bold py-2.5 border border-slate-300 rounded-xl focus:ring-2 focus:ring-emerald-500 outline-none"
                 />
+                {needCode && (
+                  <input
+                    type="text"
+                    inputMode="numeric"
+                    autoComplete="one-time-code"
+                    maxLength={6}
+                    autoFocus
+                    placeholder="অথেনটিকেটর অ্যাপের ৬ সংখ্যার কোড"
+                    value={code}
+                    onChange={(e) => setCode(e.target.value.replace(/\D/g, ''))}
+                    className="w-full text-center text-lg font-bold tracking-[0.3em] py-2.5 border border-slate-300 rounded-xl focus:ring-2 focus:ring-emerald-500 outline-none"
+                  />
+                )}
                 {loginError && <p className="text-xs text-red-600 font-medium">{loginError}</p>}
 
                 <button
@@ -1268,6 +1297,8 @@ function AdminModalContent({
                   <p className="font-bold text-slate-800 mb-1">🔐 এডমিন পাসওয়ার্ড</p>
                   <p>পাসওয়ার্ড এখন সার্ভারে (Vercel → Settings → Environment Variables → <code className="bg-white px-1 rounded">ADMIN_PASSWORD</code>) থাকে। বদলাতে হলে ওখানে বদলে Redeploy করুন।</p>
                 </div>
+
+                <TwoFactorSetup adminKey={adminKey} />
 
                 <div className="pt-2 flex flex-wrap justify-between items-center gap-3">
                   <button

@@ -19,12 +19,35 @@ export async function fetchSiteData() {
   }
 }
 
-/** { ok, configured, reason } — reason: 'wrong' | 'not_configured' | 'network' */
-export async function adminLogin(key) {
+/** Is 2-step verification on? (public flag) */
+export async function fetchTwoFactorStatus() {
+  try { const b = await json(await fetch('/api/admin-login')); return Boolean(b?.twofa); } catch { return false; }
+}
+
+/** Makes a new 2-step key (needs the password; 2FA must still be off). { ok, secret, uri, error } */
+export async function createTwoFactorKey(password) {
   try {
-    const res = await fetch('/api/admin-login', { method: 'POST', headers: adminHeaders(key) });
-    if (res.ok) return { ok: true, configured: true };
+    const res = await fetch('/api/admin-login', { method: 'POST', headers: adminHeaders(password), body: JSON.stringify({ action: 'setup' }) });
+    const b = await json(res);
+    return res.ok && b?.secret ? { ok: true, secret: b.secret, uri: b.uri } : { ok: false, error: b?.error || 'করা যায়নি' };
+  } catch { return { ok: false, error: 'নেটওয়ার্ক সমস্যা' }; }
+}
+
+/**
+ * { ok, configured, token?, reason } — reason: 'wrong' | 'code_required' | 'bad_code' | 'not_configured' | 'network'.
+ * With 2-step verification on, a correct password + code returns a session `token` that replaces the password.
+ */
+export async function adminLogin(key, code) {
+  try {
+    const res = await fetch('/api/admin-login', { method: 'POST', headers: { ...adminHeaders(key), 'Content-Type': 'application/json' }, body: JSON.stringify(code ? { code } : {}) });
+    if (res.ok) {
+      const ok = await json(res);
+      return { ok: true, configured: true, token: ok?.token || '' };
+    }
     const body = await json(res);
+    if (body?.code === 'CODE_REQUIRED') return { ok: false, configured: true, reason: 'code_required' };
+    if (body?.code === 'BAD_CODE') return { ok: false, configured: true, reason: 'bad_code' };
+    if (res.status === 429) return { ok: false, configured: true, reason: 'locked' };
     if (res.status === 503 || body?.code === 'ADMIN_NOT_CONFIGURED') return { ok: false, configured: false, reason: 'not_configured' };
     if (res.status === 401) return { ok: false, configured: true, reason: 'wrong' };
     return { ok: false, reason: 'network' };
