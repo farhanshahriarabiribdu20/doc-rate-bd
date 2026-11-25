@@ -95,4 +95,11 @@ export const UNIT_OPTIONS = [
   { key: 'dozen', bn: 'ডজন', per: 'প্রতি ডজন' }
 ];
 
+export const AGE_UNITS = [
+  { key: 'day', bn: 'দিন' },
+  { key: 'week', bn: 'সপ্তাহ' },
+  { key: 'month', bn: 'মাস' }
+];
+export const ageUnitBn = (k) => (AGE_UNITS.find((u) => u.key === k) || AGE_UNITS[0]).bn;
+
 export const UNIT_BN = Object.fromEntries(UNIT_OPTIONS.map((u) => [u.key, u]));

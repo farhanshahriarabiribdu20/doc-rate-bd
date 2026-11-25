@@ -123,7 +123,7 @@ function decodeImages(raw) {
 }
 
 const publicItem = (it) => ({
-  id: it.id, sellerName: it.sellerName, phone: it.phone, product: it.product, customName: it.customName || '', quantity: it.quantity, unit: it.unit,
+  id: it.id, sellerName: it.sellerName, phone: it.phone, product: it.product, customName: it.customName || '', age: it.age || 0, ageUnit: it.ageUnit || 'day', quantity: it.quantity, unit: it.unit,
   price: it.price, location: it.location, district: it.district || '', details: it.details, imgs: it.imgs || [], createdAt: it.createdAt, expiresAt: it.expiresAt
 });
 
@@ -154,8 +154,11 @@ function validateListing(body) {
   const district = DISTRICTS.includes(body.district) ? body.district : '';
   if (!district) return { error: 'জেলা বাছাই করুন' };
   const customName = product === 'other' ? str(body.customName, 40) : '';
+  const ageNum = body.age === '' || body.age === null || body.age === undefined ? 0 : Math.round(Number(body.age));
+  if (!Number.isFinite(ageNum) || ageNum < 0 || ageNum > 3650) return { error: 'বয়স সঠিক দিন' };
+  const ageUnit = ['day', 'week', 'month'].includes(body.ageUnit) ? body.ageUnit : 'day';
   const details = strMulti(body.details, 300);
-  return { value: { product, customName, unit, quantity, price, location, district, details } };
+  return { value: { product, customName, age: ageNum, ageUnit, unit, quantity, price, location, district, details } };
 }
 
 // ---------- posting (no account) ----------

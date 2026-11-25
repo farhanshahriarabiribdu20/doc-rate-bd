@@ -1,6 +1,6 @@
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import { Phone, MessageCircle, MapPin, Loader2, RefreshCw, Store, Search, Share2, Star, BadgeCheck } from 'lucide-react';
-import { fetchListings, rateSeller, PRODUCT_OPTIONS, prodOf, UNIT_BN } from '../services/market';
+import { fetchListings, rateSeller, PRODUCT_OPTIONS, prodOf, UNIT_BN, ageUnitBn } from '../services/market';
 import { DISTRICT_GROUPS, districtOf } from '../data/districts';
 
 const bnNum = (n) => new Intl.NumberFormat('bn-BD', { maximumFractionDigits: 2 }).format(n);
@@ -215,6 +215,7 @@ export default function MarketSection({ lang, onOpenSeller, refreshKey }) {
 
                 <div className="text-sm text-slate-700 space-y-1">
                   <p><span className="font-black">{bn ? 'পরিমাণ:' : 'Quantity:'}</span> {bnNum(it.quantity)} {unit.bn}</p>
+                  {it.age > 0 && <p><span className="font-black">{bn ? 'বয়স:' : 'Age:'}</span> {bnNum(it.age)} {ageUnitBn(it.ageUnit)}</p>}
                   <p className="flex items-start gap-1"><MapPin className="w-4 h-4 mt-0.5 shrink-0 text-slate-400" /> <span>{it.location}</span></p>
                   {it.details && <p className="text-slate-600 whitespace-pre-line break-words">{it.details}</p>}
                 </div>
