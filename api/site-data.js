@@ -8,6 +8,7 @@ import {
   sanitizeSettings
 } from './_lib.js';
 import { isDate, saveRateDay } from './_days.js';
+import { count } from './_budget.js';
 
 const BLOB_PATH = 'site-data.json';
 const HISTORY_PREFIX = 'history/';
@@ -41,6 +42,7 @@ async function snapshotPrevious(prev, force) {
       addRandomSuffix: true,
       contentType: 'application/json'
     });
+    await count('snapshot', 2); // list + put
     const extra = sorted.slice(HISTORY_KEEP - 1);
     if (extra.length) await del(extra.map((b) => b.url));
   } catch (err) {
@@ -109,6 +111,8 @@ export default async function handler(req, res) {
         contentType: 'application/json',
         cacheControlMaxAge: 60
       });
+
+      await count('publish', 1);
 
       // Day archive for the visitors' "date-wise rate" view and the trend chart. Written ONCE per day: when the
       // report date moves on, the version being replaced holds that day's final rates. (Today's rates are the live

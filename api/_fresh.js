@@ -1,4 +1,5 @@
 import { put, get } from '@vercel/blob';
+import { count } from './_budget.js';
 
 // Read-modify-write helper for small JSON blobs that get overwritten (gallery list, market listings).
 //
@@ -32,8 +33,13 @@ export async function readFresh(path) {
   return blob;
 }
 
+// Which part of the site a blob belongs to, for the admin's write meter.
+const kindOfPath = (p) => (/^market\//.test(p) ? 'ad' : /^gallery\//.test(p) ? 'gallery' : /^(trend|rate-days|ready-days)\//.test(p) ? 'archive'
+  : p === 'feed-prices.json' ? 'feeds' : /^rate-submissions\//.test(p) ? 'submission' : /vote/.test(p) ? 'votes' : /report/.test(p) ? 'report'
+  : /stat|visit/.test(p) ? 'stats' : 'other');
+
 /** Writes `data` with a new version number (always higher than `prevV`) and returns that version. */
-export async function writeFresh(path, data, prevV = 0) {
+export async function writeFresh(path, data, prevV = 0, kind = '') {
   const m = memo.get(path);
   const v = Math.max(Date.now(), Number(prevV) + 1, (m ? m.v : 0) + 1);
   const json = JSON.stringify({ ...data, v });
@@ -41,5 +47,6 @@ export async function writeFresh(path, data, prevV = 0) {
     access: 'public', addRandomSuffix: false, allowOverwrite: true, contentType: 'application/json', cacheControlMaxAge: 60
   });
   memo.set(path, { v, json });
+  await count(kind || kindOfPath(path));
   return v;
 }

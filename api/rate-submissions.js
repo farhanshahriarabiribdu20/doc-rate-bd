@@ -1,6 +1,8 @@
-import { put, get, list, del } from '@vercel/blob';
+import { get } from '@vercel/blob';
 import { createHash, randomBytes } from 'node:crypto';
 import { noStore, parseBody, requireAdmin } from './_lib.js';
+import { readFresh, writeFresh } from './_fresh.js';
+import { allow } from './_budget.js';
 
 // Visitor-submitted rates go live at once, with no admin approval. The site shows them with a
 // "ইউজারের দেওয়া রেট" tag (they never touch the admin's published data, so the admin's own rates stay as they are).
@@ -8,10 +10,10 @@ import { noStore, parseBody, requireAdmin } from './_lib.js';
 //   GET ?live=1 (public)    -> today's user rates, one value per rate (the median when several people sent one)
 //   GET    (admin)          -> list all stored submissions with name / phone
 //   DELETE (admin)          -> remove one (e.g. a wrong or spam rate)
-// Each submission is its own small blob ("rate-submissions/<id>.json") so two people submitting at the
-// same time never overwrite each other; the random suffix keeps the URLs unguessable.
-const PREFIX = 'rate-submissions/';
-const MAX_STORED = 1500;
+// The last few days of submissions live in ONE small blob. A submission is then a single storage write and
+// reading them never needs list() (on the free Vercel Blob plan every put / list counts against 2,000 a month).
+const RECENT_PATH = 'rate-submissions/recent.json';
+const MAX_STORED = 400;
 const MAX_PER_IP_PER_DAY = 30;
 const KEEP_DAYS = 3; // older submissions are cleaned up
 const DAY_MS = 24 * 60 * 60 * 1000;
@@ -68,15 +70,11 @@ async function typoError(v) {
   return Object.entries(v.values).some(([k, n]) => farFrom(item[k], n)) ? msg : '';
 }
 
-async function listAll(prefix) {
-  const out = [];
-  let cursor;
-  do {
-    const page = await list({ prefix, limit: 1000, cursor });
-    out.push(...page.blobs);
-    cursor = page.hasMore ? page.cursor : undefined;
-  } while (cursor && out.length < 2000);
-  return out;
+async function readItems() {
+  const d = await readFresh(RECENT_PATH);
+  const cutoff = Date.now() - KEEP_DAYS * DAY_MS;
+  const items = (Array.isArray(d?.items) ? d.items : []).filter((e) => e && ID_RE.test(e.id || '') && tsOf(e.id) > cutoff);
+  return { v: Number(d?.v) || 0, items };
 }
 
 function validate(body) {
@@ -121,20 +119,18 @@ export default async function handler(req, res) {
       if (v.error) return res.status(400).json({ success: false, error: v.error });
 
       const hash = ipHash(req);
-      const all = await listAll(PREFIX);
+      const gate = await allow('submission');
+      if (!gate.ok) return res.status(429).json({ success: false, code: 'BUDGET', error: gate.error });
+
+      const { v: prevV, items } = await readItems();
       const now = Date.now();
-      const mineToday = all.filter((b) => b.pathname.includes(`/rs-${hash}-`) && now - tsOf(b.pathname) < DAY_MS);
+      const mineToday = items.filter((e) => e.id.startsWith(`rs-${hash}-`) && now - tsOf(e.id) < DAY_MS);
       if (mineToday.length >= MAX_PER_IP_PER_DAY) {
         return res.status(429).json({ success: false, code: 'TOO_MANY', error: 'আজকের জন্য আপনি অনেকগুলো রেট পাঠিয়েছেন। কাল আবার চেষ্টা করুন।' });
       }
-      if (all.length >= MAX_STORED) return res.status(429).json({ success: false, code: 'FULL', error: 'Inbox is full' });
 
       const typo = await typoError(v);
       if (typo) return res.status(400).json({ success: false, code: 'FAR', error: typo });
-
-      // housekeeping: old submissions are not needed any more
-      const stale = all.filter((b) => tsOf(b.pathname) && now - tsOf(b.pathname) > KEEP_DAYS * DAY_MS).slice(0, 50);
-      if (stale.length) { try { await del(stale.map((b) => b.url)); } catch { /* ignore */ } }
 
       const entry = {
         id: `rs-${hash}-${Date.now()}-${randomBytes(3).toString('hex')}`,
@@ -149,11 +145,7 @@ export default async function handler(req, res) {
         note: str(body.note, 300),
         createdAt: new Date().toISOString()
       };
-      await put(`${PREFIX}${entry.id}.json`, JSON.stringify(entry), {
-        access: 'public',
-        addRandomSuffix: true,
-        contentType: 'application/json'
-      });
+      await writeFresh(RECENT_PATH, { items: [...items, entry].slice(-MAX_STORED) }, prevV, 'submission');
       return res.status(201).json({ success: true });
     }
 
@@ -161,15 +153,8 @@ export default async function handler(req, res) {
       // public, cached for a short while at the edge
       res.setHeader('Cache-Control', 'public, s-maxage=120, stale-while-revalidate=600');
       const today = dhakaToday();
-      const recent = (await listAll(PREFIX)).filter((b) => Date.now() - tsOf(b.pathname) < 2 * DAY_MS).slice(0, 600);
-      const settled = await Promise.allSettled(recent.map(async (b) => {
-        const r = await fetch(b.url);
-        if (!r.ok) throw new Error(`HTTP ${r.status}`);
-        return r.json();
-      }));
-      const entries = settled
-        .filter((x) => x.status === 'fulfilled' && x.value && ID_RE.test(x.value.id || '') && x.value.rateDate === today)
-        .map((x) => x.value)
+      const entries = (await readItems()).items
+        .filter((x) => x.rateDate === today)
         .sort((a, b) => String(a.createdAt).localeCompare(String(b.createdAt)));
 
       // newest report of each person (ip hash) for each rate, then the median of those
@@ -208,19 +193,7 @@ export default async function handler(req, res) {
 
     if (req.method === 'GET') {
       if (!(await requireAdmin(req, res))) return;
-      const blobs = await listAll(PREFIX);
-      const settled = await Promise.allSettled(
-        blobs.slice(0, 400).map(async (b) => {
-          const r = await fetch(b.url, { cache: 'no-store' });
-          if (!r.ok) throw new Error(`HTTP ${r.status}`);
-          return r.json();
-        })
-      );
-      const seen = new Set();
-      const submissions = settled
-        .filter((s) => s.status === 'fulfilled' && s.value && ID_RE.test(s.value.id || ''))
-        .map((s) => s.value)
-        .filter((x) => (seen.has(x.id) ? false : seen.add(x.id)))
+      const submissions = (await readItems()).items
         .sort((a, b) => String(a.createdAt).localeCompare(String(b.createdAt)));
       return res.status(200).json({ success: true, submissions });
     }
@@ -231,10 +204,10 @@ export default async function handler(req, res) {
       const ids = Array.isArray(body?.ids) ? body.ids : typeof body?.id === 'string' ? [body.id] : [];
       const valid = ids.filter((id) => typeof id === 'string' && ID_RE.test(id)).slice(0, 100);
       if (!valid.length) return res.status(400).json({ success: false, error: 'valid id required' });
-      for (const id of valid) {
-        const { blobs } = await list({ prefix: `${PREFIX}${id}` });
-        if (blobs.length) await del(blobs.map((b) => b.url));
-      }
+      const { v: prevV, items } = await readItems();
+      const drop = new Set(valid);
+      const kept = items.filter((e) => !drop.has(e.id));
+      if (kept.length !== items.length) await writeFresh(RECENT_PATH, { items: kept }, prevV, 'admin');
       return res.status(200).json({ success: true, deleted: valid.length });
     }
 

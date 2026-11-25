@@ -18,6 +18,7 @@ import AnalyticsPanel from './AnalyticsPanel';
 import MarketAdminPanel from './MarketAdminPanel';
 import { fetchMarketAdmin, marketAdminAction } from '../services/market';
 import TwoFactorSetup from './TwoFactorSetup';
+import BlobMeter from './BlobMeter';
 import { applyReadyPlan } from '../utils/readyExcel';
 
 // Region label shown on a rate card (what the company's rate covers). Free text; these are the usual choices.
@@ -1298,6 +1299,7 @@ function AdminModalContent({
                   <p>পাসওয়ার্ড এখন সার্ভারে (Vercel → Settings → Environment Variables → <code className="bg-white px-1 rounded">ADMIN_PASSWORD</code>) থাকে। বদলাতে হলে ওখানে বদলে Redeploy করুন।</p>
                 </div>
 
+                <BlobMeter adminKey={adminKey} />
                 <TwoFactorSetup adminKey={adminKey} />
 
                 <div className="pt-2 flex flex-wrap justify-between items-center gap-3">
