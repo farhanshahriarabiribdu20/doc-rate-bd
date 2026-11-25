@@ -1,17 +1,23 @@
-import { put, list, del } from '@vercel/blob';
+import { put, get, list, del } from '@vercel/blob';
 import { createHash, randomBytes } from 'node:crypto';
 import { noStore, parseBody, requireAdmin } from './_lib.js';
 
-// Visitor-submitted rates wait here until the admin approves them (nothing a visitor sends is ever
-// published by itself).
-//   POST   (public) -> store a pending submission
-//   GET    (admin)  -> list the pending submissions
-//   DELETE (admin)  -> remove one (after approving it in the admin panel, or to reject it)
+// Visitor-submitted rates go live at once, with no admin approval. The site shows them with a
+// "ইউজারের দেওয়া রেট" tag (they never touch the admin's published data, so the admin's own rates stay as they are).
+//   POST   (public)         -> store a submission (it is live straight away)
+//   GET ?live=1 (public)    -> today's user rates, one value per rate (the median when several people sent one)
+//   GET    (admin)          -> list all stored submissions with name / phone
+//   DELETE (admin)          -> remove one (e.g. a wrong or spam rate)
 // Each submission is its own small blob ("rate-submissions/<id>.json") so two people submitting at the
 // same time never overwrite each other; the random suffix keeps the URLs unguessable.
 const PREFIX = 'rate-submissions/';
-const MAX_PENDING = 300;
-const MAX_PENDING_PER_IP = 6;
+const MAX_STORED = 1500;
+const MAX_PER_IP_PER_DAY = 30;
+const KEEP_DAYS = 3; // older submissions are cleaned up
+const DAY_MS = 24 * 60 * 60 * 1000;
+const SITE_DATA_PATH = 'site-data.json';
+// A rate this far from the one on the site is treated as a typo and refused.
+const MAX_DEVIATION = 0.5;
 const ID_RE = /^rs-[a-f0-9]{8}-\d+-[a-f0-9]{6}$/;
 
 // field -> [min, max]. Anything outside is rejected as a typo or spam.
@@ -27,6 +33,40 @@ const ipHash = (req) => {
   const fwd = String(req.headers?.['x-forwarded-for'] || req.headers?.['x-real-ip'] || 'unknown').split(',')[0].trim();
   return createHash('sha256').update(`fn-rs:${fwd}`).digest('hex').slice(0, 8);
 };
+
+const tsOf = (name) => Number(/rs-[a-f0-9]{8}-(\d+)-/.exec(name || '')?.[1]) || 0;
+
+const median = (nums) => {
+  const a = [...nums].sort((x, y) => x - y);
+  const m = Math.floor(a.length / 2);
+  return a.length % 2 ? a[m] : (a[m - 1] + a[m]) / 2;
+};
+
+// The rates the admin published (only used to catch typos; any failure just skips the check).
+async function readPublishedSafe() {
+  try {
+    const r = await get(SITE_DATA_PATH, { access: 'public', useCache: false });
+    if (!r || r.statusCode !== 200) return null;
+    return JSON.parse(await new Response(r.stream).text());
+  } catch { return null; }
+}
+
+const farFrom = (ref, next) => Number(ref) > 0 && Math.abs(Number(next) - Number(ref)) / Number(ref) > MAX_DEVIATION;
+
+async function typoError(v) {
+  const pub = await readPublishedSafe();
+  if (!pub) return '';
+  const msg = 'এই রেটটি সাইটের বর্তমান রেটের থেকে অনেক আলাদা। সংখ্যাটি আবার দেখে লিখুন।';
+  if (v.kind === 'doc') {
+    const item = (pub.rates || []).find((r) => r.id === v.targetId);
+    if (!item) return '';
+    const ref = (v.zoneId && item.zoneRates?.[v.zoneId]) || item.todayRate;
+    return farFrom(ref, v.values.rate) ? msg : '';
+  }
+  const item = (pub.readyRates || []).find((r) => r.id === v.targetId);
+  if (!item) return '';
+  return Object.entries(v.values).some(([k, n]) => farFrom(item[k], n)) ? msg : '';
+}
 
 async function listAll(prefix) {
   const out = [];
@@ -81,12 +121,20 @@ export default async function handler(req, res) {
       if (v.error) return res.status(400).json({ success: false, error: v.error });
 
       const hash = ipHash(req);
-      const mine = await listAll(`${PREFIX}rs-${hash}-`);
-      if (mine.length >= MAX_PENDING_PER_IP) {
-        return res.status(429).json({ success: false, code: 'TOO_MANY', error: 'আপনার আগের রেটগুলো যাচাই হওয়ার অপেক্ষায় আছে। কিছুক্ষণ পর আবার চেষ্টা করুন।' });
-      }
       const all = await listAll(PREFIX);
-      if (all.length >= MAX_PENDING) return res.status(429).json({ success: false, code: 'FULL', error: 'Inbox is full' });
+      const now = Date.now();
+      const mineToday = all.filter((b) => b.pathname.includes(`/rs-${hash}-`) && now - tsOf(b.pathname) < DAY_MS);
+      if (mineToday.length >= MAX_PER_IP_PER_DAY) {
+        return res.status(429).json({ success: false, code: 'TOO_MANY', error: 'আজকের জন্য আপনি অনেকগুলো রেট পাঠিয়েছেন। কাল আবার চেষ্টা করুন।' });
+      }
+      if (all.length >= MAX_STORED) return res.status(429).json({ success: false, code: 'FULL', error: 'Inbox is full' });
+
+      const typo = await typoError(v);
+      if (typo) return res.status(400).json({ success: false, code: 'FAR', error: typo });
+
+      // housekeeping: old submissions are not needed any more
+      const stale = all.filter((b) => tsOf(b.pathname) && now - tsOf(b.pathname) > KEEP_DAYS * DAY_MS).slice(0, 50);
+      if (stale.length) { try { await del(stale.map((b) => b.url)); } catch { /* ignore */ } }
 
       const entry = {
         id: `rs-${hash}-${Date.now()}-${randomBytes(3).toString('hex')}`,
@@ -107,6 +155,55 @@ export default async function handler(req, res) {
         contentType: 'application/json'
       });
       return res.status(201).json({ success: true });
+    }
+
+    if (req.method === 'GET' && req.query?.live) {
+      // public, cached for a short while at the edge
+      res.setHeader('Cache-Control', 'public, s-maxage=20, stale-while-revalidate=60');
+      const today = dhakaToday();
+      const recent = (await listAll(PREFIX)).filter((b) => Date.now() - tsOf(b.pathname) < 2 * DAY_MS).slice(0, 600);
+      const settled = await Promise.allSettled(recent.map(async (b) => {
+        const r = await fetch(b.url);
+        if (!r.ok) throw new Error(`HTTP ${r.status}`);
+        return r.json();
+      }));
+      const entries = settled
+        .filter((x) => x.status === 'fulfilled' && x.value && ID_RE.test(x.value.id || '') && x.value.rateDate === today)
+        .map((x) => x.value)
+        .sort((a, b) => String(a.createdAt).localeCompare(String(b.createdAt)));
+
+      // newest report of each person (ip hash) for each rate, then the median of those
+      const docGroups = new Map();
+      const readyGroups = new Map();
+      for (const e of entries) {
+        const who = e.id.split('-')[1];
+        if (e.kind === 'doc') {
+          const key = `${e.targetId}|${e.zoneId || ''}`;
+          if (!docGroups.has(key)) docGroups.set(key, { targetId: e.targetId, zoneId: e.zoneId || '', byWho: new Map() });
+          docGroups.get(key).byWho.set(who, { v: Number(e.values?.rate), at: e.createdAt });
+        } else {
+          if (!readyGroups.has(e.targetId)) readyGroups.set(e.targetId, { targetId: e.targetId, fields: new Map() });
+          const g = readyGroups.get(e.targetId);
+          for (const [f, n] of Object.entries(e.values || {})) {
+            if (!g.fields.has(f)) g.fields.set(f, new Map());
+            g.fields.get(f).set(who, { v: Number(n), at: e.createdAt });
+          }
+        }
+      }
+      const agg = (byWho) => {
+        const list = [...byWho.values()].filter((x) => Number.isFinite(x.v) && x.v > 0);
+        return list.length ? { value: Math.round(median(list.map((x) => x.v)) * 100) / 100, n: list.length, at: list.map((x) => x.at).sort().pop() } : null;
+      };
+      const doc = [...docGroups.values()].map((g) => ({ targetId: g.targetId, zoneId: g.zoneId, ...agg(g.byWho) })).filter((x) => x.value);
+      const ready = [...readyGroups.values()].map((g) => {
+        const values = {}; const counts = {}; let at = '';
+        for (const [f, byWho] of g.fields) {
+          const a = agg(byWho);
+          if (a) { values[f] = a.value; counts[f] = a.n; if (a.at > at) at = a.at; }
+        }
+        return { targetId: g.targetId, values, counts, at };
+      }).filter((x) => Object.keys(x.values).length);
+      return res.status(200).json({ success: true, date: today, doc, ready });
     }
 
     if (req.method === 'GET') {

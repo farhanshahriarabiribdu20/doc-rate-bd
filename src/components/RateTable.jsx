@@ -5,6 +5,7 @@ import React from 'react';
 import { Printer, MapPin, ShieldCheck, AlertTriangle } from 'lucide-react';
 import PriceChange from './PriceChange';
 import { rateForRegion, zoneRegionName } from '../data/zones';
+import UserRateTag from './UserRateTag';
 import { formatBn, formatEn } from '../utils/date';
 
 export default function RateTable({ rates, selectedDivision, isStale = false, rateDateISO, favFor, lang }) {
@@ -66,6 +67,7 @@ export default function RateTable({ rates, selectedDivision, isStale = false, ra
           <tbody className="divide-y divide-slate-100">
             {rates.map((item) => {
               const currentRate = rateForRegion(item, selectedDivision);
+              const byUser = selectedDivision === 'all' ? !!item.userAll : !!item.userZones?.[selectedDivision];
               const currentRegion = zoneRegionName(selectedDivision, lang) || ((selectedDivision !== 'all' && divisionRegionNames[selectedDivision])
                 ? (lang === 'bn' ? divisionRegionNames[selectedDivision].bn : divisionRegionNames[selectedDivision].en)
                 : (lang === 'bn' ? (item.regionBn || 'সেন্ট্রাল ও ইস্ট জোন') : (item.regionEn || 'Central & East Zone')));
@@ -108,7 +110,9 @@ export default function RateTable({ rates, selectedDivision, isStale = false, ra
                     ) : null}
                   </td>
                   <td className="py-3.5 px-4 text-center">
-                    {isStale ? (
+                    {byUser ? (
+                      <UserRateTag lang={lang} />
+                    ) : isStale ? (
                       <span className="inline-flex items-center gap-1 text-[11px] font-bold text-amber-800 bg-amber-50 border border-amber-300 px-2.5 py-0.5 rounded-full">
                         <AlertTriangle className="w-3 h-3" />
                         <span>পুরনো রেট</span>

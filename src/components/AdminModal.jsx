@@ -111,7 +111,7 @@ function AdminModalContent({
   const [fbError, setFbError] = useState('');
   const [selectedFbCat, setSelectedFbCat] = useState('all');
   const [feedbackSearch, setFeedbackSearch] = useState('');
-  // visitor-submitted rates waiting for approval
+  // visitor-submitted rates (already live, the admin can delete one)
   const [subs, setSubs] = useState([]);
   const [subsLoading, setSubsLoading] = useState(false);
   const [subsError, setSubsError] = useState('');
@@ -173,7 +173,7 @@ function AdminModalContent({
     }
   };
 
-  // ---- visitor-submitted rates (approval queue) ----
+  // ---- visitor-submitted rates (live at once, the admin can delete) ----
   const loadSubs = useCallback(async () => {
     setSubsLoading(true);
     setSubsError('');
@@ -189,33 +189,12 @@ function AdminModalContent({
     if (adminKey) loadSubs();
   }, [adminKey, onSubsTab, loadSubs]);
 
-  const handleApproveSub = async (sub) => {
-    if (sub.kind === 'ready') {
-      if (!readyRates.some((r) => r.id === sub.targetId)) return;
-      forceSnapshotRef.current = true; // the state before approving stays in history, so it can be undone
-      setReadyRates((prev) => prev.map((r) => (r.id === sub.targetId ? { ...r, ...sub.values } : r)));
-      setSettings((prev) => (prev.readyDateISO === todayISO() ? prev : { ...prev, readyDateISO: todayISO() }));
-    } else {
-      if (!rates.some((r) => r.id === sub.targetId)) return;
-      forceSnapshotRef.current = true;
-      const rate = Number(sub.values?.rate);
-      setRates((prev) => prev.map((item) => {
-        if (item.id !== sub.targetId) return item;
-        if (sub.zoneId) return { ...item, zoneRates: { ...(item.zoneRates || {}), [sub.zoneId]: rate } };
-        return { ...item, todayRate: rate, rateDate: '' };
-      }));
-    }
-    const ok = await deleteRateSubmissions(adminKey, [sub.id]);
-    setSubs((prev) => prev.filter((x) => x.id !== sub.id));
-    showToast(ok ? '✅ রেট অনুমোদিত হয়েছে। কিছুক্ষণের মধ্যে অটো-প্রকাশ হবে।' : '✅ রেট বসানো হয়েছে, কিন্তু তালিকা থেকে মুছতে পারিনি (রিফ্রেশ করুন)।', ok ? undefined : 'error');
-  };
-
-  const handleRejectSub = async (sub) => {
+  const handleDeleteSub = async (sub) => {
     const ok = await deleteRateSubmissions(adminKey, [sub.id]);
     if (ok) {
       setSubs((prev) => prev.filter((x) => x.id !== sub.id));
-      showToast('রেটটি বাতিল করা হয়েছে।');
-    } else showToast('বাতিল করা যায়নি। আবার চেষ্টা করুন।', 'error');
+      showToast('রেটটি মুছে ফেলা হয়েছে, সাইট থেকে কিছুক্ষণের মধ্যে সরে যাবে।');
+    } else showToast('মুছতে পারিনি। আবার চেষ্টা করুন।', 'error');
   };
 
   // ---- rate pictures (gallery) ----
@@ -1059,8 +1038,7 @@ function AdminModalContent({
                 readyRates={readyRates}
                 rates={rates}
                 onReload={loadSubs}
-                onApprove={handleApproveSub}
-                onReject={handleRejectSub}
+                onDelete={handleDeleteSub}
               />
             )}
 
