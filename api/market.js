@@ -283,6 +283,17 @@ async function adminAction(body, res) {
       store.items.splice(idx, 1);
       return {};
     }
+    if (op === 'edit') {
+      const it = store.items.find((x) => x.id === id);
+      if (!it) return { error: 'বিজ্ঞাপনটি পাওয়া যায়নি', status: 404 };
+      const f = body.fields || {};
+      const sellerName = str(f.sellerName, 60);
+      if (sellerName.length < 2) return { error: 'বিক্রেতার নাম দিন', status: 400 };
+      const parsed = validateListing({ ...f, district: DISTRICTS.includes(f.district) ? f.district : it.district });
+      if (parsed.error) return { error: parsed.error, status: 400 };
+      Object.assign(it, parsed.value, { sellerName });
+      return {};
+    }
     if (op === 'ban' || op === 'unban') {
       if (!USER_RE.test(userId)) return { error: 'userId দিন', status: 400 };
       const set = new Set(store.banned);
@@ -308,6 +319,7 @@ async function adminAction(body, res) {
     return { error: 'unknown op', status: 400 };
   }, (check) => {
     if (op === 'delete') return !check.items.some((it) => it.id === id);
+    if (op === 'edit') return true;
     if (op === 'ban') return check.banned.includes(userId);
     if (op === 'unban') return !check.banned.includes(userId);
     if (op === 'verify') return check.verified.includes(userId);

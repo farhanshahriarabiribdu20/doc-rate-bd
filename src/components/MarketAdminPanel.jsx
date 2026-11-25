@@ -1,6 +1,7 @@
-import React from 'react';
-import { Check, X, Ban, EyeOff, Trash2, RefreshCw, Loader2, Store, UserCheck, BadgeCheck, Star } from 'lucide-react';
-import { prodOf, UNIT_BN } from '../services/market';
+import React, { useState } from 'react';
+import { Check, X, Ban, EyeOff, Trash2, Pencil, RefreshCw, Loader2, Store, UserCheck, BadgeCheck, Star } from 'lucide-react';
+import { prodOf, PRODUCT_OPTIONS, UNIT_OPTIONS, UNIT_BN } from '../services/market';
+import { DISTRICT_GROUPS } from '../data/districts';
 
 const bnNum = (n) => new Intl.NumberFormat('bn-BD', { maximumFractionDigits: 2 }).format(n);
 const when = (ms) => {
@@ -15,10 +16,58 @@ const STATUS = {
   expired: ['মেয়াদ শেষ', 'bg-slate-200 text-slate-700']
 };
 
+const fld = 'w-full px-2.5 py-1.5 border border-slate-300 rounded-lg text-sm bg-white focus:outline-none focus:ring-2 focus:ring-emerald-500';
+const lbl = 'block text-[11px] font-bold text-slate-600 mb-0.5';
+
+/** Inline edit form for one ad (admin can fix any field except the seller's phone). */
+function EditForm({ it, onSave, onCancel }) {
+  const [f, setF] = useState({
+    sellerName: it.sellerName || '', product: it.product, customName: it.customName || '', quantity: it.quantity,
+    unit: it.unit, price: it.price || '', district: it.district || '', location: it.location || '', details: it.details || ''
+  });
+  const [busy, setBusy] = useState(false);
+  const set = (k) => (e) => setF((x) => ({ ...x, [k]: e.target.value }));
+  const save = async () => { setBusy(true); await onSave(f); setBusy(false); };
+  return (
+    <div className="space-y-2 bg-slate-50 border border-slate-200 rounded-xl p-3">
+      <div className="grid grid-cols-2 gap-2">
+        <div className="col-span-2"><label className={lbl}>বিক্রেতার নাম</label><input className={fld} value={f.sellerName} onChange={set('sellerName')} maxLength={60} /></div>
+        <div className={f.product === 'other' ? '' : 'col-span-2'}>
+          <label className={lbl}>পণ্য</label>
+          <select className={fld} value={f.product} onChange={set('product')}>
+            {PRODUCT_OPTIONS.map((p) => <option key={p.key} value={p.key}>{p.emoji} {p.bn}</option>)}
+          </select>
+        </div>
+        {f.product === 'other' && <div><label className={lbl}>পণ্যের নাম</label><input className={fld} value={f.customName} onChange={set('customName')} maxLength={40} /></div>}
+        <div><label className={lbl}>পরিমাণ</label><input type="number" min="1" step="any" className={fld} value={f.quantity} onChange={set('quantity')} /></div>
+        <div>
+          <label className={lbl}>একক</label>
+          <select className={fld} value={f.unit} onChange={set('unit')}>{UNIT_OPTIONS.map((u) => <option key={u.key} value={u.key}>{u.bn}</option>)}</select>
+        </div>
+        <div className="col-span-2"><label className={lbl}>দাম (৳) — ফাঁকা বা ০ হলে "দর আলোচনা সাপেক্ষে"</label><input type="number" min="0" step="any" className={fld} value={f.price} onChange={set('price')} /></div>
+        <div>
+          <label className={lbl}>জেলা</label>
+          <select className={fld} value={f.district} onChange={set('district')}>
+            <option value="">জেলা</option>
+            {DISTRICT_GROUPS.map((g) => <optgroup key={g.division} label={g.division}>{g.districts.map((d) => <option key={d} value={d}>{d}</option>)}</optgroup>)}
+          </select>
+        </div>
+        <div><label className={lbl}>এলাকা / ঠিকানা</label><input className={fld} value={f.location} onChange={set('location')} maxLength={80} /></div>
+        <div className="col-span-2"><label className={lbl}>বিবরণ</label><textarea className={fld} rows={2} value={f.details} onChange={set('details')} maxLength={300} /></div>
+      </div>
+      <div className="flex gap-2">
+        <button onClick={save} disabled={busy} className="flex items-center gap-1 px-3 py-1.5 rounded-lg bg-emerald-600 hover:bg-emerald-500 text-white font-black text-xs cursor-pointer disabled:opacity-60">{busy ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Check className="w-3.5 h-3.5" />} সেভ করুন</button>
+        <button onClick={onCancel} className="px-3 py-1.5 rounded-lg bg-slate-200 hover:bg-slate-300 text-slate-700 font-black text-xs cursor-pointer">বাতিল</button>
+      </div>
+    </div>
+  );
+}
+
 /** Admin: delete seller ads, block a seller, verified tick, rating reset (ads need no approval). */
 export default function MarketAdminPanel({ data, loading, error, onReload, onAction }) {
   const items = data?.items || [];
   const banned = data?.banned || [];
+  const [editId, setEditId] = useState(null);
 
   return (
     <div className="space-y-4">
@@ -69,7 +118,11 @@ export default function MarketAdminPanel({ data, loading, error, onReload, onAct
                 </div>
                 <span className={`shrink-0 px-2 py-0.5 rounded-full text-[10px] font-black ${stCls}`}>{stText}</span>
               </div>
+              {editId === it.id && (
+                <EditForm it={it} onCancel={() => setEditId(null)} onSave={async (fields) => { const ok = await onAction({ op: 'edit', id: it.id, fields }); if (ok) setEditId(null); }} />
+              )}
               <div className="flex flex-wrap gap-2">
+                <button onClick={() => setEditId(editId === it.id ? null : it.id)} className="flex items-center gap-1 px-2.5 py-1.5 rounded-lg bg-sky-50 hover:bg-sky-100 text-sky-700 font-black text-xs cursor-pointer"><Pencil className="w-3.5 h-3.5" /> এডিট</button>
                 <button onClick={() => { if (window.confirm('বিজ্ঞাপনটি মুছে ফেলবেন?')) onAction({ op: 'delete', id: it.id }); }} className="flex items-center gap-1 px-2.5 py-1.5 rounded-lg bg-red-50 hover:bg-red-100 text-red-700 font-black text-xs cursor-pointer"><Trash2 className="w-3.5 h-3.5" /> মুছুন</button>
                 <button onClick={() => onAction({ op: it.verified ? 'unverify' : 'verify', userId: it.userId })} className={`flex items-center gap-1 px-2.5 py-1.5 rounded-lg font-black text-xs cursor-pointer ${it.verified ? 'bg-emerald-100 text-emerald-800 hover:bg-emerald-200' : 'bg-emerald-50 text-emerald-700 hover:bg-emerald-100'}`}><BadgeCheck className="w-3.5 h-3.5" /> {it.verified ? 'যাচাই বাতিল' : 'যাচাইকৃত করুন'}</button>
                 {it.rating && (
