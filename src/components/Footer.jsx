@@ -128,6 +128,13 @@ export default function Footer({ lang, isStale = false, settings }) {
               <span>আমাদের ইউটিউব চ্যানেল</span>
             </a>
 
+            {settings?.telegramChatUrl && (
+              <a href={settings.telegramChatUrl} target="_blank" rel="noreferrer" className="flex items-center gap-2 py-2 sm:py-0 text-sky-400 hover:text-sky-300 font-semibold transition">
+                <span className="w-4 h-4 text-[12px] leading-none shrink-0">💬</span>
+                <span>টেলিগ্রাম লাইভ চ্যাট — সবার সাথে কথা বলুন</span>
+              </a>
+            )}
+
             {settings?.telegramUrl && (
               <a href={settings.telegramUrl} target="_blank" rel="noreferrer" className="flex items-center gap-2 py-2 sm:py-0 text-sky-400 hover:text-sky-300 font-semibold transition">
                 <span className="w-4 h-4 text-[12px] leading-none shrink-0">✈️</span>

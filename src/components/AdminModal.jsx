@@ -1227,6 +1227,11 @@ function AdminModalContent({
                   </div>
                   <div className="sm:col-span-2 p-3 rounded-xl border border-emerald-200 bg-emerald-50/60 space-y-3">
                     <div>
+                      <label className="block text-xs font-bold text-slate-700 mb-1">💬 Telegram লাইভ চ্যাট গ্রুপের লিংক (সবাই এখানে কথা বলবে)</label>
+                      <input type="url" placeholder="https://t.me/..." value={settings.telegramChatUrl || ''} onChange={(e) => setSettings((p) => ({ ...p, telegramChatUrl: e.target.value }))} className="w-full px-3 py-2 border rounded-xl text-xs font-bold" />
+                      <p className="text-[11px] text-slate-500 mt-1">গ্রুপ (Group) এর লিংক দিন, চ্যানেলের না — চ্যানেলে শুধু অ্যাডমিন লিখতে পারে। সাইটে "💬 লাইভ চ্যাট" বাটন আসবে।</p>
+                    </div>
+                    <div>
                       <label className="block text-xs font-bold text-slate-700 mb-1">✈️ Telegram চ্যানেলের লিংক (ভিজিটররা জয়েন করবে)</label>
                       <input type="url" placeholder="https://t.me/..." value={settings.telegramUrl || ''} onChange={(e) => setSettings((p) => ({ ...p, telegramUrl: e.target.value }))} className="w-full px-3 py-2 border rounded-xl text-xs font-bold" />
                     </div>

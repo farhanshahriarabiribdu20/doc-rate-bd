@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useRef, lazy, Suspense } from 'react';
+import ChatFab from './components/ChatFab';
 import Navbar from './components/Navbar';
 import Ticker from './components/Ticker';
 import StatsOverview from './components/StatsOverview';
@@ -724,7 +725,7 @@ export default function App() {
         </div>
 
         {/* Telegram group banner (link comes from Admin > Settings) */}
-        {settings?.telegramUrl && (
+        {(settings?.telegramChatUrl || settings?.telegramUrl) && (
           <div className="mt-4 bg-gradient-to-r from-sky-900 via-sky-950 to-slate-900 text-white p-5 sm:p-6 rounded-3xl border border-sky-800/40 shadow-xl flex flex-col sm:flex-row items-center justify-between gap-4">
             <div className="flex items-center gap-3.5 text-center sm:text-left">
               <div className="w-12 h-12 rounded-2xl bg-sky-600/30 border border-sky-400/30 flex items-center justify-center shrink-0">
@@ -737,12 +738,12 @@ export default function App() {
                   {lang === 'bn' ? 'আমাদের টেলিগ্রাম গ্রুপের সাথে যুক্ত হোন' : 'Join our Telegram Group'}
                 </h3>
                 <p className="text-xs text-sky-200 mt-0.5">
-                  {lang === 'bn' ? 'প্রতিদিনের বাচ্চার রেট ও বাজার আপডেট সবার আগে টেলিগ্রামে পেতে যোগ দিন।' : 'Get the daily rates and market updates first on Telegram.'}
+                  {lang === 'bn' ? (settings.telegramChatUrl ? 'লাইভ চ্যাটে খামারিদের সাথে কথা বলুন, রেট ও বাজারের খবর শেয়ার করুন।' : 'প্রতিদিনের বাচ্চার রেট ও বাজার আপডেট সবার আগে টেলিগ্রামে পেতে যোগ দিন।') : 'Get the daily rates and market updates first on Telegram.'}
                 </p>
               </div>
             </div>
             <a
-              href={settings.telegramUrl}
+              href={settings.telegramChatUrl || settings.telegramUrl}
               target="_blank"
               rel="noopener noreferrer"
               className="px-5 py-2.5 rounded-xl bg-[#29A9EB] hover:bg-sky-500 text-white font-bold text-xs transition shadow-lg shrink-0 flex items-center gap-2 cursor-pointer"
@@ -756,6 +757,8 @@ export default function App() {
           <MarketSection lang={lang} onOpenSeller={() => setSellerOpen(true)} refreshKey={marketKey} />
         )}
       </main>
+
+      <ChatFab url={settings?.telegramChatUrl} lang={lang} />
 
       {/* Modals */}
       {sellerOpen && <SellerModal onClose={() => setSellerOpen(false)} onChanged={() => setMarketKey((k) => k + 1)} />}
