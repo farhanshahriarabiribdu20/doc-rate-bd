@@ -764,7 +764,6 @@ function AdminModalContent({
               </button>
               <button onClick={() => setActiveTab('market')} className={tabClass('market')}>
                 <Store className="w-4 h-4" /> বিক্রেতার বিজ্ঞাপন
-                <TabBadge n={(market?.items || []).filter((i) => i.status === 'pending').length} />
               </button>
               <button onClick={() => setActiveTab('feedprices')} className={tabClass('feedprices')}>
                 <Wheat className="w-4 h-4" /> ফিডের দাম

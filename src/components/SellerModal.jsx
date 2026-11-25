@@ -12,7 +12,6 @@ const label = 'block text-xs font-bold text-slate-700 mb-1';
 const bnNum = (n) => new Intl.NumberFormat('bn-BD', { maximumFractionDigits: 2 }).format(n);
 
 const STATUS = {
-  pending: { text: 'অ্যাডমিনের অনুমোদনের অপেক্ষায়', cls: 'bg-amber-100 text-amber-800' },
   live: { text: 'সাইটে চালু আছে', cls: 'bg-emerald-100 text-emerald-800' },
   sold: { text: 'বিক্রি হয়ে গেছে', cls: 'bg-slate-200 text-slate-700' },
   hidden: { text: 'অ্যাডমিন লুকিয়েছে', cls: 'bg-red-100 text-red-700' },
@@ -88,7 +87,7 @@ export default function SellerModal({ onClose, onChanged }) {
     setPhotos([]);
     setOpenedAt(Date.now());
     setView('mine');
-    setNotice(r.status === 'pending' ? 'বিজ্ঞাপন জমা হয়েছে। অ্যাডমিন অনুমোদন দিলে সাইটে দেখা যাবে।' : 'বিজ্ঞাপন সাইটে চালু হয়েছে!');
+    setNotice('বিজ্ঞাপন সাইটে চালু হয়েছে!');
     await loadMine();
     onChanged?.();
   };
@@ -200,7 +199,7 @@ export default function SellerModal({ onClose, onChanged }) {
                   <button disabled={busy} className="w-full flex items-center justify-center gap-2 px-4 py-3 rounded-xl bg-emerald-600 hover:bg-emerald-700 disabled:opacity-60 text-white font-black text-sm cursor-pointer">
                     {busy && <Loader2 className="w-4 h-4 animate-spin" />} বিজ্ঞাপন জমা দিন
                   </button>
-                  <p className="text-[11px] text-slate-500">বিজ্ঞাপন ১০ দিন চালু থাকে। আপনার নাম ও নম্বর বিজ্ঞাপনের সাথে সবাইকে দেখানো হবে। অ্যাডমিন যাচাই করে অনুমোদন দিলে সাইটে দেখা যাবে।</p>
+                  <p className="text-[11px] text-slate-500">বিজ্ঞাপন ১০ দিন চালু থাকে। আপনার নাম ও নম্বর বিজ্ঞাপনের সাথে সবাইকে দেখানো হবে। জমা দিলেই সাইটে চালু হয়ে যাবে।</p>
                 </form>
               ) : (
                 <div className="space-y-3">
@@ -213,8 +212,8 @@ export default function SellerModal({ onClose, onChanged }) {
                       <button onClick={() => setView('new')} className="px-4 py-2 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white font-black text-xs cursor-pointer">+ প্রথম বিজ্ঞাপন দিন</button>
                     </div>
                   ) : mine.map((it) => {
-                    const st = STATUS[it.status] || STATUS.pending;
-                    const canRenew = it.status === 'live' || it.status === 'pending' || it.status === 'expired';
+                    const st = STATUS[it.status] || STATUS.live;
+                    const canRenew = it.status === 'live' || it.status === 'expired';
                     return (
                       <div key={it.id} className="border border-slate-200 rounded-2xl p-3 space-y-2">
                         <div className="flex items-start justify-between gap-2">
