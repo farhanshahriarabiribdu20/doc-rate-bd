@@ -161,7 +161,7 @@ export async function saveRateDays(key, days, kind = 'doc') {
   } catch { return { ok: false, saved }; }
 }
 
-/** Public: a visitor proposes a rate; it is only stored for the admin to approve. Returns { ok, error }. */
+/** Public: a visitor sends a rate; it goes live at once, tagged as given by a user. Returns { ok, error }. */
 export async function submitRate(data) {
   try {
     const res = await fetch('/api/rate-submissions', {
@@ -176,7 +176,16 @@ export async function submitRate(data) {
   }
 }
 
-/** Admin: the pending visitor rates, or null on failure. */
+/** Public: today's rates given by visitors ({ doc: [...], ready: [...] }), or null. */
+export async function fetchLiveUserRates() {
+  try {
+    const res = await fetch('/api/rate-submissions?live=1');
+    const body = await json(res);
+    return res.ok && body?.success ? { doc: body.doc || [], ready: body.ready || [] } : null;
+  } catch { return null; }
+}
+
+/** Admin: the visitor rates sent so far, or null on failure. */
 export async function fetchRateSubmissions(key) {
   try {
     const res = await fetch('/api/rate-submissions', { headers: adminHeaders(key) });
@@ -185,7 +194,7 @@ export async function fetchRateSubmissions(key) {
   } catch { return null; }
 }
 
-/** Admin: drop handled submissions (approved or rejected). */
+/** Admin: delete visitor rates (wrong or spam). */
 export async function deleteRateSubmissions(key, ids) {
   try {
     const res = await fetch('/api/rate-submissions', { method: 'DELETE', headers: adminHeaders(key), body: JSON.stringify({ ids }) });

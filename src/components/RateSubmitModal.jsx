@@ -16,9 +16,9 @@ export const READY_SUBMIT_FIELDS = [
 ];
 
 /**
- * Visitors propose a rate. Nothing is published: it goes to the admin's approval list.
+ * Visitors send a rate. It goes live at once, tagged "ইউজারের দেওয়া রেট" (no admin approval).
  */
-export default function RateSubmitModal({ lang = 'bn', readyRates = [], docRates = [], initialKind = 'ready', onClose }) {
+export default function RateSubmitModal({ lang = 'bn', readyRates = [], docRates = [], initialKind = 'ready', onSent, onClose }) {
   const bn = lang === 'bn';
   const [kind, setKind] = useState(initialKind);
   const [targetId, setTargetId] = useState('');
@@ -62,6 +62,7 @@ export default function RateSubmitModal({ lang = 'bn', readyRates = [], docRates
     });
     if (result.ok) {
       setStatus('saved');
+      onSent?.();
     } else {
       setStatus('failed');
       setError(result.error || (bn ? 'পাঠানো যায়নি। ইন্টারনেট দেখে আবার চেষ্টা করুন।' : 'Could not send. Please try again.'));
@@ -76,7 +77,7 @@ export default function RateSubmitModal({ lang = 'bn', readyRates = [], docRates
         <div className="sticky top-0 flex items-center justify-between gap-3 px-5 py-4 bg-emerald-900 text-white rounded-t-3xl">
           <div>
             <h3 className="font-black text-base">{bn ? '✍️ আপনার এলাকার রেট জানান' : '✍️ Share a rate'}</h3>
-            <p className="text-[11px] text-emerald-100">{bn ? 'যাচাই করে অ্যাডমিন অনুমোদন দিলে সাইটে প্রকাশ হবে।' : 'Published after the admin verifies and approves it.'}</p>
+            <p className="text-[11px] text-emerald-100">{bn ? 'পাঠালেই সাইটে প্রকাশ হবে, "ইউজারের দেওয়া রেট" ট্যাগসহ।' : 'Goes live on the site right away, tagged "Provided by user".'}</p>
           </div>
           <button onClick={onClose} aria-label="Close" className="p-1.5 rounded-full hover:bg-white/15 cursor-pointer"><X className="w-5 h-5" /></button>
         </div>
@@ -84,8 +85,8 @@ export default function RateSubmitModal({ lang = 'bn', readyRates = [], docRates
         {status === 'saved' ? (
           <div className="p-8 text-center space-y-3">
             <CheckCircle2 className="w-14 h-14 text-emerald-600 mx-auto" />
-            <p className="font-black text-slate-900 text-lg">{bn ? 'ধন্যবাদ! রেট পাঠানো হয়েছে।' : 'Thank you! Your rate was sent.'}</p>
-            <p className="text-sm text-slate-600">{bn ? 'অ্যাডমিন যাচাই করে অনুমোদন দিলে এটি ওয়েবসাইটে দেখা যাবে।' : 'It will appear on the site once the admin approves it.'}</p>
+            <p className="font-black text-slate-900 text-lg">{bn ? 'ধন্যবাদ! আপনার রেট সাইটে প্রকাশ হয়েছে।' : 'Thank you! Your rate is now live.'}</p>
+            <p className="text-sm text-slate-600">{bn ? 'রেটটি "ইউজারের দেওয়া রেট" হিসেবে চিহ্নিত হয়ে ওয়েবসাইটে দেখা যাবে (কিছুক্ষণ সময় লাগতে পারে)।' : 'It shows on the site tagged "Provided by user" (it can take a short moment).'}</p>
             <button onClick={onClose} className="px-5 py-2.5 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white font-black text-sm cursor-pointer">{bn ? 'ঠিক আছে' : 'Done'}</button>
           </div>
         ) : (
@@ -154,7 +155,7 @@ export default function RateSubmitModal({ lang = 'bn', readyRates = [], docRates
               {status === 'sending' ? <Loader2 className="w-4 h-4 animate-spin" /> : <Send className="w-4 h-4" />}
               {bn ? 'রেট পাঠান' : 'Send rate'}
             </button>
-            <p className="text-[11px] text-slate-500 text-center">{bn ? 'আপনার পাঠানো রেট সরাসরি প্রকাশ হয় না — আগে অ্যাডমিন যাচাই করেন।' : 'Rates are never published directly — the admin checks them first.'}</p>
+            <p className="text-[11px] text-slate-500 text-center">{bn ? 'আপনার দেওয়া রেট "ইউজারের দেওয়া রেট" ট্যাগসহ দেখানো হবে। সঠিক রেট দিন — ভুল রেট অ্যাডমিন মুছে দিতে পারেন।' : 'Your rate is shown with a "Provided by user" tag. Please send the correct rate — the admin can remove wrong ones.'}</p>
           </form>
         )}
       </div>

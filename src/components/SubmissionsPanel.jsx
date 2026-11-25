@@ -1,5 +1,5 @@
 import React from 'react';
-import { Check, X, RefreshCw, Loader2, AlertTriangle, Inbox } from 'lucide-react';
+import { Trash2, RefreshCw, Loader2, AlertTriangle, Inbox } from 'lucide-react';
 import { READY_SUBMIT_FIELDS } from './RateSubmitModal';
 import { ZONE_BY_ID, rateForRegion } from '../data/zones';
 
@@ -16,10 +16,10 @@ const when = (iso) => {
 const far = (now, next) => Number(now) > 0 && Math.abs(Number(next) - Number(now)) / Number(now) > 0.25;
 
 /**
- * Visitor-submitted rates waiting for approval. Approving puts the rate into the admin data (which
- * then auto-publishes like any other edit); rejecting just removes it.
+ * Visitor-submitted rates. They are already live on the site (tagged "ইউজারের দেওয়া রেট"), no approval needed;
+ * the admin can delete a wrong or spam one.
  */
-export default function SubmissionsPanel({ subs, loading, error, readyRates, rates, onReload, onApprove, onReject }) {
+export default function SubmissionsPanel({ subs, loading, error, readyRates, rates, onReload, onDelete }) {
   const rows = subs.map((sub) => {
     if (sub.kind === 'ready') {
       const item = readyRates.find((r) => r.id === sub.targetId) || null;
@@ -42,7 +42,7 @@ export default function SubmissionsPanel({ subs, loading, error, readyRates, rat
     <div className="space-y-4">
       <div className="flex flex-wrap items-center justify-between gap-2">
         <div className="flex items-center gap-2">
-          <h3 className="font-black text-slate-900 text-base flex items-center gap-1.5"><Inbox className="w-4 h-4 text-emerald-700" /> ইউজারদের পাঠানো রেট</h3>
+          <h3 className="font-black text-slate-900 text-base flex items-center gap-1.5"><Inbox className="w-4 h-4 text-emerald-700" /> ইউজারদের দেওয়া রেট</h3>
           <span className="px-2.5 py-0.5 rounded-full bg-emerald-600 text-white text-xs font-bold">{subs.length}টি</span>
         </div>
         <button onClick={onReload} disabled={loading} className="px-3 py-1.5 bg-emerald-600 hover:bg-emerald-700 disabled:opacity-60 text-white rounded-xl text-xs font-bold cursor-pointer flex items-center gap-1">
@@ -50,14 +50,14 @@ export default function SubmissionsPanel({ subs, loading, error, readyRates, rat
         </button>
       </div>
       <p className="text-xs text-slate-600 leading-relaxed">
-        এখানকার কোনো রেট নিজে থেকে প্রকাশ হয় না। "অনুমোদন" দিলে রেটটি সাইটের ডেটায় বসে যায় এবং অটো-প্রকাশ হয়; "বাতিল" দিলে মুছে যায়।
-        ২৫%-এর বেশি পার্থক্য হলে ⚠️ চিহ্ন দেখাবে।
+        এখানকার রেটগুলো অনুমোদন ছাড়াই সাইটে "ইউজারের দেওয়া রেট" ট্যাগসহ প্রকাশ হয়ে গেছে (আপনার নিজের রেট বদলায় না)।
+        ভুল বা স্প্যাম রেট দেখলে "মুছুন" চাপুন — সাথে সাথে সাইট থেকে সরে যাবে। ২৫%-এর বেশি পার্থক্য হলে ⚠️ চিহ্ন দেখাবে।
       </p>
 
       {error && <div className="text-xs font-bold text-red-700 bg-red-50 border border-red-200 rounded-xl p-2.5">{error}</div>}
 
       {!loading && rows.length === 0 ? (
-        <div className="text-center text-sm text-slate-500 border-2 border-dashed border-slate-200 rounded-2xl p-8">কোনো নতুন রেট অপেক্ষায় নেই।</div>
+        <div className="text-center text-sm text-slate-500 border-2 border-dashed border-slate-200 rounded-2xl p-8">এখনো কোনো ইউজার রেট দেননি।</div>
       ) : (
         <div className="space-y-3">
           {rows.map(({ sub, item, title, changes }) => (
@@ -74,14 +74,9 @@ export default function SubmissionsPanel({ subs, loading, error, readyRates, rat
                   </div>
                   {sub.note && <div className="text-[11px] text-slate-600 mt-0.5">💬 {sub.note}</div>}
                 </div>
-                <div className="flex gap-2">
-                  <button onClick={() => onApprove(sub)} disabled={!item} className="px-3 py-1.5 bg-emerald-600 hover:bg-emerald-700 disabled:opacity-40 text-white rounded-xl text-xs font-black cursor-pointer flex items-center gap-1">
-                    <Check className="w-3.5 h-3.5" /> অনুমোদন
-                  </button>
-                  <button onClick={() => onReject(sub)} className="px-3 py-1.5 bg-red-50 hover:bg-red-100 text-red-700 border border-red-200 rounded-xl text-xs font-black cursor-pointer flex items-center gap-1">
-                    <X className="w-3.5 h-3.5" /> বাতিল
-                  </button>
-                </div>
+                <button onClick={() => onDelete(sub)} className="px-3 py-1.5 bg-red-50 hover:bg-red-100 text-red-700 border border-red-200 rounded-xl text-xs font-black cursor-pointer flex items-center gap-1">
+                  <Trash2 className="w-3.5 h-3.5" /> মুছুন
+                </button>
               </div>
               <div className="flex flex-wrap gap-1.5">
                 {changes.map((c) => (

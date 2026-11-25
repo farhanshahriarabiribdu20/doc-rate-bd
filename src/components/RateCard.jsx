@@ -5,6 +5,7 @@ import { AlertTriangle, MapPin } from 'lucide-react';
 import PriceChange from './PriceChange';
 import FavStar from './FavStar';
 import RateVote from './RateVote';
+import UserRateTag from './UserRateTag';
 import { rateForRegion, zoneRegionName } from '../data/zones';
 import { formatBn, formatEn, todayISO } from '../utils/date';
 
@@ -12,6 +13,8 @@ export default function RateCard({ item, selectedDivision, isStale = false, rate
   const currentRate = rateForRegion(item, selectedDivision);
   const rateDateLabel = rateDateISO ? (lang === 'bn' ? formatBn(rateDateISO) : formatEn(rateDateISO)).split('(')[0].trim() : '';
   const isToday = rateDateISO === todayISO();
+  // the shown rate was given by a visitor (not from the admin's sheet)
+  const byUser = selectedDivision === 'all' ? !!item.userAll : !!item.userZones?.[selectedDivision];
 
 
   const divisionRegionNames = {
@@ -56,7 +59,9 @@ export default function RateCard({ item, selectedDivision, isStale = false, rate
             <span>{catTag.label}</span>
           </span>
 
-          {isStale ? (
+          {byUser ? (
+            <UserRateTag lang={lang} />
+          ) : isStale ? (
             <span className="inline-flex items-center gap-1 text-[11px] font-bold text-amber-800 bg-amber-50 px-2.5 py-0.5 rounded-full border border-amber-300">
               <AlertTriangle className="w-3 h-3" />
               <span>{lang === 'bn' ? 'পুরনো রেট' : 'Outdated'}</span>
@@ -109,9 +114,11 @@ export default function RateCard({ item, selectedDivision, isStale = false, rate
         <div className="flex items-end justify-between gap-2">
           <div>
             <span className="text-[11px] font-bold text-slate-500 uppercase tracking-wider block">
-              {isToday
-                ? (lang === 'bn' ? 'আজকের নির্ধারিত বাজারদর' : "Today's Official Rate")
-                : (lang === 'bn' ? 'নির্ধারিত বাজারদর' : 'Official Rate')}
+              {byUser
+                ? (lang === 'bn' ? 'ইউজারের দেওয়া রেট' : 'Provided by user')
+                : isToday
+                  ? (lang === 'bn' ? 'আজকের নির্ধারিত বাজারদর' : "Today's Official Rate")
+                  : (lang === 'bn' ? 'নির্ধারিত বাজারদর' : 'Official Rate')}
             </span>
             <div className="flex items-baseline gap-1 mt-0.5">
               <span className="text-[1.7rem] max-sm:leading-none sm:text-4xl font-black text-slate-900 tracking-tight">৳{currentRate}</span>
@@ -134,7 +141,9 @@ export default function RateCard({ item, selectedDivision, isStale = false, rate
               <PriceChange today={item.todayRate} yesterday={item.yesterdayRate} lang={lang} />
             )}
             <span className="block text-[10px] text-slate-500 font-semibold">
-              {lang === 'bn' ? 'অফিসিয়াল রেট শিট' : 'Official rate sheet'}
+              {byUser
+                ? (lang === 'bn' ? 'অফিসিয়াল শিট নয়' : 'Not from the official sheet')
+                : (lang === 'bn' ? 'অফিসিয়াল রেট শিট' : 'Official rate sheet')}
             </span>
           </div>
         </div>

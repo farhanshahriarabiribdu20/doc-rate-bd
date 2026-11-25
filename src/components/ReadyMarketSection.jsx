@@ -2,6 +2,17 @@ import React, { useState, useEffect } from 'react';
 import { ShoppingBag, MapPin, Search, LayoutGrid, Table as TableIcon, Egg, Bird } from 'lucide-react';
 import { getReadyMarketStats } from '../data/readyMarketData';
 import { formatBn, formatEn, todayISO } from '../utils/date';
+import UserRateTag from './UserRateTag';
+import { READY_SUBMIT_FIELDS } from './RateSubmitModal';
+
+// "ইউজারের দেওয়া: গ্রিল, লাল ডিম" — which of the shown rates a visitor gave
+const FIELD_BN = Object.fromEntries(READY_SUBMIT_FIELDS.map((f) => [f.key, f.bn]));
+FIELD_BN.sonaliSuper = 'সোনালী সুপার';
+const userFieldsLabel = (item, lang) => {
+  const keys = Object.keys(item.userFields || {});
+  if (!keys.length) return '';
+  return lang === 'bn' ? `ইউজারের দেওয়া: ${keys.map((k) => FIELD_BN[k] || k).join(', ')}` : `Provided by user: ${keys.map((k) => FIELD_BN[k] || k).join(', ')}`;
+};
 
 // A rate that was not in the sheet is 0: show a dash instead of ৳0.
 const money = (v) => (Number(v) > 0 ? `৳${v}` : '—');
@@ -258,6 +269,7 @@ export default function ReadyMarketSection({ readyRates = [], lang = 'bn', setti
                             📅 {dateLabel}
                           </span>
                         )}
+                        {item.userFields && <div className="mt-1 ml-5"><UserRateTag lang={lang} label={userFieldsLabel(item, lang)} /></div>}
                       </td>
 
                       {/* Broiler */}
@@ -344,6 +356,8 @@ export default function ReadyMarketSection({ readyRates = [], lang = 'bn', setti
                       </span>
                     )}
                   </div>
+
+                  {item.userFields && <div className="mb-3 -mt-1"><UserRateTag lang={lang} label={userFieldsLabel(item, lang)} /></div>}
 
                   {/* Rates Grid */}
                   <div className="grid grid-cols-2 gap-2 text-xs mb-4">

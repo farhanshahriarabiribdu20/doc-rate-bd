@@ -13,7 +13,7 @@ export default function RateCta({ lang, onClick }) {
           </p>
           <p className="text-xs sm:text-sm text-amber-800 mt-0.5 leading-relaxed">
             {bn
-              ? 'আপনি নিজে বাঁচুন, অন্য খামারিকেও বাঁচান — আমাদের উদ্দেশ্য খামার বাঁচানো। আপনার জানা রেটটি পাঠান, যাচাই করে সবার জন্য প্রকাশ করা হবে।'
+              ? 'আপনি নিজে বাঁচুন, অন্য খামারিকেও বাঁচান — আমাদের উদ্দেশ্য খামার বাঁচানো। আপনার জানা রেটটি পাঠান, সাথে সাথে সবার জন্য "ইউজারের দেওয়া রেট" হিসেবে প্রকাশ হবে।'
               : 'Save yourself and help other farmers too — our goal is to keep farms alive. Send the rate you know; it is published for everyone after checking.'}
           </p>
         </div>

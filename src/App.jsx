@@ -24,7 +24,8 @@ import FeedbackWidget from './components/FeedbackWidget';
 import ReadyMarketSection from './components/ReadyMarketSection';
 import DistrictReports, { ReportBanner } from './components/DistrictReports';
 import Footer from './components/Footer';
-import { fetchSiteData, fetchRateDates, fetchRateDay, fetchGallery } from './services/api';
+import { fetchSiteData, fetchRateDates, fetchRateDay, fetchGallery, fetchLiveUserRates } from './services/api';
+import { applyUserDocRates, applyUserReadyRates } from './utils/userRates';
 import { ageInDays, formatBn, formatEn, toBnDigits } from './utils/date';
 import {
   INITIAL_RATES,
@@ -200,6 +201,16 @@ export default function App() {
   const [readyBusy, setReadyBusy] = useState(false);
   useEffect(() => { fetchRateDates('ready').then(setReadyDates); }, []);
 
+  // Rates visitors gave: live at once, shown with a "ইউজারের দেওয়া রেট" tag (re-checked every 2 minutes)
+  const [userRates, setUserRates] = useState(null);
+  useEffect(() => {
+    let cancelled = false;
+    const load = () => { if (document.visibilityState === 'visible') fetchLiveUserRates().then((r) => { if (!cancelled && r) setUserRates(r); }); };
+    load();
+    const t = setInterval(load, 120000);
+    return () => { cancelled = true; clearInterval(t); };
+  }, []);
+
   // rate pictures uploaded by the admin
   const [gallery, setGallery] = useState([]);
   useEffect(() => { fetchGallery().then((g) => { if (g) setGallery(g); }); }, []);
@@ -267,7 +278,9 @@ export default function App() {
   const reportAge = ageInDays(settings.reportDateISO);
   const isStale = reportAge !== null && reportAge >= STALE_AFTER_DAYS;
   // What the public sections show: an archived day while one is picked, otherwise the latest rates.
-  const liveRates = rates.filter((r) => !r.rateDate || r.rateDate === settings.reportDateISO);
+  const officialRates = rates.filter((r) => !r.rateDate || r.rateDate === settings.reportDateISO); // the admin's own sheet (banners and share text use this)
+  const liveRates = applyUserDocRates(officialRates, userRates?.doc, updatedAt);
+  const liveReadyRates = applyUserReadyRates(readyRates, userRates?.ready, updatedAt);
   const shownRates = archive ? archive.rates : liveRates;
   const shownStale = archive ? false : isStale;
   const shownDateISO = archive ? archive.date : settings.reportDateISO;
@@ -660,7 +673,7 @@ export default function App() {
             <div data-search-anchor="ready" className="scroll-mt-40" />
             <ReadyMarketSection
               presetSearch={readyPreset}
-              readyRates={readyArchive ? readyArchive.rates : readyRates}
+              readyRates={readyArchive ? readyArchive.rates : liveReadyRates}
               lang={lang}
               settings={readyArchive ? { ...settings, readyDateISO: readyArchive.date } : settings}
             />
@@ -794,6 +807,7 @@ export default function App() {
           initialKind={submitKind}
           readyRates={readyRates}
           docRates={liveRates}
+          onSent={() => fetchLiveUserRates().then((r) => { if (r) setUserRates(r); })}
           onClose={() => setSubmitKind(null)}
         />
       )}
@@ -803,7 +817,7 @@ export default function App() {
           <BannerGeneratorModal
             isOpen={isBannerOpen}
             onClose={() => setIsBannerOpen(false)}
-            rates={liveRates}
+            rates={officialRates}
             readyRates={readyRates}
             feeds={feeds}
             settings={settings}
@@ -838,7 +852,7 @@ export default function App() {
       <ShareModal
         isOpen={isShareOpen}
         onClose={() => setIsShareOpen(false)}
-        rates={liveRates}
+        rates={officialRates}
         notice={notice}
         settings={settings}
         lang={lang}
