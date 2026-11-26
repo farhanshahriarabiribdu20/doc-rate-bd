@@ -1,8 +1,8 @@
 import { createHmac, randomBytes, timingSafeEqual } from 'node:crypto';
-import { put, del } from '@vercel/blob';
+import { putImage, delImages } from './_store.js';
 import { noStore, parseBody, requireAdmin } from './_lib.js';
 import { readFresh, writeFresh } from './_fresh.js';
-import { allow, countBlob } from './_budget.js';
+import { allow } from './_budget.js';
 import { DISTRICTS } from '../src/data/districts.js';
 
 // Seller marketplace: NO login. Anyone posts a listing with name, mobile number and location. The
@@ -98,9 +98,7 @@ function prune(store, now) {
 }
 
 // Pictures live in their own blobs; they are removed when their listing goes away. A leftover blob is harmless.
-const dropImages = async (urls) => {
-  await Promise.all((urls || []).filter((u) => typeof u === 'string' && /^https?:\/\//.test(u)).map((u) => del(u).catch(() => {})));
-};
+const dropImages = delImages;
 
 function magicOk(buf, type) {
   if (type === 'image/jpeg') return buf[0] === 0xff && buf[1] === 0xd8;
@@ -196,10 +194,7 @@ async function postListing(body, req, res) {
   let imgs = [];
   if (pics.images.length) {
     try {
-      await countBlob('ad', pics.images.length);
-      imgs = await Promise.all(pics.images.map((p, i) => put(`market/img/${id}-${i}.${IMG_TYPES[p.type]}`, p.buf, {
-        access: 'public', addRandomSuffix: true, contentType: p.type, cacheControlMaxAge: 31536000
-      }).then((b) => b.url)));
+      imgs = await Promise.all(pics.images.map((p, i) => putImage(`market/img/${id}-${i}.${IMG_TYPES[p.type]}`, p.buf, p.type, 'ad')));
     } catch {
       await dropImages(imgs);
       return res.status(503).json({ success: false, error: 'ছবি আপলোড হয়নি, আবার চেষ্টা করুন' });

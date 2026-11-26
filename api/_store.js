@@ -9,6 +9,7 @@
 
 import { put, get, list, del } from '@vercel/blob';
 import { randomBytes } from 'node:crypto';
+import { countBlob } from './_budget.js';
 
 const env = (k) => String(process.env[k] || '').trim();
 export const isSupabase = () => env('STORE') === 'supabase' && !!env('SUPABASE_URL') && !!env('SUPABASE_SERVICE_KEY');
@@ -196,4 +197,57 @@ export async function storeStatus() {
   const out = { store: storeName(), supabaseKeys: supabaseReady(), switchOn: env('STORE') === 'supabase' };
   try { out.siteData = !!(await getDoc('site-data.json')); out.readOk = true; } catch (err) { out.readOk = false; out.error = String(err?.message || err).slice(0, 160); }
   return out;
+}
+
+
+// ---------- pictures ----------
+// STORE=supabase: Supabase Storage, public bucket `images` (made on first use). Otherwise Vercel Blob.
+// Old pictures keep working: delImages() understands both kinds of address.
+const BUCKET = 'images';
+const PUBLIC_MARK = `/storage/v1/object/public/${BUCKET}/`;
+const sbBase = () => env('SUPABASE_URL').replace(/\/+$/, '');
+const sbAuth = () => ({ apikey: env('SUPABASE_SERVICE_KEY'), Authorization: `Bearer ${env('SUPABASE_SERVICE_KEY')}` });
+
+async function ensureBucket() {
+  const r = await fetch(`${sbBase()}/storage/v1/bucket`, {
+    method: 'POST', headers: { ...sbAuth(), 'Content-Type': 'application/json' },
+    body: JSON.stringify({ id: BUCKET, name: BUCKET, public: true, file_size_limit: 3145728, allowed_mime_types: ['image/jpeg', 'image/png', 'image/webp'] }),
+    signal: AbortSignal.timeout(TIMEOUT_MS)
+  });
+  if (!r.ok && r.status !== 409) { const t = await r.text().catch(() => ''); if (!/already exists|Duplicate/i.test(t)) throw new Error(`Supabase bucket ${r.status}: ${t.slice(0, 120)}`); }
+}
+
+/** Stores a picture and returns its public address. `kind` is only for the Blob write meter. */
+export async function putImage(path, buf, contentType, kind = 'ad') {
+  if (!isSupabase()) {
+    await countBlob(kind, 1);
+    const blob = await put(path, buf, { access: 'public', addRandomSuffix: true, contentType, cacheControlMaxAge: 31536000 });
+    return blob.url;
+  }
+  const key = path.replace(/(\.\w+)?$/, `-${randomBytes(4).toString('hex')}$1`);
+  for (let attempt = 0; attempt < 2; attempt += 1) {
+    const r = await fetch(`${sbBase()}/storage/v1/object/${BUCKET}/${key}`, {
+      method: 'POST', headers: { ...sbAuth(), 'Content-Type': contentType, 'cache-control': 'max-age=31536000', 'x-upsert': 'false' },
+      body: buf, signal: AbortSignal.timeout(20000)
+    });
+    if (r.ok) return `${sbBase()}${PUBLIC_MARK}${key}`;
+    const t = await r.text().catch(() => '');
+    if (attempt === 0 && /bucket not found/i.test(t)) { await ensureBucket(); continue; }
+    throw new Error(`Supabase upload ${r.status}: ${t.slice(0, 160)}`);
+  }
+  throw new Error('Supabase upload failed');
+}
+
+/** Removes pictures by address (Supabase Storage or Vercel Blob). Never throws; a leftover picture is harmless. */
+export async function delImages(urls) {
+  const list_ = (urls || []).filter((u) => typeof u === 'string' && /^https?:\/\//.test(u));
+  const sbPaths = [];
+  const blobUrls = [];
+  list_.forEach((u) => { const i = u.indexOf(PUBLIC_MARK); if (i >= 0) sbPaths.push(decodeURIComponent(u.slice(i + PUBLIC_MARK.length).split('?')[0])); else blobUrls.push(u); });
+  if (sbPaths.length && supabaseReady()) {
+    try {
+      await fetch(`${sbBase()}/storage/v1/object/${BUCKET}`, { method: 'DELETE', headers: { ...sbAuth(), 'Content-Type': 'application/json' }, body: JSON.stringify({ prefixes: sbPaths }), signal: AbortSignal.timeout(TIMEOUT_MS) });
+    } catch { /* ignore */ }
+  }
+  await Promise.all(blobUrls.map((u) => del(u).catch(() => {})));
 }

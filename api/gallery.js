@@ -1,6 +1,5 @@
-import { put, del } from '@vercel/blob';
+import { putImage, delImages } from './_store.js';
 import { readFresh, writeFresh } from './_fresh.js';
-import { countBlob } from './_budget.js';
 import { randomBytes } from 'node:crypto';
 import { noStore, parseBody, requireAdmin, sanitizeFeeds } from './_lib.js';
 
@@ -96,13 +95,10 @@ export default async function handler(req, res) {
       if (!matchesMagic(buf, m[1])) return res.status(400).json({ success: false, error: 'ছবির ফাইলটি সঠিক নয়' });
       if (images.length >= MAX_IMAGES) return res.status(400).json({ success: false, error: `সর্বোচ্চ ${MAX_IMAGES}টি ছবি রাখা যায়, পুরনো কিছু মুছুন` });
 
-      await countBlob('gallery', 1);
-      const blob = await put(`gallery/img.${TYPES[m[1]]}`, buf, {
-        access: 'public', addRandomSuffix: true, contentType: m[1], cacheControlMaxAge: 31536000
-      });
+      const imageUrl = await putImage(`gallery/img.${TYPES[m[1]]}`, buf, m[1], 'gallery');
       const item = {
         id: `g-${Date.now().toString(36)}-${randomBytes(3).toString('hex')}`,
-        url: blob.url,
+        url: imageUrl,
         caption: str(body.caption, 120),
         target: TARGETS.includes(body.target) ? body.target : 'all',
         createdAt: Date.now()
@@ -124,7 +120,7 @@ export default async function handler(req, res) {
       if (!target) return res.status(404).json({ success: false, error: 'ছবিটি পাওয়া যায়নি' });
       const next = images.filter((it) => it.id !== id);
       const out = await save(next);
-      try { await del(target.url); } catch { /* the list no longer points to it; a leftover blob is harmless */ }
+      try { await delImages([target.url]); } catch { /* the list no longer points to it; a leftover blob is harmless */ }
       return out;
     }
 
