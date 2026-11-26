@@ -21,7 +21,7 @@ Current monthly budget (approx.): publish ~300, undo copy ~60, day archive ~90, 
 ## Data store switch (Supabase)
 All small JSON documents go through `api/_store.js` (`getDoc/putDoc/listDocs/readDocs/delDocs`), never straight to `@vercel/blob`.
 `STORE=supabase` (+ `SUPABASE_URL`, `SUPABASE_SERVICE_KEY`) puts them in the Supabase table `docs` (`supabase/setup.sql`); otherwise Vercel Blob.
-Only pictures (market/gallery) stay in Blob and must be counted with `countBlob` (`count` does nothing in Supabase mode).
+Pictures (market/gallery) go through `putImage/delImages` in the same file: Supabase Storage bucket `images` when `STORE=supabase` (made on first upload), otherwise Vercel Blob (counted automatically). Old Blob picture addresses keep working. `count` does nothing in Supabase mode.
 Admin settings -> "ডেটা স্টোর": full backup download (`site-history?export=1`), Blob->Supabase copy (`?migrate=1`), status (`?store=1`).
 Supabase free projects pause after 7 days without requests; the daily backup cron (`site-history?cron=1`) keeps it awake.
 
