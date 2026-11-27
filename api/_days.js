@@ -2,6 +2,7 @@
 import { getDoc, putDoc, listDocs } from './_store.js';
 import { readFresh, writeFresh } from './_fresh.js';
 import { count } from './_budget.js';
+import { updateReadyTrend } from './_readyTrend.js';
 
 const prefixOf = (kind) => (kind === 'ready' ? 'ready-days/' : 'rate-days/');
 
@@ -13,6 +14,8 @@ export async function saveRateDay(date, rates, kind = 'doc') {
   await addToIndex(date, kind);
   if (kind === 'doc') {
     try { await updateTrend(date, rates); } catch (err) { console.error('trend update failed:', err); }
+  } else {
+    try { await updateReadyTrend(date, rates); } catch (err) { console.error('ready trend update failed:', err); }
   }
 }
 

@@ -29,3 +29,6 @@ Supabase free projects pause after 7 days without requests; the daily backup cro
 - Vercel Hobby: max 12 serverless functions (extend existing ones with query params).
 - Most visitors use phones: keep mobile layout first; desktop must stay unchanged unless asked.
 - Marketplace needs no login and ads auto-publish; admin can only delete/ban/verify/edit.
+
+## Ready-market trend analysis
+`GET /api/rate-trend?kind=ready` (edge cached) returns daily averages from `trend/ready.json` merged over the built-in sheet history `api/_readySeed.js`. The doc is written only when a ready day is archived (`saveRateDay(..., 'ready')`, already budgeted as `archive`), so it adds no new writes. Today's point is added in the browser from the live ready rates.
