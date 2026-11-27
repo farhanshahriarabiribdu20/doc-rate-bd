@@ -183,6 +183,8 @@ export default function DistrictReports() {
   );
 }
 
+const WHATSAPP_RATE_GROUP = 'https://chat.whatsapp.com/H2PQhDdgRksASVlNtxSz4b';
+
 /** Big, hard-to-miss call to action: asks everyone to share today's ready-bird and egg rates. */
 export function ReportBanner({ onDocRate, people = 0 }) {
   const [open, setOpen] = useState(false);
@@ -208,6 +210,16 @@ export function ReportBanner({ onDocRate, people = 0 }) {
                 🐣 বাচ্চার রেট দিন
               </button>
             )}
+          </div>
+          <div className="rounded-2xl bg-black/15 border border-white/30 p-3.5 sm:p-4 flex flex-col sm:flex-row sm:items-center gap-3 sm:gap-5 sm:max-w-3xl">
+            <p className="text-sm sm:text-[15px] font-bold leading-relaxed text-white">
+              আমরা আপনাদের <span className="font-black text-amber-200">৬৪ জেলার সঠিক রেট</span> দেওয়ার চেষ্টা করছি। নিজে রেট দিন, <span className="font-black text-amber-200">উপকৃত হোন</span> এবং অন্যকেও <span className="font-black text-amber-200">উপকৃত করুন</span>।
+            </p>
+            <a href={WHATSAPP_RATE_GROUP} target="_blank" rel="noreferrer"
+              className="shrink-0 inline-flex items-center justify-center gap-2 px-5 py-3 rounded-2xl bg-[#25D366] hover:bg-[#1fb857] text-white font-black text-sm sm:text-base shadow-lg border border-white/40 active:scale-95 transition">
+              <svg viewBox="0 0 24 24" className="w-5 h-5 fill-current" aria-hidden="true"><path d="M20.5 3.5A11.8 11.8 0 0 0 12 0C5.4 0 .1 5.3.1 11.9c0 2.1.5 4.1 1.6 5.9L0 24l6.4-1.7a11.9 11.9 0 0 0 5.6 1.4c6.6 0 11.9-5.3 11.9-11.9 0-3.2-1.2-6.2-3.4-8.3zM12 21.7c-1.8 0-3.5-.5-5-1.4l-.4-.2-3.8 1 1-3.7-.2-.4a9.8 9.8 0 0 1-1.5-5.2C2.1 6.4 6.5 2 12 2c2.6 0 5.1 1 6.9 2.9a9.7 9.7 0 0 1 2.9 6.9c0 5.4-4.4 9.9-9.8 9.9zm5.4-7.4c-.3-.1-1.8-.9-2-1-.3-.1-.5-.1-.7.1l-.9 1.1c-.2.2-.3.2-.6.1-1.8-.9-3-1.6-4.2-3.7-.3-.5.3-.5.9-1.7.1-.2 0-.4 0-.5l-.9-2.1c-.2-.5-.5-.5-.7-.5h-.6c-.2 0-.5.1-.8.4-.3.3-1.1 1.1-1.1 2.6s1.1 3 1.3 3.2c.2.2 2.2 3.4 5.4 4.7 2 .8 2.8.9 3.8.7.6-.1 1.8-.7 2.1-1.5.3-.7.3-1.3.2-1.5-.1-.2-.3-.3-.6-.4z"/></svg>
+              হোয়াটসঅ্যাপ গ্রুপে যুক্ত হোন
+            </a>
           </div>
         </div>
       </div>
