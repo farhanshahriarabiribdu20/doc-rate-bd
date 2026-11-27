@@ -43,6 +43,32 @@ async function flushVotes(force) {
   pend = { date: '', c: {}, n: 0 };
 }
 
+// ---- "how is the market today?" one-tap poll (?poll=1) ----
+// One small document for the current day: { date, c: [good, middling, bad], h: [ip hashes that already voted] }.
+const POLL_PATH = 'market-poll.json';
+const POLL_KEYS = ['good', 'mid', 'bad'];
+async function pollHandler(req, res) {
+  const today = dhakaDay();
+  const fresh = (d) => (d && d.date === today ? { c: Array.isArray(d.c) ? d.c.map((n) => Number(n) || 0).slice(0, 3) : [0, 0, 0], h: Array.isArray(d.h) ? d.h : [] } : { c: [0, 0, 0], h: [] });
+  if (req.method === 'GET') {
+    res.setHeader('Cache-Control', 'public, s-maxage=30, stale-while-revalidate=120');
+    const { c } = fresh(await readFresh(POLL_PATH));
+    return res.status(200).json({ success: true, date: today, c });
+  }
+  if (req.method !== 'POST') return res.status(405).json({ success: false, error: 'Method not allowed' });
+  const idx = POLL_KEYS.indexOf(parseBody(req)?.v);
+  if (idx < 0) return res.status(400).json({ success: false, error: 'Invalid vote' });
+  const who = clientHash(req);
+  const stored = await readFresh(POLL_PATH);
+  const cur = fresh(stored);
+  if (cur.h.includes(who)) return res.status(200).json({ success: true, date: today, c: cur.c, already: true });
+  const gate = await allow('poll');
+  if (!gate.ok) return res.status(429).json({ success: false, error: gate.error });
+  cur.c[idx] += 1;
+  await writeFresh(POLL_PATH, { date: today, c: cur.c, h: [...cur.h, who].slice(-3000) }, stored?.v, 'poll');
+  return res.status(200).json({ success: true, date: today, c: cur.c });
+}
+
 // ---- district rate reports (?reports=1) ----
 // Visitors report today's ready-bird/egg rates for any of the 64 districts. A report is shown at once
 // (one report = that value, two or more = their median, worked out in the browser). One blob holds the
@@ -194,6 +220,7 @@ export default async function handler(req, res) {
 
   try {
     if (req.query?.votes) return await votesHandler(req, res);
+    if (req.query?.poll) return await pollHandler(req, res);
     if (req.query?.reports) return await reportsHandler(req, res, DISTRICTS_BN);
     // POST (public): submit new feedback
     if (req.method === 'POST') {

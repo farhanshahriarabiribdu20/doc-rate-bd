@@ -184,7 +184,7 @@ export default function DistrictReports() {
 }
 
 /** Big, hard-to-miss call to action: asks everyone to share today's ready-bird and egg rates. */
-export function ReportBanner({ onDocRate }) {
+export function ReportBanner({ onDocRate, people = 0 }) {
   const [open, setOpen] = useState(false);
   let saved = '';
   try { saved = localStorage.getItem('fn_report_district') || ''; } catch { /* ignore */ }
@@ -197,6 +197,7 @@ export function ReportBanner({ onDocRate }) {
             <p className="text-[11px] sm:text-xs font-black tracking-wider uppercase bg-white/20 inline-block px-2.5 py-1 rounded-full">📢 সবার প্রতি অনুরোধ</p>
             <h2 className="mt-2 text-2xl sm:text-4xl font-black leading-tight drop-shadow-sm">বাচ্চা, মুরগি ও ডিমের রেট দিন!</h2>
             <p className="mt-1.5 text-sm sm:text-base font-bold text-white/95 leading-relaxed">আপনার জানা বাচ্চার, রেডি মুরগি বা ডিমের রেট জানান — সবাই উপকৃত হবে।</p>
+            {people > 0 && <p className="mt-1 text-xs sm:text-sm font-black text-white bg-white/20 inline-block px-2.5 py-1 rounded-full">✅ আজ {String(people).replace(/\d/g, (d) => '০১২৩৪৫৬৭৮৯'[d])} জন রেট দিয়েছেন</p>}
           </div>
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5 sm:gap-3 sm:max-w-2xl">
             <button onClick={() => setOpen(true)} className="w-full px-5 py-3.5 sm:py-4 rounded-2xl bg-white text-orange-700 hover:bg-orange-50 font-black text-base sm:text-lg shadow-lg cursor-pointer">
