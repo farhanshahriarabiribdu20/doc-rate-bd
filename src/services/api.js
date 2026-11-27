@@ -314,6 +314,15 @@ export async function fetchRateTrend() {
   } catch { return null; }
 }
 
+/** Ready-market daily averages for the trend analysis: { days: { date: { broilerGrill, ... } } } or null. */
+export async function fetchReadyTrend() {
+  try {
+    const res = await fetch('/api/rate-trend?kind=ready');
+    const body = await json(res);
+    return res.ok && body?.success ? { days: body.days || {} } : null;
+  } catch { return null; }
+}
+
 /** Admin: post a message to the Telegram channel. Returns { ok, notConfigured, error }. */
 export async function sendTelegram(key, text) {
   try {

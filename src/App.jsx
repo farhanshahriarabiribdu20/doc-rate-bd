@@ -8,6 +8,7 @@ import RateCard from './components/RateCard';
 import RateTable from './components/RateTable';
 import PriceChart from './components/PriceChart';
 import TrendChart from './components/TrendChart';
+import ReadyTrendAnalysis from './components/ReadyTrendAnalysis';
 import InstallPrompt from './components/InstallPrompt';
 const Calculator = lazy(() => import('./components/Calculator'));
 import { track, trackVisit } from './services/track';
@@ -654,6 +655,7 @@ export default function App() {
         {/* Tab 2: Ready Broiler, Color, Sonali & Egg Market Section */}
         {activeTab === 'ready' && (
           <div className="flex flex-col gap-5 sm:gap-6">
+            <ReadyTrendAnalysis lang={lang} liveRates={liveReadyRates} liveDate={settings.readyDateISO} />
             <ReportBanner onDocRate={() => setSubmitKind('doc')} people={userRates?.people} />
             <MarketPoll lang={lang} />
             <div className="grid gap-4">
