@@ -186,7 +186,7 @@ export default async function handler(req, res) {
         }
         return { targetId: g.targetId, values, counts, at };
       }).filter((x) => Object.keys(x.values).length);
-      return res.status(200).json({ success: true, date: today, doc, ready });
+      return res.status(200).json({ success: true, date: today, doc, ready, people: new Set(entries.map((e) => e.id.split('-')[1])).size });
     }
 
     if (req.method === 'GET') {

@@ -5,7 +5,7 @@ import { fetchBlobUsage } from '../services/api';
 const LABELS = {
   publish: 'রেট প্রকাশ', snapshot: 'আনডু কপি', archive: 'দিনের আর্কাইভ/ট্রেন্ড', backup: 'অটো ব্যাকআপ', stats: 'ভিজিট পরিসংখ্যান',
   votes: 'ভোট', report: 'জেলা রেট রিপোর্ট', submission: 'ইউজারের রেট', feedback: 'মতামত', ad: 'মার্কেট বিজ্ঞাপন', adrate: 'বিক্রেতা রেটিং',
-  adedit: 'বিজ্ঞাপন সম্পাদনা (বিক্রেতা)', gallery: 'গ্যালারি', feeds: 'ফিডের দাম', admin: 'অ্যাডমিন তালিকা দেখা', meter: 'এই মিটার', other: 'অন্যান্য'
+  adedit: 'বিজ্ঞাপন সম্পাদনা (বিক্রেতা)', poll: 'বাজার পোল', gallery: 'গ্যালারি', feeds: 'ফিডের দাম', admin: 'অ্যাডমিন তালিকা দেখা', meter: 'এই মিটার', other: 'অন্যান্য'
 };
 const bnNum = (n) => new Intl.NumberFormat('bn-BD').format(n);
 

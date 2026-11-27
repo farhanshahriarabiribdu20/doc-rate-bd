@@ -239,7 +239,7 @@ export async function fetchLiveUserRates() {
   try {
     const res = await fetch('/api/rate-submissions?live=1');
     const body = await json(res);
-    return res.ok && body?.success ? { doc: body.doc || [], ready: body.ready || [] } : null;
+    return res.ok && body?.success ? { doc: body.doc || [], ready: body.ready || [], people: Number(body.people) || 0 } : null;
   } catch { return null; }
 }
 
@@ -333,4 +333,22 @@ export async function fetchStats(key) {
     const body = await json(res);
     return res.ok && body?.success ? body : null;
   } catch { return null; }
+}
+
+/** Today's "how is the market?" poll: { date, c: [good, middling, bad] } or null. */
+export async function fetchPoll() {
+  try {
+    const res = await fetch('/api/feedback?poll=1');
+    const body = await json(res);
+    return res.ok && body?.success ? { date: body.date, c: body.c } : null;
+  } catch { return null; }
+}
+
+/** One vote ('good' | 'mid' | 'bad'). Returns { ok, date, c, error }. */
+export async function votePoll(v) {
+  try {
+    const res = await fetch('/api/feedback?poll=1', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ v }) });
+    const body = await json(res);
+    return res.ok && body?.success ? { ok: true, date: body.date, c: body.c } : { ok: false, error: body?.error || `HTTP ${res.status}` };
+  } catch (err) { return { ok: false, error: err.message || 'network' }; }
 }

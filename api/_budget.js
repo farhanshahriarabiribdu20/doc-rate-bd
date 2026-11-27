@@ -17,7 +17,7 @@ const FLUSH_GAP_MS = 30 * 60 * 1000;
 const METER_PATH = 'meta/ops-meter.json';
 
 // Most writes a day for each visitor-triggered kind (an ad counts 2: its picture + the list).
-export const DAILY_CAPS = { submission: 15, report: 15, feedback: 8, ad: 16, adrate: 10, adedit: 10 };
+export const DAILY_CAPS = { submission: 15, report: 15, feedback: 8, ad: 16, adrate: 10, adedit: 10, poll: 150 };
 
 const ist = () => new Date(Date.now() + 6 * 3600 * 1000).toISOString(); // Asia/Dhaka
 const monthKey = () => ist().slice(0, 7);
