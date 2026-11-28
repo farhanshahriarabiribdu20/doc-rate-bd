@@ -144,7 +144,27 @@ export default async function handler(req, res) {
         createdAt: new Date().toISOString()
       };
       await writeFresh(RECENT_PATH, { items: [...items, entry].slice(-MAX_STORED) }, prevV, 'submission');
-      return res.status(201).json({ success: true });
+      return res.status(201).json({ success: true, who: hash });
+    }
+
+    if (req.method === 'GET' && req.query?.top) {
+      // public leaderboard of the last few days: who sent the most rates (name only if they typed one; no phone, no IP)
+      res.setHeader('Cache-Control', 'public, s-maxage=300, stale-while-revalidate=900');
+      const { items } = await readItems();
+      const today = dhaka();
+      const byWho = new Map();
+      for (const e of items) {
+        const who = e.id.split('-')[1];
+        const g = byWho.get(who) || { who, count: 0, today: 0, name: '', at: '' };
+        g.count += 1;
+        if (e.rateDate === today) g.today += 1;
+        if (e.name && e.name !== 'ভিজিটর' && String(e.createdAt) >= g.at) g.name = e.name;
+        if (String(e.createdAt) > g.at) g.at = String(e.createdAt);
+        byWho.set(who, g);
+      }
+      const top = [...byWho.values()].sort((a, b) => b.count - a.count || b.today - a.today).slice(0, 10)
+        .map((g, i) => ({ rank: i + 1, who: g.who, name: g.name ? g.name.split(' ')[0] : '', count: g.count, today: g.today }));
+      return res.status(200).json({ success: true, days: KEEP_DAYS, people: byWho.size, top });
     }
 
     if (req.method === 'GET' && req.query?.live) {

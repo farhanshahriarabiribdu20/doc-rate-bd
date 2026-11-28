@@ -2,6 +2,8 @@ import React, { useEffect, useMemo, useState } from 'react';
 import { MapPin, Send, X, Loader2, CheckCircle2, AlertTriangle, Search } from 'lucide-react';
 import { DISTRICT_GROUPS } from '../data/districts';
 import { fetchReports, sendReport } from '../services/reports';
+import { recordRate, getStats, bnNum } from '../utils/contributor';
+import ContributorPanel from './ContributorPanel';
 
 const FIELDS = [
   { key: 'broiler', bn: 'ব্রয়লার', unit: '৳/কেজি' },
@@ -55,7 +57,7 @@ export function ReportModal({ initialDistrict, onClose, onSent }) {
     const r = await sendReport({ district, values: filled, name: name.trim(), website });
     if (r.ok) {
       try { localStorage.setItem('fn_report_district', district); } catch { /* ignore */ }
-      setStatus('saved'); onSent();
+      setStatus('saved'); recordRate(); onSent();
     } else { setStatus('idle'); setError(r.error || 'পাঠানো যায়নি। ইন্টারনেট দেখে আবার চেষ্টা করুন।'); }
   };
 
@@ -188,6 +190,13 @@ const WHATSAPP_RATE_GROUP = 'https://chat.whatsapp.com/B9A22d7rAQ4HfQyaRPwn4o';
 /** Big, hard-to-miss call to action: asks everyone to share today's ready-bird and egg rates. */
 export function ReportBanner({ onDocRate, people = 0 }) {
   const [open, setOpen] = useState(false);
+  const [panel, setPanel] = useState(false);
+  const [mine, setMine] = useState(getStats());
+  useEffect(() => {
+    const sync = () => setMine(getStats());
+    window.addEventListener('fn-contrib-changed', sync);
+    return () => window.removeEventListener('fn-contrib-changed', sync);
+  }, []);
   let saved = '';
   try { saved = localStorage.getItem('fn_report_district') || ''; } catch { /* ignore */ }
   return (
@@ -212,6 +221,15 @@ export function ReportBanner({ onDocRate, people = 0 }) {
               </button>
             )}
           </div>
+          <button onClick={() => setPanel(true)} className="sm:max-w-3xl w-full flex items-center justify-between gap-3 rounded-2xl bg-white/20 hover:bg-white/30 border border-white/40 px-4 py-3 text-left cursor-pointer">
+            <span className="text-sm sm:text-[15px] font-black leading-snug">
+              🏆 রেটদাতা প্যানেল
+              <span className="block text-xs font-bold text-white/90">
+                {mine.total > 0 ? `${mine.badge?.icon || ''} আপনি ${bnNum(mine.total)}টি রেট দিয়েছেন${mine.nextBadge ? ` — পরের ব্যাজ আর ${bnNum(mine.nextBadge.min - mine.total)}টি দূরে` : ''}` : 'রেট দিন, ব্যাজ জিতুন, সেরা রেটদাতাদের তালিকায় নাম তুলুন'}
+              </span>
+            </span>
+            <span className="text-xl" aria-hidden="true">›</span>
+          </button>
           <div className="rounded-2xl bg-black/15 border border-white/30 p-3.5 sm:p-4 flex flex-col sm:flex-row sm:items-center gap-3 sm:gap-5 sm:max-w-3xl">
             <p className="text-sm sm:text-[15px] font-bold leading-relaxed text-white">
               আমরা আপনাদের <span className="font-black text-amber-200">৬৪ জেলার সঠিক রেট</span> দেওয়ার চেষ্টা করছি। এই মহৎ কাজে আপনি অংশ নিন, নিজে <span className="font-black text-amber-200">উপকৃত হোন</span> এবং সবাইকে <span className="font-black text-amber-200">উপকৃত করুন</span>।
@@ -225,6 +243,7 @@ export function ReportBanner({ onDocRate, people = 0 }) {
         </div>
       </div>
       {open && <ReportModal initialDistrict={saved} onClose={() => setOpen(false)} onSent={() => window.dispatchEvent(new Event('fn-reports-changed'))} />}
+      {panel && <ContributorPanel onClose={() => setPanel(false)} onGiveRate={() => setOpen(true)} />}
     </>
   );
 }
