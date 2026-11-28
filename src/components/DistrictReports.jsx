@@ -2,6 +2,8 @@ import React, { useEffect, useMemo, useState } from 'react';
 import { MapPin, Send, X, Loader2, CheckCircle2, AlertTriangle, Search } from 'lucide-react';
 import { DISTRICT_GROUPS } from '../data/districts';
 import { fetchReports, sendReport } from '../services/reports';
+import { recordRate, getStats, bnNum } from '../utils/contributor';
+import ContributorPanel from './ContributorPanel';
 
 const FIELDS = [
   { key: 'broiler', bn: 'ব্রয়লার', unit: '৳/কেজি' },
@@ -55,7 +57,7 @@ export function ReportModal({ initialDistrict, onClose, onSent }) {
     const r = await sendReport({ district, values: filled, name: name.trim(), website });
     if (r.ok) {
       try { localStorage.setItem('fn_report_district', district); } catch { /* ignore */ }
-      setStatus('saved'); onSent();
+      setStatus('saved'); recordRate(); onSent();
     } else { setStatus('idle'); setError(r.error || 'পাঠানো যায়নি। ইন্টারনেট দেখে আবার চেষ্টা করুন।'); }
   };
 
@@ -188,6 +190,13 @@ const WHATSAPP_RATE_GROUP = 'https://chat.whatsapp.com/B9A22d7rAQ4HfQyaRPwn4o';
 /** Big, hard-to-miss call to action: asks everyone to share today's ready-bird and egg rates. */
 export function ReportBanner({ onDocRate, people = 0 }) {
   const [open, setOpen] = useState(false);
+  const [panel, setPanel] = useState(false);
+  const [mine, setMine] = useState(getStats());
+  useEffect(() => {
+    const sync = () => setMine(getStats());
+    window.addEventListener('fn-contrib-changed', sync);
+    return () => window.removeEventListener('fn-contrib-changed', sync);
+  }, []);
   let saved = '';
   try { saved = localStorage.getItem('fn_report_district') || ''; } catch { /* ignore */ }
   return (
@@ -202,15 +211,19 @@ export function ReportBanner({ onDocRate, people = 0 }) {
             </h2>
             <p className="mt-1.5 text-sm sm:text-base font-bold text-white/95 leading-relaxed">আপনার জানা বাচ্চার, রেডি মুরগি বা ডিমের রেট জানান — সবাই উপকৃত হবে।</p>
           </div>
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5 sm:gap-3 sm:max-w-2xl">
-            <button onClick={() => setOpen(true)} className="w-full px-5 py-3.5 sm:py-4 rounded-2xl bg-white text-orange-700 hover:bg-orange-50 font-black text-base sm:text-lg shadow-lg cursor-pointer">
+          <div className="grid grid-cols-2 sm:grid-cols-3 gap-2.5 sm:gap-3 sm:max-w-4xl">
+            <button onClick={() => setOpen(true)} className="col-span-2 sm:col-span-1 w-full px-4 py-3.5 sm:py-4 rounded-2xl bg-white text-orange-700 hover:bg-orange-50 font-black text-base sm:text-lg shadow-lg cursor-pointer">
               🐔 মুরগি ও ডিমের রেট দিন
             </button>
             {onDocRate && (
-              <button onClick={onDocRate} className="w-full px-5 py-3.5 sm:py-4 rounded-2xl bg-white/15 hover:bg-white/25 border-2 border-white text-white font-black text-base sm:text-lg cursor-pointer">
+              <button onClick={onDocRate} className="w-full px-3 py-3.5 sm:py-4 rounded-2xl bg-white/15 hover:bg-white/25 border-2 border-white text-white font-black text-base sm:text-lg cursor-pointer">
                 🐣 বাচ্চার রেট দিন
               </button>
             )}
+            <button onClick={() => setPanel(true)} className="w-full px-3 py-3.5 sm:py-4 rounded-2xl bg-amber-300 hover:bg-amber-200 text-slate-900 font-black text-base sm:text-lg shadow-lg cursor-pointer leading-tight">
+              🏆 রেটদাতা প্যানেল
+              {mine.total > 0 && <span className="block text-[11px] font-bold">{mine.badge?.icon} {bnNum(mine.total)}টি রেট</span>}
+            </button>
           </div>
           <div className="rounded-2xl bg-black/15 border border-white/30 p-3.5 sm:p-4 flex flex-col sm:flex-row sm:items-center gap-3 sm:gap-5 sm:max-w-3xl">
             <p className="text-sm sm:text-[15px] font-bold leading-relaxed text-white">
@@ -225,6 +238,7 @@ export function ReportBanner({ onDocRate, people = 0 }) {
         </div>
       </div>
       {open && <ReportModal initialDistrict={saved} onClose={() => setOpen(false)} onSent={() => window.dispatchEvent(new Event('fn-reports-changed'))} />}
+      {panel && <ContributorPanel onClose={() => setPanel(false)} onGiveRate={() => setOpen(true)} />}
     </>
   );
 }

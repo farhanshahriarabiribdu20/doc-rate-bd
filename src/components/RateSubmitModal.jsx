@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { X, Send, CheckCircle2, AlertTriangle, Loader2 } from 'lucide-react';
 import { submitRate } from '../services/api';
 import { ZONES, ZONE_GROUPS } from '../data/zones';
+import { recordRate, bnNum } from '../utils/contributor';
 
 // Rates a visitor can tell us for a mokam (everything is optional, but at least one is needed).
 export const READY_SUBMIT_FIELDS = [
@@ -59,6 +60,7 @@ export default function RateSubmitModal({ lang = 'bn', readyRates = [], docRates
   const [website, setWebsite] = useState(''); // honeypot
   const [status, setStatus] = useState('idle'); // idle | sending | saved | failed
   const [error, setError] = useState('');
+  const [stats, setStats] = useState(null);
 
   const targets = kind === 'ready'
     ? readyRates.map((r) => ({ id: r.id, label: `${r.regionBn || r.regionEn}${r.regionEn && r.regionBn && r.regionBn !== r.regionEn ? ` (${r.regionEn})` : ''}` }))
@@ -100,6 +102,7 @@ export default function RateSubmitModal({ lang = 'bn', readyRates = [], docRates
     });
     if (result.ok) {
       savePref({ ...readPref(), [kind === 'doc' ? 'docTarget' : 'readyTarget']: targetId, ...(kind === 'doc' ? { zoneId } : {}), name: name.trim(), phone: phone.trim() });
+      setStats(recordRate(result.who));
       setStatus('saved');
       onSent?.();
     } else {
@@ -129,6 +132,15 @@ export default function RateSubmitModal({ lang = 'bn', readyRates = [], docRates
             <CheckCircle2 className="w-14 h-14 text-emerald-600 mx-auto" />
             <p className="font-black text-slate-900 text-lg">{bn ? 'ধন্যবাদ! আপনার রেট সাইটে প্রকাশ হয়েছে।' : 'Thank you! Your rate is now live.'}</p>
             <p className="text-sm text-slate-600">{bn ? 'রেটটি "ইউজারের দেওয়া রেট" হিসেবে চিহ্নিত হয়ে ওয়েবসাইটে দেখা যাবে (কিছুক্ষণ সময় লাগতে পারে)।' : 'It shows on the site tagged "Provided by user" (it can take a short moment).'}</p>
+            {stats && (
+              <div className="rounded-2xl bg-amber-50 border border-amber-200 p-3 text-sm text-slate-800 space-y-1.5">
+                <p className="font-black">{stats.badge?.icon} আপনি মোট {bnNum(stats.total)}টি রেট দিয়েছেন{stats.streak > 1 ? ` · 🔥 টানা ${bnNum(stats.streak)} দিন` : ''}</p>
+                {stats.nextBadge
+                  ? <><div className="h-2.5 rounded-full bg-amber-200 overflow-hidden"><div className="h-full bg-emerald-600" style={{ width: `${Math.max(4, stats.pct)}%` }} /></div>
+                    <p className="text-xs font-bold text-slate-600">আর {bnNum(stats.nextBadge.min - stats.total)}টি রেট দিলেই {stats.nextBadge.icon} {stats.nextBadge.name} ব্যাজ পাবেন</p></>
+                  : <p className="text-xs font-bold text-emerald-800">🎉 আপনি সর্বোচ্চ ব্যাজে আছেন, ধন্যবাদ!</p>}
+              </div>
+            )}
             <div className="flex gap-2 justify-center">
               <button onClick={again} className="px-4 py-2.5 rounded-xl border border-emerald-600 text-emerald-800 font-black text-sm cursor-pointer">{bn ? 'আরেকটি রেট দিন' : 'Send another'}</button>
               <button onClick={onClose} className="px-5 py-2.5 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white font-black text-sm cursor-pointer">{bn ? 'ঠিক আছে' : 'Done'}</button>

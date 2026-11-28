@@ -35,3 +35,6 @@ Supabase free projects pause after 7 days without requests; the daily backup cro
 
 ## Books (admin -> "📚 বই")
 `api/gallery.js?books=1` (no new function: Hobby limit is 12). Doc `books.json` (one write per admin change, none for visitors; public GET edge cached). Cover goes through `putImage`. PDFs are uploaded by the browser straight to the Supabase Storage bucket `books` with a one-time signed URL (`signBookUpload` in `api/_store.js`, files up to 50 MB; a Vercel function only takes 4.5 MB). Only works with `STORE=supabase`; otherwise the admin pastes a PDF link. Visitors download after the follow pop-up (`FollowGateModal`).
+
+## Contributor panel (visitors who give rates)
+`ContributorPanel.jsx` opens from `ReportBanner`. "আমার অবস্থান" is per browser (`src/utils/contributor.js`, localStorage `fn_contrib`: total, streak, badges). "সেরা রেটদাতা" reads `GET /api/rate-submissions?top=1` (edge cached 300 s, built from the existing 3-day `recent.json`, no new writes; only the first name the visitor typed, never phone/IP). POST returns `who` (ip hash) so the visitor's own row is highlighted.

@@ -228,10 +228,19 @@ export async function submitRate(data) {
       body: JSON.stringify(data)
     });
     const body = await json(res);
-    return { ok: res.ok, error: body?.error || '' };
+    return { ok: res.ok, error: body?.error || '', who: body?.who || '' };
   } catch {
     return { ok: false, error: '' };
   }
+}
+
+/** Public: top rate givers of the last days, or null. */
+export async function fetchTopContributors() {
+  try {
+    const res = await fetch('/api/rate-submissions?top=1');
+    const body = await json(res);
+    return res.ok && body?.success ? { top: body.top || [], people: Number(body.people) || 0, days: Number(body.days) || 3 } : null;
+  } catch { return null; }
 }
 
 /** Public: today's rates given by visitors ({ doc: [...], ready: [...] }), or null. */
