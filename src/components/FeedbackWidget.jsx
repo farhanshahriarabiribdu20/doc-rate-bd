@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { MessageSquareText, X, Send, Sparkles, CheckCircle2, AlertTriangle } from 'lucide-react';
 import { submitFeedback } from '../services/api';
 
-export default function FeedbackWidget({ lang = 'bn', whatsappNumber = '8801619500178' }) {
+export default function FeedbackWidget({ lang = 'bn', whatsappNumber = '8801790220686' }) {
   const [isOpen, setIsOpen] = useState(false);
   const [category, setCategory] = useState('পরামর্শ');
   const [name, setName] = useState('');
@@ -203,8 +203,8 @@ ${feedback.trim()}
                   <span className="text-base shrink-0">📲</span>
                   <p className="font-semibold text-[11px] leading-tight">
                     {lang === 'bn' 
-                      ? 'বাটনে চাপ দিলে আপনার মতামতটি সরাসরি আমাদের অফিসিয়াল WhatsApp নাম্বারে (01619-500178) চলে যাবে।'
-                      : 'Clicking submit will send your feedback directly to our official WhatsApp (01619-500178).'}
+                      ? 'বাটনে চাপ দিলে আপনার মতামতটি সরাসরি আমাদের অফিসিয়াল WhatsApp নাম্বারে (01790-220686) চলে যাবে।'
+                      : 'Clicking submit will send your feedback directly to our official WhatsApp (01790-220686).'}
                   </p>
                 </div>
 

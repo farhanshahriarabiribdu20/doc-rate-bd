@@ -27,7 +27,7 @@ function BookingModalContent({ onClose, selectedItem, settings, lang }) {
 
     const encoded = encodeURIComponent(message);
     // Digits only, Bangladesh country code (880). Admin-set WhatsApp number wins.
-    const digits = (settings?.whatsapp || selectedItem.bookingPhone || '01619500178').replace(/[^0-9]/g, '');
+    const digits = (settings?.whatsapp || selectedItem.bookingPhone || '01790220686').replace(/[^0-9]/g, '');
     const targetPhone = digits.startsWith('880') ? digits : `880${digits.replace(/^0/, '')}`;
     window.open(`https://api.whatsapp.com/send?phone=${targetPhone}&text=${encoded}`, '_blank', 'noopener,noreferrer');
     setSubmitted(true);

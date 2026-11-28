@@ -97,15 +97,15 @@ export default function Footer({ lang, isStale = false, settings }) {
             {lang === 'bn' ? 'জরুরি যোগাযোগ ও সোশ্যাল' : 'Helpline & Social'}
           </h4>
           <div className="space-y-0.5 sm:space-y-2.5 text-xs">
-            <a href="tel:01619500178" className="flex items-center gap-2 py-2 sm:py-0 text-slate-300 hover:text-white transition">
+            <a href="tel:01790220686" className="flex items-center gap-2 py-2 sm:py-0 text-slate-300 hover:text-white transition">
               <Phone className="w-4 h-4 text-emerald-400 shrink-0" />
-              <span className="font-bold">01619-500178</span>
+              <span className="font-bold">01790-220686</span>
               <span className="text-[10px] text-slate-500">(সকাল ৮টা - রাত ১০টা)</span>
             </a>
 
-            <a href="https://wa.me/8801619500178" target="_blank" rel="noreferrer" className="flex items-center gap-2 py-2 sm:py-0 text-slate-300 hover:text-white transition">
+            <a href="https://wa.me/8801790220686" target="_blank" rel="noreferrer" className="flex items-center gap-2 py-2 sm:py-0 text-slate-300 hover:text-white transition">
               <MessageCircle className="w-4 h-4 text-emerald-400 shrink-0" />
-              <span>হোয়াটসঅ্যাপ: 01619-500178</span>
+              <span>হোয়াটসঅ্যাপ: 01790-220686</span>
             </a>
 
             <a href="https://chat.whatsapp.com/B9A22d7rAQ4HfQyaRPwn4o" target="_blank" rel="noreferrer" className="flex items-center gap-2 py-2 sm:py-0 text-emerald-400 hover:text-emerald-300 font-bold transition">

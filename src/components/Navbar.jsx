@@ -62,12 +62,12 @@ export default function Navbar({
           {/* Right hotline & language */}
           <div className="flex items-center gap-1.5 sm:gap-3 shrink-0 ml-auto">
             <a 
-              href={`tel:${settings.hotline || '01619500178'}`} 
+              href={`tel:${settings.hotline || '01790220686'}`} 
               className="flex items-center justify-center gap-1.5 w-9 h-9 sm:w-auto sm:h-auto sm:px-2.5 sm:py-0.5 rounded-full bg-white/5 hover:bg-white/10 text-emerald-200 hover:text-white transition font-semibold text-[11px] border border-white/10"
               aria-label={lang === 'bn' ? 'হটলাইনে কল করুন' : 'Call hotline'}
             >
               <PhoneCall className="w-4 h-4 sm:w-3 sm:h-3 text-emerald-400" />
-              <span className="hidden sm:inline">{lang === 'bn' ? 'হটলাইন:' : 'Hotline:'} {settings.hotline || '01619-500178'}</span>
+              <span className="hidden sm:inline">{lang === 'bn' ? 'হটলাইন:' : 'Hotline:'} {settings.hotline || '01790-220686'}</span>
             </a>
             <button
               onClick={onCycleFont}

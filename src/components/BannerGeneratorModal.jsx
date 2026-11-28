@@ -176,7 +176,7 @@ function BannerGeneratorModalContent({ onClose, rates: allRates, readyRates, fee
 
     ctx.font = '900 36px "Hind Siliguri", "Segoe UI", sans-serif';
     ctx.fillStyle = '#0c2116';
-    const hotline = settings.hotline || '01619-500178';
+    const hotline = settings.hotline || '01790-220686';
     ctx.fillText(hotline, 600, 985);
     const hotW = ctx.measureText(hotline).width;
 

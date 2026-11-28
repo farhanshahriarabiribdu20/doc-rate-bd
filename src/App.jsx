@@ -103,6 +103,8 @@ const readCache = () => {
 // Bundled defaults < published settings. Dates are always derived from reportDateISO.
 const buildSettings = (published) => {
   const merged = { ...SITE_SETTINGS, ...(published || {}) };
+  // The old contact number may still be saved in the published settings: show the current one (admin can still set another).
+  ['hotline', 'whatsapp'].forEach((k) => { if (/1619-?500178$/.test(String(merged[k] || '').replace(/[^0-9-]/g, ''))) merged[k] = SITE_SETTINGS[k]; });
   if (merged.reportDateISO) {
     merged.reportDateBn = formatBn(merged.reportDateISO);
     merged.reportDateEn = formatEn(merged.reportDateISO);
@@ -899,7 +901,7 @@ export default function App() {
       {/* Floating Website Feedback Widget (Bottom-Right) */}
       <FeedbackWidget
         lang={lang}
-        whatsappNumber={settings.whatsapp?.replace(/[^0-9]/g, '') || "8801619500178"}
+        whatsappNumber={settings.whatsapp?.replace(/[^0-9]/g, '') || "8801790220686"}
       />
 
       {/* Footer */}
