@@ -309,7 +309,7 @@ export async function booksAdmin(key, payload) {
   try {
     const res = await fetch('/api/gallery?books=1', { method: 'POST', headers: adminHeaders(key), body: JSON.stringify(payload) });
     const body = await json(res);
-    return { ok: res.ok && body?.success === true, books: body?.books || null, uploadUrl: body?.uploadUrl || '', publicUrl: body?.publicUrl || '', error: body?.error || '' };
+    return { ok: res.ok && body?.success === true, books: body?.books || null, uploadUrl: body?.uploadUrl || '', publicUrl: body?.publicUrl || '', error: (body?.error || (res.ok ? '' : `HTTP ${res.status}`)) + (body?.detail ? ` [${body.detail}]` : '') };
   } catch {
     return { ok: false, books: null, error: 'ইন্টারনেট সংযোগ চেক করুন' };
   }
@@ -320,7 +320,7 @@ export async function galleryAdmin(key, payload) {
   try {
     const res = await fetch('/api/gallery', { method: 'POST', headers: adminHeaders(key), body: JSON.stringify(payload) });
     const body = await json(res);
-    return { ok: res.ok && body?.success === true, images: body?.images || null, v: Number(body?.v) || 0, error: body?.error || '' };
+    return { ok: res.ok && body?.success === true, images: body?.images || null, v: Number(body?.v) || 0, error: (body?.error || '') + (body?.detail ? ` [${body.detail}]` : '') };
   } catch {
     return { ok: false, images: null, error: 'ইন্টারনেট সংযোগ চেক করুন' };
   }

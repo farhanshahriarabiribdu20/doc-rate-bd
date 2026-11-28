@@ -92,7 +92,7 @@ async function booksHandler(req, res) {
     try { return res.status(200).json({ success: true, ...(await signBookUpload()) }); } catch (err) {
       if (err.message === 'NOT_SUPABASE') return res.status(400).json({ success: false, error: 'PDF সরাসরি আপলোড করতে Supabase স্টোর চালু থাকতে হবে। আপাতত PDF-এর লিংক (যেমন Google Drive) দিন।' });
       console.error('book sign error', err);
-      return res.status(500).json({ success: false, error: 'আপলোডের অনুমতি তৈরি হয়নি, আবার চেষ্টা করুন' });
+      return res.status(500).json({ success: false, error: 'আপলোডের অনুমতি তৈরি হয়নি, আবার চেষ্টা করুন', detail: String(err?.message || err).slice(0, 220) });
     }
   }
 
@@ -214,6 +214,7 @@ export default async function handler(req, res) {
     return res.status(400).json({ success: false, error: 'unknown action' });
   } catch (err) {
     console.error('gallery error', err);
-    return res.status(500).json({ success: false, error: 'সার্ভারে সমস্যা হয়েছে, আবার চেষ্টা করুন' });
+    // admin-only endpoint for writes: the real cause is shown to the admin so it can be fixed
+    return res.status(500).json({ success: false, error: 'সার্ভারে সমস্যা হয়েছে, আবার চেষ্টা করুন', detail: req.method === 'POST' ? String(err?.message || err).slice(0, 220) : undefined });
   }
 }
