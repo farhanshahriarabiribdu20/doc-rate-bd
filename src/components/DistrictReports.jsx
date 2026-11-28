@@ -183,7 +183,7 @@ export default function DistrictReports() {
   );
 }
 
-const WHATSAPP_RATE_GROUP = 'https://chat.whatsapp.com/H2PQhDdgRksASVlNtxSz4b';
+const WHATSAPP_RATE_GROUP = 'https://chat.whatsapp.com/B9A22d7rAQ4HfQyaRPwn4o';
 
 /** Big, hard-to-miss call to action: asks everyone to share today's ready-bird and egg rates. */
 export function ReportBanner({ onDocRate, people = 0 }) {
@@ -197,9 +197,10 @@ export function ReportBanner({ onDocRate, people = 0 }) {
         <div className="relative flex flex-col gap-4 sm:gap-5">
           <div className="min-w-0">
             <p className="text-[11px] sm:text-xs font-black tracking-wider uppercase bg-white/20 inline-block px-2.5 py-1 rounded-full">📢 সবার প্রতি অনুরোধ</p>
-            <h2 className="mt-2 text-2xl sm:text-4xl font-black leading-tight drop-shadow-sm">বাচ্চা, মুরগি ও ডিমের রেট দিন!</h2>
+            <h2 className="mt-2 text-2xl sm:text-4xl font-black leading-tight drop-shadow-sm">
+              {people > 0 ? <>✅ আজ <span className="text-amber-200">{String(people).replace(/\d/g, (d) => '০১২৩৪৫৬৭৮৯'[d])} জন</span> রেট দিয়েছেন</> : 'বাচ্চা, মুরগি ও ডিমের রেট দিন!'}
+            </h2>
             <p className="mt-1.5 text-sm sm:text-base font-bold text-white/95 leading-relaxed">আপনার জানা বাচ্চার, রেডি মুরগি বা ডিমের রেট জানান — সবাই উপকৃত হবে।</p>
-            {people > 0 && <p className="mt-1 text-xs sm:text-sm font-black text-white bg-white/20 inline-block px-2.5 py-1 rounded-full">✅ আজ {String(people).replace(/\d/g, (d) => '০১২৩৪৫৬৭৮৯'[d])} জন রেট দিয়েছেন</p>}
           </div>
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5 sm:gap-3 sm:max-w-2xl">
             <button onClick={() => setOpen(true)} className="w-full px-5 py-3.5 sm:py-4 rounded-2xl bg-white text-orange-700 hover:bg-orange-50 font-black text-base sm:text-lg shadow-lg cursor-pointer">
@@ -213,7 +214,7 @@ export function ReportBanner({ onDocRate, people = 0 }) {
           </div>
           <div className="rounded-2xl bg-black/15 border border-white/30 p-3.5 sm:p-4 flex flex-col sm:flex-row sm:items-center gap-3 sm:gap-5 sm:max-w-3xl">
             <p className="text-sm sm:text-[15px] font-bold leading-relaxed text-white">
-              আমরা আপনাদের <span className="font-black text-amber-200">৬৪ জেলার সঠিক রেট</span> দেওয়ার চেষ্টা করছি। নিজে রেট দিন, <span className="font-black text-amber-200">উপকৃত হোন</span> এবং অন্যকেও <span className="font-black text-amber-200">উপকৃত করুন</span>।
+              আমরা আপনাদের <span className="font-black text-amber-200">৬৪ জেলার সঠিক রেট</span> দেওয়ার চেষ্টা করছি। এই মহৎ কাজে আপনি অংশ নিন, নিজে <span className="font-black text-amber-200">উপকৃত হোন</span> এবং সবাইকে <span className="font-black text-amber-200">উপকৃত করুন</span>।
             </p>
             <a href={WHATSAPP_RATE_GROUP} target="_blank" rel="noreferrer"
               className="shrink-0 inline-flex items-center justify-center gap-2 px-5 py-3 rounded-2xl bg-[#25D366] hover:bg-[#1fb857] text-white font-black text-sm sm:text-base shadow-lg border border-white/40 active:scale-95 transition">
