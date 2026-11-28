@@ -21,6 +21,7 @@ import FavAlert from './components/FavAlert';
 import MasterSearch from './components/MasterSearch';
 import { fetchVotes, sendVote } from './services/votes';
 import WeeklySummary from './components/WeeklySummary';
+import BooksSection from './components/BooksSection';
 import FeedbackWidget from './components/FeedbackWidget';
 import ReadyMarketSection from './components/ReadyMarketSection';
 import DistrictReports, { ReportBanner } from './components/DistrictReports';
@@ -800,6 +801,7 @@ export default function App() {
         {activeTab === 'market' && (
           <MarketSection lang={lang} onOpenSeller={() => setSellerOpen(true)} refreshKey={marketKey} />
         )}
+        <div className="mt-6 sm:mt-8"><BooksSection settings={settings} /></div>
       </main>
 
       <ChatFab url={settings?.telegramChatUrl} lang={lang} />

@@ -294,6 +294,27 @@ export async function fetchGallery() {
   } catch { return null; }
 }
 
+// ---------- books (cover + PDF) ----------
+/** Public / admin: the published books ({ books, v }) or null. */
+export async function fetchBooks(fresh = false) {
+  try {
+    const res = await fetch(`/api/gallery?books=1${fresh ? `&t=${Date.now()}` : ''}`, fresh ? { cache: 'no-store' } : { cache: 'no-cache' });
+    const body = await json(res);
+    return res.ok && body?.success && Array.isArray(body.books) ? { books: body.books, v: Number(body.v) || 0 } : null;
+  } catch { return null; }
+}
+
+/** Admin: sign / add / update / delete a book. Returns { ok, books, uploadUrl, publicUrl, error }. */
+export async function booksAdmin(key, payload) {
+  try {
+    const res = await fetch('/api/gallery?books=1', { method: 'POST', headers: adminHeaders(key), body: JSON.stringify(payload) });
+    const body = await json(res);
+    return { ok: res.ok && body?.success === true, books: body?.books || null, uploadUrl: body?.uploadUrl || '', publicUrl: body?.publicUrl || '', error: body?.error || '' };
+  } catch {
+    return { ok: false, books: null, error: 'ইন্টারনেট সংযোগ চেক করুন' };
+  }
+}
+
 /** Admin: add / update / delete a picture. Returns { ok, images, error }. */
 export async function galleryAdmin(key, payload) {
   try {

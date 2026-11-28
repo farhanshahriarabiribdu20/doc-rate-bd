@@ -12,6 +12,7 @@ import MasterExcelPanel from './MasterExcelPanel';
 import { applyMasterPlan } from '../utils/masterGrades';
 import SubmissionsPanel from './SubmissionsPanel';
 import GalleryAdminPanel from './GalleryAdminPanel';
+import BooksAdminPanel from './BooksAdminPanel';
 import FeedAdminPanel from './FeedAdminPanel';
 import { fetchFeeds } from '../services/feed';
 import AnalyticsPanel from './AnalyticsPanel';
@@ -775,6 +776,9 @@ function AdminModalContent({
               <button onClick={() => setActiveTab('gallery')} className={tabClass('gallery')}>
                 <ImagePlus className="w-4 h-4" /> রেট চার্ট ও ছবি
               </button>
+              <button onClick={() => setActiveTab('books')} className={tabClass('books')}>
+                📚 বই
+              </button>
               <button onClick={() => setActiveTab('market')} className={tabClass('market')}>
                 <Store className="w-4 h-4" /> বিক্রেতার বিজ্ঞাপন
               </button>
@@ -1075,6 +1079,10 @@ function AdminModalContent({
 
             {activeTab === 'gallery' && (
               <GalleryAdminPanel adminKey={adminKey} gallery={gallery} onChange={setGallery} showToast={showToast} />
+            )}
+
+            {activeTab === 'books' && (
+              <BooksAdminPanel adminKey={adminKey} showToast={showToast} />
             )}
 
             {activeTab === 'feedprices' && (
