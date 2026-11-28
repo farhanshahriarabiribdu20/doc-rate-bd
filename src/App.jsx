@@ -518,6 +518,7 @@ export default function App() {
         {activeTab === 'doc' && (
           <div className="flex flex-col gap-5 sm:gap-6">
             <ReportBanner onDocRate={() => setSubmitKind('doc')} people={userRates?.people} />
+            <BooksSection settings={settings} />
             <PageHead
               title={lang === 'bn' ? 'আজকের বাচ্চার বাজার দর' : 'Day-Old Chick (DOC) Rates'}
               sub={lang === 'bn' ? 'সকল কোম্পানির ব্রয়লার, কালার, সোনালী ও লেয়ার বাচ্চার নির্ভরযোগ্য পাইকারি বাজারদর' : 'Reliable wholesale rates of Broiler, Color, Sonali and Layer chicks'}
@@ -658,6 +659,7 @@ export default function App() {
           <div className="flex flex-col gap-5 sm:gap-6">
             <ReadyTrendAnalysis lang={lang} liveRates={liveReadyRates} liveDate={settings.readyDateISO} />
             <ReportBanner onDocRate={() => setSubmitKind('doc')} people={userRates?.people} />
+            <BooksSection settings={settings} />
             <div className="grid gap-4">
             {settings.readyDateISO && (
               <DateRatePicker
@@ -798,9 +800,8 @@ export default function App() {
           </div>
         )}
         {activeTab === 'market' && (
-          <MarketSection lang={lang} onOpenSeller={() => setSellerOpen(true)} refreshKey={marketKey} />
+          <div className="flex flex-col gap-5 sm:gap-6"><BooksSection settings={settings} /><MarketSection lang={lang} onOpenSeller={() => setSellerOpen(true)} refreshKey={marketKey} /></div>
         )}
-        <div className="mt-6 sm:mt-8"><BooksSection settings={settings} /></div>
       </main>
 
       <ChatFab url={settings?.telegramChatUrl} lang={lang} />
