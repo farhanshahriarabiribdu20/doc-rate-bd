@@ -49,6 +49,10 @@ export default function BooksAdminPanel({ adminKey, showToast }) {
     if (!s.ok) { setProgress(-1); showToast(s.error || 'আপলোড শুরু করা যায়নি', 'error'); return; }
     try {
       await putFile(s.uploadUrl, file, setProgress);
+      // check the stored file is as big as the one picked (a cut-off upload gives a PDF nobody can open)
+      let stored = 0;
+      try { stored = Number((await fetch(s.publicUrl, { method: 'HEAD', cache: 'no-store' })).headers.get('content-length')) || 0; } catch { /* cannot check: carry on */ }
+      if (stored && stored !== file.size) throw new Error(`ফাইল পুরোটা জমা হয়নি (${Math.round(stored / 1024)} KB / ${Math.round(file.size / 1024)} KB)`);
       setPdf({ url: s.publicUrl, kb: Math.round(file.size / 1024), name: file.name });
       setLink('');
       showToast('✅ PDF আপলোড হয়েছে। এবার "বই প্রকাশ করুন" চাপুন।');
