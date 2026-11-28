@@ -16,8 +16,8 @@ function putFile(url, file, onProgress) {
     xhr.open('PUT', url);
     xhr.setRequestHeader('x-upsert', 'false');
     xhr.upload.onprogress = (e) => { if (e.lengthComputable) onProgress(Math.round((e.loaded / e.total) * 100)); };
-    xhr.onload = () => (xhr.status >= 200 && xhr.status < 300 ? resolve() : reject(new Error(`HTTP ${xhr.status}`)));
-    xhr.onerror = () => reject(new Error('network'));
+    xhr.onload = () => (xhr.status >= 200 && xhr.status < 300 ? resolve() : reject(new Error(`HTTP ${xhr.status} ${String(xhr.responseText || '').slice(0, 160)}`)));
+    xhr.onerror = () => reject(new Error('নেটওয়ার্ক/CORS ত্রুটি'));
     xhr.send(fd);
   });
 }
@@ -52,8 +52,8 @@ export default function BooksAdminPanel({ adminKey, showToast }) {
       setPdf({ url: s.publicUrl, kb: Math.round(file.size / 1024), name: file.name });
       setLink('');
       showToast('✅ PDF আপলোড হয়েছে। এবার "বই প্রকাশ করুন" চাপুন।');
-    } catch {
-      showToast('PDF আপলোড হয়নি। ইন্টারনেট চেক করে আবার চেষ্টা করুন, অথবা PDF-এর লিংক দিন।', 'error');
+    } catch (err) {
+      showToast(`PDF আপলোড হয়নি: ${err.message}। আবার চেষ্টা করুন, অথবা PDF-এর লিংক দিন।`, 'error');
     }
     setProgress(-1);
   };
