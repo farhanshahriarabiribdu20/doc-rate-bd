@@ -211,25 +211,20 @@ export function ReportBanner({ onDocRate, people = 0 }) {
             </h2>
             <p className="mt-1.5 text-sm sm:text-base font-bold text-white/95 leading-relaxed">আপনার জানা বাচ্চার, রেডি মুরগি বা ডিমের রেট জানান — সবাই উপকৃত হবে।</p>
           </div>
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5 sm:gap-3 sm:max-w-2xl">
-            <button onClick={() => setOpen(true)} className="w-full px-5 py-3.5 sm:py-4 rounded-2xl bg-white text-orange-700 hover:bg-orange-50 font-black text-base sm:text-lg shadow-lg cursor-pointer">
+          <div className="grid grid-cols-2 sm:grid-cols-3 gap-2.5 sm:gap-3 sm:max-w-4xl">
+            <button onClick={() => setOpen(true)} className="col-span-2 sm:col-span-1 w-full px-4 py-3.5 sm:py-4 rounded-2xl bg-white text-orange-700 hover:bg-orange-50 font-black text-base sm:text-lg shadow-lg cursor-pointer">
               🐔 মুরগি ও ডিমের রেট দিন
             </button>
             {onDocRate && (
-              <button onClick={onDocRate} className="w-full px-5 py-3.5 sm:py-4 rounded-2xl bg-white/15 hover:bg-white/25 border-2 border-white text-white font-black text-base sm:text-lg cursor-pointer">
+              <button onClick={onDocRate} className="w-full px-3 py-3.5 sm:py-4 rounded-2xl bg-white/15 hover:bg-white/25 border-2 border-white text-white font-black text-base sm:text-lg cursor-pointer">
                 🐣 বাচ্চার রেট দিন
               </button>
             )}
-          </div>
-          <button onClick={() => setPanel(true)} className="sm:max-w-3xl w-full flex items-center justify-between gap-3 rounded-2xl bg-white/20 hover:bg-white/30 border border-white/40 px-4 py-3 text-left cursor-pointer">
-            <span className="text-sm sm:text-[15px] font-black leading-snug">
+            <button onClick={() => setPanel(true)} className="w-full px-3 py-3.5 sm:py-4 rounded-2xl bg-amber-300 hover:bg-amber-200 text-slate-900 font-black text-base sm:text-lg shadow-lg cursor-pointer leading-tight">
               🏆 রেটদাতা প্যানেল
-              <span className="block text-xs font-bold text-white/90">
-                {mine.total > 0 ? `${mine.badge?.icon || ''} আপনি ${bnNum(mine.total)}টি রেট দিয়েছেন${mine.nextBadge ? ` — পরের ব্যাজ আর ${bnNum(mine.nextBadge.min - mine.total)}টি দূরে` : ''}` : 'রেট দিন, ব্যাজ জিতুন, সেরা রেটদাতাদের তালিকায় নাম তুলুন'}
-              </span>
-            </span>
-            <span className="text-xl" aria-hidden="true">›</span>
-          </button>
+              {mine.total > 0 && <span className="block text-[11px] font-bold">{mine.badge?.icon} {bnNum(mine.total)}টি রেট</span>}
+            </button>
+          </div>
           <div className="rounded-2xl bg-black/15 border border-white/30 p-3.5 sm:p-4 flex flex-col sm:flex-row sm:items-center gap-3 sm:gap-5 sm:max-w-3xl">
             <p className="text-sm sm:text-[15px] font-bold leading-relaxed text-white">
               আমরা আপনাদের <span className="font-black text-amber-200">৬৪ জেলার সঠিক রেট</span> দেওয়ার চেষ্টা করছি। এই মহৎ কাজে আপনি অংশ নিন, নিজে <span className="font-black text-amber-200">উপকৃত হোন</span> এবং সবাইকে <span className="font-black text-amber-200">উপকৃত করুন</span>।
