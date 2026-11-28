@@ -32,3 +32,6 @@ Supabase free projects pause after 7 days without requests; the daily backup cro
 
 ## Ready-market trend analysis
 `GET /api/rate-trend?kind=ready` (edge cached) returns daily averages from `trend/ready.json` merged over the built-in sheet history `api/_readySeed.js`. The doc is written only when a ready day is archived (`saveRateDay(..., 'ready')`, already budgeted as `archive`), so it adds no new writes. Today's point is added in the browser from the live ready rates.
+
+## Books (admin -> "📚 বই")
+`api/gallery.js?books=1` (no new function: Hobby limit is 12). Doc `books.json` (one write per admin change, none for visitors; public GET edge cached). Cover goes through `putImage`. PDFs are uploaded by the browser straight to the Supabase Storage bucket `books` with a one-time signed URL (`signBookUpload` in `api/_store.js`, files up to 50 MB; a Vercel function only takes 4.5 MB). Only works with `STORE=supabase`; otherwise the admin pastes a PDF link. Visitors download after the follow pop-up (`FollowGateModal`).

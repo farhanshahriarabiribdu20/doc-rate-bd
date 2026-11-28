@@ -27,7 +27,9 @@ export async function downloadPicture(url, name) {
  * Before a picture can be downloaded the visitor ticks "I follow our YouTube channel and Facebook
  * page". This is a promise (we cannot check it), shown with the links so they can follow right here.
  */
-export default function FollowGateModal({ image, youtubeUrl, facebookUrl, onClose }) {
+export default function FollowGateModal({ image, file, youtubeUrl, facebookUrl, onClose }) {
+  // `file` = { url, name, what } for something that is not a picture (a book PDF)
+  const what = file?.what || 'ছবিটি';
   const [agreed, setAgreed] = useState(false);
   const [busy, setBusy] = useState(false);
   const hasYt = Boolean(youtubeUrl);
@@ -41,7 +43,7 @@ export default function FollowGateModal({ image, youtubeUrl, facebookUrl, onClos
     if (!complete || busy) return;
     setBusy(true);
     try { localStorage.setItem(FOLLOW_KEY, '1'); } catch { /* private mode */ }
-    await downloadPicture(image.url, `fosholnexa-${image.id}.jpg`);
+    await (file ? downloadPicture(file.url, file.name) : downloadPicture(image.url, `fosholnexa-${image.id}.jpg`));
     setBusy(false);
     onClose(true);
   };
@@ -51,7 +53,7 @@ export default function FollowGateModal({ image, youtubeUrl, facebookUrl, onClos
       <div className="w-full max-w-md bg-white rounded-3xl shadow-2xl overflow-hidden" onClick={(e) => e.stopPropagation()}>
         <div className="flex items-start justify-between gap-3 px-5 py-4 bg-emerald-900 text-white">
           <div>
-            <h3 className="font-black text-base">📥 ছবিটি ডাউনলোড করুন</h3>
+            <h3 className="font-black text-base">📥 {what} ডাউনলোড করুন</h3>
             <p className="text-[11px] text-emerald-100">{hasYt ? 'আমাদের YouTube ও Facebook ফলো করলে ডাউনলোড করতে পারবেন।' : 'আমাদের Facebook পেজ ফলো করলে ডাউনলোড করতে পারবেন।'}</p>
           </div>
           <button onClick={() => onClose(false)} aria-label="Close" className="p-1.5 rounded-full hover:bg-white/15 cursor-pointer"><X className="w-5 h-5" /></button>

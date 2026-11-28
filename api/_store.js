@@ -238,6 +238,52 @@ export async function putImage(path, buf, contentType, kind = 'ad') {
   throw new Error('Supabase upload failed');
 }
 
+// ---------- book PDFs ----------
+// A PDF can be bigger than the 4.5 MB a Vercel function accepts, so the browser uploads it straight to Supabase
+// Storage with a one-time signed URL made here (public bucket `books`, made on first use). Needs STORE=supabase.
+const BOOKS_BUCKET = 'books';
+const BOOKS_MARK = `/storage/v1/object/public/${BOOKS_BUCKET}/`;
+
+async function ensureBooksBucket() {
+  const r = await fetch(`${sbBase()}/storage/v1/bucket`, {
+    method: 'POST', headers: { ...sbAuth(), 'Content-Type': 'application/json' },
+    body: JSON.stringify({ id: BOOKS_BUCKET, name: BOOKS_BUCKET, public: true, file_size_limit: 52428800 }),
+    signal: AbortSignal.timeout(TIMEOUT_MS)
+  });
+  if (!r.ok && r.status !== 409) { const t = await r.text().catch(() => ''); if (!/already exists|Duplicate/i.test(t)) throw new Error(`Supabase bucket ${r.status}: ${t.slice(0, 120)}`); }
+}
+
+/** One-time upload address for a PDF: { uploadUrl, publicUrl }. Throws when Supabase is not the active store. */
+export async function signBookUpload() {
+  if (!isSupabase()) throw new Error('NOT_SUPABASE');
+  const key = `book-${Date.now().toString(36)}-${randomBytes(4).toString('hex')}.pdf`;
+  for (let attempt = 0; attempt < 2; attempt += 1) {
+    const r = await fetch(`${sbBase()}/storage/v1/object/upload/sign/${BOOKS_BUCKET}/${key}`, {
+      method: 'POST', headers: { ...sbAuth(), 'Content-Type': 'application/json' }, body: '{}', signal: AbortSignal.timeout(TIMEOUT_MS)
+    });
+    const t = await r.text().catch(() => '');
+    if (r.ok) {
+      let rel = '';
+      try { rel = JSON.parse(t).url || ''; } catch { /* ignore */ }
+      if (!rel) throw new Error('Supabase sign: no url');
+      const uploadUrl = /^https?:/.test(rel) ? rel : `${sbBase()}/storage/v1${rel.startsWith('/') ? '' : '/'}${rel}`;
+      return { uploadUrl, publicUrl: `${sbBase()}${BOOKS_MARK}${key}` };
+    }
+    if (attempt === 0 && /bucket not found/i.test(t)) { await ensureBooksBucket(); continue; }
+    throw new Error(`Supabase sign ${r.status}: ${t.slice(0, 160)}`);
+  }
+  throw new Error('Supabase sign failed');
+}
+
+/** Removes a book PDF from our own bucket (links to other sites are ignored). Never throws. */
+export async function delBookFile(url) {
+  const i = typeof url === 'string' ? url.indexOf(BOOKS_MARK) : -1;
+  if (i < 0 || !supabaseReady()) return;
+  try {
+    await fetch(`${sbBase()}/storage/v1/object/${BOOKS_BUCKET}`, { method: 'DELETE', headers: { ...sbAuth(), 'Content-Type': 'application/json' }, body: JSON.stringify({ prefixes: [decodeURIComponent(url.slice(i + BOOKS_MARK.length).split('?')[0])] }), signal: AbortSignal.timeout(TIMEOUT_MS) });
+  } catch { /* ignore */ }
+}
+
 /** Removes pictures by address (Supabase Storage or Vercel Blob). Never throws; a leftover picture is harmless. */
 export async function delImages(urls) {
   const list_ = (urls || []).filter((u) => typeof u === 'string' && /^https?:\/\//.test(u));
