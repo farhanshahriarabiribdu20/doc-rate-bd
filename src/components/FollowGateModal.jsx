@@ -5,11 +5,24 @@ export { FB_PAGE_URL as DEFAULT_FB_PAGE } from '../data/links';
 export const FOLLOW_KEY = 'fn_follow_ok';
 
 /** Saves a picture to the device; if the browser refuses (cross-site file) it opens in a new tab instead. */
+// A Google Drive "share" link gives an HTML page, not the file: turn it into the direct-download address.
+function driveDirect(url) {
+  const m = /^https?:\/\/(?:drive|docs)\.google\.com\/(?:file\/d\/|open\?id=|uc\?(?:[^#]*&)?id=)([\w-]{10,})/.exec(url);
+  return m ? `https://drive.google.com/uc?export=download&id=${m[1]}` : '';
+}
+
 export async function downloadPicture(url, name) {
+  const drive = driveDirect(url);
+  if (drive) { window.open(drive, '_blank', 'noopener'); return; }
   try {
     const res = await fetch(url);
     if (!res.ok) throw new Error('fetch');
     const blob = await res.blob();
+    // a PDF that does not start with %PDF (an HTML page, an error text) must never be saved as a .pdf
+    if (/\.pdf$/i.test(name)) {
+      const head = await blob.slice(0, 5).text();
+      if (head !== '%PDF-') throw new Error('not a pdf');
+    }
     const href = URL.createObjectURL(blob);
     const a = document.createElement('a');
     a.href = href;
