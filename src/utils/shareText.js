@@ -63,7 +63,7 @@ export function buildShareText({ rates: allRates, notice, settings, division = '
     }
   }
   text += `\n📢 *মার্কেট নোট:* ${notice}\n`;
-  text += `📞 বুকিং ও তথ্যের জন্য: ${settings?.hotline || '01619-500178'}\n`;
+  text += `📞 বুকিং ও তথ্যের জন্য: ${settings?.hotline || '01790-220686'}\n`;
   text += `🌐 সকল রেট দেখুন: ${window.location.origin}\n`;
   return text;
 }

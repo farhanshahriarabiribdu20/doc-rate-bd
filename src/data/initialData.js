@@ -6,8 +6,8 @@ export const SITE_SETTINGS = {
   brandName: "FosholNexa BD",
   taglineBn: "সঠিক তথ্য, সচেতন খামারি, সমৃদ্ধ কৃষি।",
   taglineEn: "Accurate Data, Conscious Farmer, Prosperous Agriculture",
-  hotline: "01619-500178",
-  whatsapp: "01619500178",
+  hotline: "01790-220686",
+  whatsapp: "01790220686",
   fbPage: "https://facebook.com/FosholNexa",
   reportDateISO: "2026-10-26",
   reportDateBn: "২৬ অক্টোবর, ২০২৬ (সোমবার)",
@@ -27,7 +27,7 @@ export const INITIAL_RATES = [
     "yesterdayRate": 37,
     "status": "available",
     "minBooking": 500,
-    "bookingPhone": "01619500178",
+    "bookingPhone": "01790220686",
     "notes": "কাজী ফার্মস সেন্ট্রাল ও জোনাল রেট",
     "divisionRates": {
       "dhaka": 40,
@@ -53,7 +53,7 @@ export const INITIAL_RATES = [
     "yesterdayRate": 42,
     "status": "available",
     "minBooking": 500,
-    "bookingPhone": "01619500178",
+    "bookingPhone": "01790220686",
     "notes": "মারেক্স ভ্যাকসিন (Marek’s Vaccine) অন্তর্ভুক্ত",
     "divisionRates": {
       "dhaka": 42,
@@ -79,7 +79,7 @@ export const INITIAL_RATES = [
     "yesterdayRate": 44,
     "status": "available",
     "minBooking": 500,
-    "bookingPhone": "01619500178",
+    "bookingPhone": "01790220686",
     "notes": "মার্কেটিং বিভাগ কর্তৃক নির্ধারিত অফিসিয়াল MRP ৳৪৫",
     "divisionRates": {
       "dhaka": 45,
@@ -105,7 +105,7 @@ export const INITIAL_RATES = [
     "yesterdayRate": 38,
     "status": "available",
     "minBooking": 500,
-    "bookingPhone": "01619500178",
+    "bookingPhone": "01790220686",
     "notes": "কোম্পানি রেট শিট অনুযায়ী যাচাইকৃত",
     "divisionRates": {
       "dhaka": 40,
@@ -131,7 +131,7 @@ export const INITIAL_RATES = [
     "yesterdayRate": 40,
     "status": "available",
     "minBooking": 500,
-    "bookingPhone": "01619500178",
+    "bookingPhone": "01790220686",
     "notes": "নাহার এগ্রো অফিসিয়াল জোনাল রেট",
     "divisionRates": {
       "dhaka": 42,
@@ -157,7 +157,7 @@ export const INITIAL_RATES = [
     "yesterdayRate": 37,
     "status": "available",
     "minBooking": 500,
-    "bookingPhone": "01619500178",
+    "bookingPhone": "01790220686",
     "notes": "প্রভিটা অফিসিয়াল রেট",
     "divisionRates": {
       "dhaka": 39,
@@ -183,7 +183,7 @@ export const INITIAL_RATES = [
     "yesterdayRate": 39,
     "status": "available",
     "minBooking": 500,
-    "bookingPhone": "01619500178",
+    "bookingPhone": "01790220686",
     "notes": "কোম্পানি রেট শিট অনুযায়ী যাচাইকৃত",
     "divisionRates": {
       "dhaka": 41,
@@ -209,7 +209,7 @@ export const INITIAL_RATES = [
     "yesterdayRate": 42,
     "status": "available",
     "minBooking": 500,
-    "bookingPhone": "01619500178",
+    "bookingPhone": "01790220686",
     "notes": "ডিলার কমিশন @১ টাকা/বাচ্চা",
     "divisionRates": {
       "dhaka": 44,
@@ -235,7 +235,7 @@ export const INITIAL_RATES = [
     "yesterdayRate": 42,
     "status": "available",
     "minBooking": 500,
-    "bookingPhone": "01619500178",
+    "bookingPhone": "01790220686",
     "notes": "কোম্পানি রেট শিট অনুযায়ী যাচাইকৃত",
     "divisionRates": {
       "dhaka": 42,
@@ -261,7 +261,7 @@ export const INITIAL_RATES = [
     "yesterdayRate": 38,
     "status": "available",
     "minBooking": 500,
-    "bookingPhone": "01619500178",
+    "bookingPhone": "01790220686",
     "notes": "কোম্পানি রেট শিট অনুযায়ী যাচাইকৃত",
     "divisionRates": {
       "dhaka": 43,
@@ -287,7 +287,7 @@ export const INITIAL_RATES = [
     "yesterdayRate": 40,
     "status": "available",
     "minBooking": 500,
-    "bookingPhone": "01619500178",
+    "bookingPhone": "01790220686",
     "notes": "কোম্পানি রেট শিট অনুযায়ী যাচাইকৃত",
     "divisionRates": {
       "dhaka": 40,
@@ -313,7 +313,7 @@ export const INITIAL_RATES = [
     "yesterdayRate": 39,
     "status": "available",
     "minBooking": 500,
-    "bookingPhone": "01619500178",
+    "bookingPhone": "01790220686",
     "notes": "কোম্পানি রেট শিট অনুযায়ী যাচাইকৃত",
     "divisionRates": {
       "dhaka": 42,
@@ -339,7 +339,7 @@ export const INITIAL_RATES = [
     "yesterdayRate": 37,
     "status": "available",
     "minBooking": 500,
-    "bookingPhone": "01619500178",
+    "bookingPhone": "01790220686",
     "notes": "বগুড়া ও নর্থ বেঙ্গল জোনাল রেট",
     "divisionRates": {
       "dhaka": 38,
@@ -365,7 +365,7 @@ export const INITIAL_RATES = [
     "yesterdayRate": 69,
     "status": "available",
     "minBooking": 500,
-    "bookingPhone": "01619500178",
+    "bookingPhone": "01790220686",
     "notes": "কোম্পানি রেট শিট অনুযায়ী যাচাইকৃত",
     "divisionRates": {
       "dhaka": 69,
@@ -391,7 +391,7 @@ export const INITIAL_RATES = [
     "yesterdayRate": 68,
     "status": "available",
     "minBooking": 500,
-    "bookingPhone": "01619500178",
+    "bookingPhone": "01790220686",
     "notes": "***প্রতি কার্টুনে ০১টি বাচ্চা বোনাস (হিসাব শিট অনুযায়ী)",
     "divisionRates": {
       "dhaka": 68,
@@ -417,7 +417,7 @@ export const INITIAL_RATES = [
     "yesterdayRate": 67,
     "status": "available",
     "minBooking": 500,
-    "bookingPhone": "01619500178",
+    "bookingPhone": "01790220686",
     "notes": "কোম্পানি রেট শিট অনুযায়ী যাচাইকৃত",
     "divisionRates": {
       "dhaka": 67,
@@ -443,7 +443,7 @@ export const INITIAL_RATES = [
     "yesterdayRate": 66,
     "status": "available",
     "minBooking": 500,
-    "bookingPhone": "01619500178",
+    "bookingPhone": "01790220686",
     "notes": "কোম্পানি রেট শিট অনুযায়ী যাচাইকৃত",
     "divisionRates": {
       "dhaka": 66,
@@ -469,7 +469,7 @@ export const INITIAL_RATES = [
     "yesterdayRate": 65,
     "status": "available",
     "minBooking": 500,
-    "bookingPhone": "01619500178",
+    "bookingPhone": "01790220686",
     "notes": "কোম্পানি রেট শিট অনুযায়ী যাচাইকৃত",
     "divisionRates": {
       "dhaka": 65,
@@ -495,7 +495,7 @@ export const INITIAL_RATES = [
     "yesterdayRate": 63,
     "status": "available",
     "minBooking": 500,
-    "bookingPhone": "01619500178",
+    "bookingPhone": "01790220686",
     "notes": "কাজী ফার্মস সেন্ট্রাল ও জোনাল রেট",
     "divisionRates": {
       "dhaka": 64,
@@ -521,7 +521,7 @@ export const INITIAL_RATES = [
     "yesterdayRate": 55,
     "status": "available",
     "minBooking": 500,
-    "bookingPhone": "01619500178",
+    "bookingPhone": "01790220686",
     "notes": "বগুড়া ও নর্থ বেঙ্গল জোনাল রেট",
     "divisionRates": {
       "dhaka": 55,
@@ -547,7 +547,7 @@ export const INITIAL_RATES = [
     "yesterdayRate": 50,
     "status": "available",
     "minBooking": 500,
-    "bookingPhone": "01619500178",
+    "bookingPhone": "01790220686",
     "notes": "বগুড়া ও নর্থ বেঙ্গল জোনাল রেট",
     "divisionRates": {
       "dhaka": 50,
@@ -573,7 +573,7 @@ export const INITIAL_RATES = [
     "yesterdayRate": 64,
     "status": "available",
     "minBooking": 1000,
-    "bookingPhone": "01619500178",
+    "bookingPhone": "01790220686",
     "notes": "কাজী ফার্মস সেন্ট্রাল ও জোনাল রেট",
     "divisionRates": {
       "dhaka": 64,
@@ -599,7 +599,7 @@ export const INITIAL_RATES = [
     "yesterdayRate": 62,
     "status": "available",
     "minBooking": 1000,
-    "bookingPhone": "01619500178",
+    "bookingPhone": "01790220686",
     "notes": "কোম্পানি রেট শিট অনুযায়ী যাচাইকৃত",
     "divisionRates": {
       "dhaka": 62,
@@ -625,7 +625,7 @@ export const INITIAL_RATES = [
     "yesterdayRate": 65,
     "status": "available",
     "minBooking": 1000,
-    "bookingPhone": "01619500178",
+    "bookingPhone": "01790220686",
     "notes": "কোম্পানি রেট শিট অনুযায়ী যাচাইকৃত",
     "divisionRates": {
       "dhaka": 65,
@@ -651,7 +651,7 @@ export const INITIAL_RATES = [
     "yesterdayRate": 60,
     "status": "available",
     "minBooking": 1000,
-    "bookingPhone": "01619500178",
+    "bookingPhone": "01790220686",
     "notes": "কোম্পানি রেট শিট অনুযায়ী যাচাইকৃত",
     "divisionRates": {
       "dhaka": 60,
@@ -677,7 +677,7 @@ export const INITIAL_RATES = [
     "yesterdayRate": 65,
     "status": "available",
     "minBooking": 1000,
-    "bookingPhone": "01619500178",
+    "bookingPhone": "01790220686",
     "notes": "কোম্পানি রেট শিট অনুযায়ী যাচাইকৃত",
     "divisionRates": {
       "dhaka": 65,
@@ -703,7 +703,7 @@ export const INITIAL_RATES = [
     "yesterdayRate": 62,
     "status": "available",
     "minBooking": 1000,
-    "bookingPhone": "01619500178",
+    "bookingPhone": "01790220686",
     "notes": "প্রভিটা অফিসিয়াল রেট",
     "divisionRates": {
       "dhaka": 62,
@@ -729,7 +729,7 @@ export const INITIAL_RATES = [
     "yesterdayRate": 65,
     "status": "available",
     "minBooking": 1000,
-    "bookingPhone": "01619500178",
+    "bookingPhone": "01790220686",
     "notes": "কোম্পানি রেট শিট অনুযায়ী যাচাইকৃত",
     "divisionRates": {
       "dhaka": 65,
@@ -755,7 +755,7 @@ export const INITIAL_RATES = [
     "yesterdayRate": 42,
     "status": "available",
     "minBooking": 500,
-    "bookingPhone": "01619500178",
+    "bookingPhone": "01790220686",
     "notes": "বগুড়া ও নর্থ বেঙ্গল জোনাল রেট",
     "divisionRates": {
       "dhaka": 42,
@@ -781,7 +781,7 @@ export const INITIAL_RATES = [
     "yesterdayRate": 25,
     "status": "available",
     "minBooking": 500,
-    "bookingPhone": "01619500178",
+    "bookingPhone": "01790220686",
     "notes": "***প্রতি কার্টুনে ০১টি বাচ্চা বোনাস (হিসাব শিট অনুযায়ী)",
     "divisionRates": {
       "dhaka": 25,
@@ -826,4 +826,4 @@ export const DIVISIONS = [
   { id: "barisal", nameBn: "বরিশাল বিভাগ (সাউথ জোন)", nameEn: "Barisal (South Zone)" }
 ];
 
-export const INITIAL_TICKER_NOTICE = "📢 শীর্ষ কোম্পানিগুলোর অফিসিয়াল বাজারদর হালনাগাদ করা হয়েছে। সরাসরি কল বা WhatsApp করুন: 01619500178";
+export const INITIAL_TICKER_NOTICE = "📢 শীর্ষ কোম্পানিগুলোর অফিসিয়াল বাজারদর হালনাগাদ করা হয়েছে। সরাসরি কল বা WhatsApp করুন: 01790220686";
