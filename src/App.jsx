@@ -7,7 +7,6 @@ import FilterBar from './components/FilterBar';
 import RateCard from './components/RateCard';
 import RateTable from './components/RateTable';
 import PriceChart from './components/PriceChart';
-import TrendChart from './components/TrendChart';
 import ReadyTrendAnalysis from './components/ReadyTrendAnalysis';
 import InstallPrompt from './components/InstallPrompt';
 const Calculator = lazy(() => import('./components/Calculator'));
@@ -551,7 +550,6 @@ export default function App() {
             {/* Real Top Hatcheries Live Price Comparison Chart */}
             <PriceChart rates={shownRates} lang={lang} />
             <WeeklySummary lang={lang} />
-            <TrendChart lang={lang} liveRates={officialRates} liveDate={settings.reportDateISO} />
 
             <FeedPrices feeds={feedPrices} />
 
